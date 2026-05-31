@@ -6,3 +6,5 @@ TASKS.md
 .DS_Store
 .scratch/
 docs/
+CONTEXT.md
+.commit-message.txt
