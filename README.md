@@ -55,27 +55,6 @@ $ mise run up   # start PostgreSQL container
 $ reload        # load environment variables
 $ mise migrate  # run database migrations
 $ mise seed     # populate with demo data
-$ ./src/hello_world.js  # sample application
-contacts: Result(3) [
-  {
-    id: '1',
-    firstname: 'Alice',
-    lastname: 'Martin',
-    created_at: 2026-05-24T14:08:06.606Z
-  },
-  {
-    id: '2',
-    firstname: 'Bob',
-    lastname: 'Durand',
-    created_at: 2026-05-24T14:08:06.606Z
-  },
-  {
-    id: '3',
-    firstname: 'Charlie',
-    lastname: 'Petit',
-    created_at: 2026-05-24T14:08:06.606Z
-  }
-]
 $ mise teardown # stop the database and delete all data
 
 ## Deployment Playground
