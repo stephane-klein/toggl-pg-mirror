@@ -38,6 +38,10 @@ Issues live as markdown files under `.scratch/<feature-slug>/`. See `docs/agents
 
 Uses the default canonical labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
 
+### Backlog
+
+Global overview of all issues at `.scratch/BACKLOG.md` — status, dependencies, and next actionable items. See `.scratch/BACKLOG.md`.
+
 ### Domain docs
 
 Multi-context layout — `CONTEXT-MAP.md` at root pointing to per-context `CONTEXT.md` files. See `docs/agents/domain.md`.
