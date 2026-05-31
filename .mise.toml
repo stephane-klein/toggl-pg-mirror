@@ -36,7 +36,7 @@ run = "usql postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@127.0.0.1:${POSTGRE
 run = "usql postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@127.0.0.1:${POSTGRES_PORT}/${POSTGRES_DB}"
 
 [tasks.build-image]
-run = "podman build -t nodejs-pg-playground ."
+run = "podman build -t toggl-pg-mirror ."
 
 [tasks.build-image-cache]
 run = "podman build --layers -t toggl-pg-mirror ."
