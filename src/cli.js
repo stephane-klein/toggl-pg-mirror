@@ -5,7 +5,7 @@ import { importCsv } from "./csv-importer.js";
 import { parseDate } from "./date-parser.js";
 import { importTimeEntries } from "./importer.js";
 import { logger } from "./logger.js";
-import { sql } from "./pg.js";
+import { startSyncDaemon, stopSyncDaemon } from "./sync.js";
 import { ping } from "./toggl-client.js";
 
 function formatDuration(seconds) {
@@ -103,8 +103,18 @@ yargs(hideBin(process.argv))
         "Start periodic sync daemon",
         () => {},
         async () => {
-            await sql`SELECT 1`;
-            console.log("sync command: database connection OK");
+            const pollIntervalSeconds = parseInt(process.env.TOGGL_PG_MIRROR_POLL_INTERVAL_SECONDS || "600", 10); // 10 minutes by default
+
+            logger.info({ pollIntervalSeconds }, "Sync daemon starting");
+
+            const handleShutdown = () => {
+                logger.info("Shutdown signal received, stopping sync daemon...");
+                stopSyncDaemon();
+            };
+            process.on("SIGINT", handleShutdown);
+            process.on("SIGTERM", handleShutdown);
+
+            await startSyncDaemon(pollIntervalSeconds);
         },
     )
     .command(
@@ -126,7 +136,8 @@ yargs(hideBin(process.argv))
     .demandCommand(1, "Use one of the available commands")
     .epilogue(`
 Environment variables:
-  TOGGL_PG_MIRROR_POSTGRES_URL    PostgreSQL connection URL (e.g. postgres://user:pass@localhost:5432/db)
-  TOGGL_PG_MIRROR_TOGGL_API_TOKEN Toggl API token
+  TOGGL_PG_MIRROR_POSTGRES_URL              PostgreSQL connection URL (e.g. postgres://user:pass@localhost:5432/db)
+  TOGGL_PG_MIRROR_TOGGL_API_TOKEN           Toggl API token
+  TOGGL_PG_MIRROR_POLL_INTERVAL_SECONDS     Sync daemon polling interval in seconds (default: 600)
 `)
     .parse();

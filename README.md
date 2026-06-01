@@ -60,8 +60,20 @@ $ toggl-pg-mirror import toggle-export-data/Toggl_time_entries_2025-01-01_to_202
 [2026-06-01 13:55:42.423] INFO: CSV import completed {"deleted":2437,"inserted":19583,"dateRange":{"min":"2025-01-01T00:01:53.000Z","max":"2025-12-31T20:03:28.000Z"}}
 
 $ toggl-pg-mirror toggl api-import # -48h by default to now
-$ toggl-pg-mirror toggl api-import --start-date 2025-01-01
-$ toggl-pg-mirror toggl api-import --start-date -7d --end-date -1d
+[2026-06-01 20:43:08.157] INFO: Starting Toggl import {"startDate":"2026-06-01T17:43:08.157Z","endDate":"2026-06-01T20:43:08.157Z"}
+[2026-06-01 20:43:08.371] INFO: Fetched time entries from Toggl {"count":7,"startDate":"2026-06-01T17:43:08.157Z","endDate":"2026-06-01T20:43:08.157Z"}
+[2026-06-01 20:43:08.372] INFO: Fetched all time entries {"total":7,"pages":1}
+[2026-06-01 20:43:08.374] INFO: Import completed {"deletedCsv":0,"deleted":0,"inserted":0,"updated":0,"unchanged":7,"quotaRemaining":"20","quotaResetsIn":"1855"}
+[2026-06-01 20:43:08.375] INFO: Toggl import completed {"deletedCsv":0,"deleted":0,"inserted":0,"updated":0,"unchanged":7,"quotaRemaining":"20","quotaResetsIn":"1855"}
+[2026-06-01 20:43:08.375] INFO: Toggl API quota: 20 calls remaining, resets in 31 min {"quotaRemaining":"20","quotaResetsIn":"1855"}
+
+$ toggl-pg-mirror start-api-sync  # starts the periodic sync daemon (14-day sliding window, every 10 min by default)
+[2026-06-01 21:21:27.458] INFO: Sync daemon starting {"pollIntervalSeconds":600}
+[2026-06-01 21:21:27.460] INFO: Sync daemon started {"pollIntervalSeconds":600}
+[2026-06-01 21:21:27.779] INFO: Fetched time entries from Toggl {"count":698,"startDate":"2026-05-18T21:21:27.461Z","endDate":"2026-06-01T21:21:27.461Z"}
+[2026-06-01 21:21:27.780] INFO: Fetched all time entries {"total":698,"pages":1}
+[2026-06-01 21:21:27.910] INFO: Import completed {"deletedCsv":601,"deleted":0,"inserted":594,"updated":1,"unchanged":103,"quotaRemaining":"29","quotaResetsIn":"3600"}
+[2026-06-01 21:21:27.910] INFO: Sync cycle completed {"deletedCsv":601,"deleted":0,"inserted":594,"updated":1,"unchanged":103,"quotaRemaining":"29","quotaResetsIn":"3600"}
 
 $ mise teardown # stop the database and delete all data
 
