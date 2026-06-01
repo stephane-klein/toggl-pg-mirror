@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS time_entries (
     import_source VARCHAR(10) NOT NULL CHECK (import_source IN ('api_sync', 'csv')),
     project       TEXT,
     created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+    updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    deleted_at    TIMESTAMPTZ  DEFAULT NULL
 );
 
 -- Silver layer: records every modification to a time entry with full traceability.
@@ -21,8 +22,8 @@ CREATE TABLE IF NOT EXISTS time_entry_audit_log (
     entry_id      BIGINT       NOT NULL REFERENCES time_entries(id) ON DELETE CASCADE,
     source        TEXT         NOT NULL CHECK (source IN ('toggl', 'manual', 'llm', 'csv')),
     field_changed TEXT         NOT NULL,
-    old_value     TEXT,
-    new_value     TEXT,
+    old_value     JSONB,
+    new_value     JSONB,
     changed_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
