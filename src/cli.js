@@ -2,6 +2,8 @@
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { importCsv } from "./csv-importer.js";
+import { parseDate } from "./date-parser.js";
+import { importTimeEntries } from "./importer.js";
 import { logger } from "./logger.js";
 import { sql } from "./pg.js";
 import { ping } from "./toggl-client.js";
@@ -13,7 +15,7 @@ yargs(hideBin(process.argv))
         description: "PostgreSQL connection URL",
     })
     .command(
-        "import <file>",
+        "csv-import <file>",
         "Import a Toggl CSV export",
         (yargs) =>
             yargs.positional("file", {
@@ -39,7 +41,46 @@ yargs(hideBin(process.argv))
         },
     )
     .command(
-        "sync",
+        "api-import",
+        "Import time entries from Toggl API",
+        (yargs) =>
+            yargs
+                .option("debug", {
+                    type: "boolean",
+                    default: false,
+                    describe: "Enable debug logging and show raw API response",
+                })
+                .option("start-date", {
+                    type: "string",
+                    default: "-48h",
+                    describe: "Start date (YYYY-MM-DDTHH:MM or relative like -48h, -7d)",
+                })
+                .option("end-date", {
+                    type: "string",
+                    describe: "End date (YYYY-MM-DDTHH:MM or relative like -7d)",
+                }),
+        async (argv) => {
+            if (argv.debug) {
+                logger.level = "debug";
+            }
+
+            try {
+                const startDate = parseDate(argv.startDate);
+                const endDate = argv.endDate ? parseDate(argv.endDate) : new Date();
+
+                logger.info({ startDate, endDate }, "Starting Toggl import");
+
+                const result = await importTimeEntries({ startDate, endDate, debug: argv.debug });
+                logger.info(result, "Toggl import completed");
+                process.exit(0);
+            } catch (err) {
+                logger.error({ err }, "Toggl import failed");
+                process.exit(1);
+            }
+        },
+    )
+    .command(
+        "start-api-sync",
         "Start periodic sync daemon",
         () => {},
         async () => {
@@ -48,7 +89,7 @@ yargs(hideBin(process.argv))
         },
     )
     .command(
-        "toggl ping",
+        "api-ping",
         "Test Toggl API access",
         () => {},
         async () => {
@@ -65,6 +106,7 @@ yargs(hideBin(process.argv))
     .demandCommand(1, "Use one of the available commands")
     .epilogue(`
 Environment variables:
-  TOGGL_PG_MIRROR_POSTGRES_URL  PostgreSQL connection URL (e.g. postgres://user:pass@localhost:5432/db)
+  TOGGL_PG_MIRROR_POSTGRES_URL    PostgreSQL connection URL (e.g. postgres://user:pass@localhost:5432/db)
+  TOGGL_PG_MIRROR_TOGGL_API_TOKEN Toggl API token
 `)
     .parse();

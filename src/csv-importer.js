@@ -156,13 +156,13 @@ async function insertAuditLogs(records, entryIds) {
             entry_id: batchIds[idx],
             source: "csv",
             field_changed: "_created",
-            new_value: JSON.stringify({
+            new_value: {
                 started_at: entry.started_at,
                 ended_at: entry.ended_at,
                 description: entry.description,
                 project: entry.project,
                 tags: entry.tags,
-            }),
+            },
         }));
 
         await sql`
