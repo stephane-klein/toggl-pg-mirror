@@ -6,14 +6,13 @@
   "scripts": {
     "lint": "biome lint",
     "format": "biome format --write",
-    "check": "biome check --write"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "{{ last_biome_version }}"
-  },
+    "check": "biome check --write",
     "migrate": "node src/migrate.js",
     "seed": "node src/seed.js",
     "hello": "node src/hello_world.js"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.16"
   },
   "dependencies": {
     "pino": "^10.3.1",
