@@ -12,11 +12,15 @@ case "$COMMAND" in
         node src/migrate.js
         node src/seed.js
         ;;
-    hello|"")
+    start-api-sync|"")
         node src/migrate.js
-        node src/hello_world.js
+        node src/cli.js start-api-sync
         ;;
     *)
-        exec "$@"
+        if command -v "$1" > /dev/null 2>&1; then
+            exec "$@"
+        else
+            exec node src/cli.js "$@"
+        fi
         ;;
 esac

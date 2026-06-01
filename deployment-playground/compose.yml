@@ -16,11 +16,14 @@ services:
   app:
     image: toggl-pg-mirror
     build: ../
+    volumes:
+      - ../toggl-export-data/:/toggl-export-data/
     depends_on:
       postgres:
         condition: service_healthy
     environment:
       TOGGL_PG_MIRROR_POSTGRES_URL: postgres://postgres:password@postgres:5432/postgres
+      TOGGL_PG_MIRROR_TOGGL_API_TOKEN: ${TOGGL_PG_MIRROR_TOGGL_API_TOKEN}
 
 volumes:
   postgres:

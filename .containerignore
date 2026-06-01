@@ -2,3 +2,4 @@ node_modules/
 .git/
 .jj/
 deployment-playground/
+toggl-export-data/

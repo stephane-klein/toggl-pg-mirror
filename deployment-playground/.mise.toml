@@ -1,0 +1,5 @@
+[tasks.enter-in-app]
+run = "podman compose exec app bash"
+
+[tasks.enter-in-pg]
+run = "podman compose exec postgres psql -U postgres postgres"
