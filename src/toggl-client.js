@@ -52,6 +52,7 @@ export async function ping() {
 
 async function fetchPage({ startDate, endDate, debug }) {
     const authHeader = buildAuthHeader(TOGGL_API_TOKEN);
+    // See Toggl API documentation: https://engineering.toggl.com/docs/track/api/time_entries/
     const url = new URL("https://api.track.toggl.com/api/v9/me/time_entries");
     url.searchParams.set("start_date", startDate.toISOString());
     url.searchParams.set("end_date", endDate.toISOString());
@@ -145,5 +146,6 @@ function normaliseTimeEntry(entry) {
         tags: entry.tags ?? [],
         description: entry.description ?? null,
         project: entry.project_name ?? null,
+        updated_at: new Date(entry.at),
     };
 }

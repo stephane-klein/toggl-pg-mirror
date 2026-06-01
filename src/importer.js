@@ -14,7 +14,7 @@ export async function importTimeEntries({ startDate, endDate, debug = false }) {
     const deletedCsv = deletedCsvResult.count;
 
     const dbEntries = await sql`
-        SELECT id, toggl_uid, started_at, ended_at, tags, description, project
+        SELECT id, toggl_uid, started_at, ended_at, tags, description, project, updated_at
         FROM time_entries
         WHERE import_source = 'api_sync'
           AND deleted_at IS NULL
@@ -33,7 +33,7 @@ export async function importTimeEntries({ startDate, endDate, debug = false }) {
     const toUpdate = [];
     for (const [uid, apiEntry] of apiByUid) {
         const dbEntry = dbByUid.get(uid);
-        if (dbEntry) {
+        if (dbEntry && apiEntry.updated_at > dbEntry.updated_at) {
             const changes = detectChanges(dbEntry, apiEntry);
             if (changes.length > 0) {
                 toUpdate.push({ dbEntry, apiEntry, changes });
