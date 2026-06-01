@@ -4,6 +4,8 @@ RUN npm install -g pnpm@11.2.2
 
 WORKDIR /app/
 
+ENV PATH="/app/node_modules/.bin:${PATH}"
+
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
@@ -15,4 +17,4 @@ ENV TOGGL_PG_MIRROR_POSTGRES_URL=postgres://postgres:postgres@postgres:5432/post
 ENV NODE_ENV=production
 
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["hello"]
+CMD ["start-api-sync"]
