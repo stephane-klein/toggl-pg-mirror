@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      csv-parse:
+        specifier: ^6.2.1
+        version: 6.2.1
       pino:
         specifier: ^10.3.1
         version: 10.3.1
@@ -204,6 +207,9 @@ packages:
     peerDependenciesMeta:
       typescript:
         optional: true
+
+  csv-parse@6.2.1:
+    resolution: {integrity: sha512-LRLMV+UCyfMokp8Wb411duBf1gaBKJfOfBWU9eHMJ+b+cJYZsNu3AFmjJf3+yPGd59Exz1TsMjaSFyxnYB9+IQ==}
 
   dateformat@4.6.3:
     resolution: {integrity: sha512-2P0p0pFGzHS5EMnhdxQi7aJN+iMheud0UhG4dlE1DLAlvL8JHjJJTX/CSm4JXwV0Ka5nGk3zC5mcb5bUQUxxMA==}
@@ -825,6 +831,8 @@ snapshots:
       js-yaml: 4.1.1
       parse-json: 5.2.0
       path-type: 4.0.0
+
+  csv-parse@6.2.1: {}
 
   dateformat@4.6.3: {}
 

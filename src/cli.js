@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
+import { importCsv } from "./csv-importer.js";
+import { logger } from "./logger.js";
 import { sql } from "./pg.js";
 
 yargs(hideBin(process.argv))
@@ -12,10 +14,27 @@ yargs(hideBin(process.argv))
     .command(
         "import <file>",
         "Import a Toggl CSV export",
-        () => {},
-        async () => {
-            await sql`SELECT 1`;
-            console.log("import command: database connection OK");
+        (yargs) =>
+            yargs.positional("file", {
+                type: "string",
+                describe: "Path to the CSV file",
+            }),
+        async (argv) => {
+            const filePath = argv.file;
+
+            if (!filePath.toLowerCase().endsWith(".csv")) {
+                logger.error({ filePath }, "File must have .csv extension");
+                process.exit(1);
+            }
+
+            try {
+                const result = await importCsv(filePath);
+                logger.info(result, "CSV import completed");
+                process.exit(0);
+            } catch (err) {
+                logger.error({ err, filePath }, "CSV import failed");
+                process.exit(1);
+            }
         },
     )
     .command(

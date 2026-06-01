@@ -15,11 +15,11 @@ CREATE TABLE IF NOT EXISTS time_entries (
 );
 
 -- Silver layer: records every modification to a time entry with full traceability.
--- source indicates who or what system made the change: 'toggl', 'manual', or 'llm'.
+-- source indicates who or what system made the change: 'toggl', 'manual', 'llm', or 'csv'.
 CREATE TABLE IF NOT EXISTS time_entry_audit_log (
     id            BIGINT       GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     entry_id      BIGINT       NOT NULL REFERENCES time_entries(id) ON DELETE CASCADE,
-    source        TEXT         NOT NULL CHECK (source IN ('toggl', 'manual', 'llm')),
+    source        TEXT         NOT NULL CHECK (source IN ('toggl', 'manual', 'llm', 'csv')),
     field_changed TEXT         NOT NULL,
     old_value     TEXT,
     new_value     TEXT,
