@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS time_entries (
     ended_at      TIMESTAMPTZ,                      -- NULL while the entry is still running
     tags          TEXT[]       NOT NULL DEFAULT '{}',
     description   TEXT,
-    import_source VARCHAR(10) NOT NULL CHECK (import_source IN ('api_sync', 'csv'))
+    import_source VARCHAR(10) NOT NULL CHECK (import_source IN ('api_sync', 'csv')),
     project       TEXT,
     created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
