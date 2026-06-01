@@ -23,6 +23,9 @@ run ="pnpm run format"
 [tasks.check]
 run ="pnpm run check"
 
+[tasks.lint-pkg]
+run = "pnpm run lint:pkg"
+
 [tasks.up]
 run = "podman compose up -d"
 
