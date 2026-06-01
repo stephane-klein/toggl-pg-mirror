@@ -8,6 +8,24 @@ import { logger } from "./logger.js";
 import { sql } from "./pg.js";
 import { ping } from "./toggl-client.js";
 
+function formatDuration(seconds) {
+    if (seconds === null || seconds === undefined) return null;
+    const s = Number(seconds);
+    if (Number.isNaN(s)) return null;
+    const h = Math.floor(s / 3600);
+    const m = Math.round((s % 3600) / 60);
+    if (h > 0) return `${h}h ${String(m).padStart(2, "0")} min`;
+    return `${m} min`;
+}
+
+function logQuota(quotaRemaining, quotaResetsIn) {
+    if (quotaRemaining === null || quotaResetsIn === null) return;
+    logger.info(
+        { quotaRemaining, quotaResetsIn },
+        `Toggl API quota: ${quotaRemaining} calls remaining, resets in ${formatDuration(quotaResetsIn)}`,
+    );
+}
+
 yargs(hideBin(process.argv))
     .env("TOGGL_PG_MIRROR")
     .option("postgres-url", {
@@ -72,6 +90,7 @@ yargs(hideBin(process.argv))
 
                 const result = await importTimeEntries({ startDate, endDate, debug: argv.debug });
                 logger.info(result, "Toggl import completed");
+                logQuota(result.quotaRemaining, result.quotaResetsIn);
                 process.exit(0);
             } catch (err) {
                 logger.error({ err }, "Toggl import failed");
@@ -94,8 +113,12 @@ yargs(hideBin(process.argv))
         () => {},
         async () => {
             try {
-                const user = await ping();
-                logger.info({ email: user.email, name: user.name }, "Toggl API access OK");
+                const { user, quotaRemaining, quotaResetsIn } = await ping();
+                logger.info(
+                    { email: user.email, name: user.name },
+                    "Toggl API access OK",
+                );
+                logQuota(quotaRemaining, quotaResetsIn);
                 process.exit(0);
             } catch (err) {
                 logger.error({ err }, "Toggl API access failed");

@@ -22,7 +22,7 @@ export async function importTimeEntries({ startDate, endDate, debug = false }) {
           AND started_at <= ${endDate}
     `;
 
-    const apiEntries = await getTimeEntries({ startDate, endDate, debug });
+    const { entries: apiEntries, quotaRemaining, quotaResetsIn } = await getTimeEntries({ startDate, endDate, debug });
 
     const dbByUid = new Map(dbEntries.map((e) => [String(e.toggl_uid), e]));
     const apiByUid = new Map(apiEntries.map((e) => [String(e.toggl_uid), e]));
@@ -55,8 +55,8 @@ export async function importTimeEntries({ startDate, endDate, debug = false }) {
                     source: "toggl",
                     field_changed: "_deleted",
                     old_value: {
-                        started_at: entry.started_at,
-                        ended_at: entry.ended_at,
+                        started_at: auditValue(entry.started_at),
+                        ended_at: auditValue(entry.ended_at),
                         description: entry.description,
                         project: entry.project,
                         tags: entry.tags,
@@ -106,8 +106,8 @@ export async function importTimeEntries({ startDate, endDate, debug = false }) {
                         field_changed: "_created",
                         old_value: null,
                         new_value: {
-                            started_at: entry.started_at,
-                            ended_at: entry.ended_at,
+                            started_at: auditValue(entry.started_at),
+                            ended_at: auditValue(entry.ended_at),
                             description: entry.description,
                             project: entry.project,
                             tags: entry.tags,
@@ -137,8 +137,8 @@ export async function importTimeEntries({ startDate, endDate, debug = false }) {
                         entry_id: dbEntry.id,
                         source: "toggl",
                         field_changed: field,
-                        old_value: dbEntry[field] ?? null,
-                        new_value: apiEntry[field] ?? null,
+                        old_value: auditValue(dbEntry[field]),
+                        new_value: auditValue(apiEntry[field]),
                     })}
                 `;
             }
@@ -146,7 +146,7 @@ export async function importTimeEntries({ startDate, endDate, debug = false }) {
         }
     });
 
-    const result = { deletedCsv, deleted, inserted, updated, unchanged };
+    const result = { deletedCsv, deleted, inserted, updated, unchanged, quotaRemaining, quotaResetsIn };
     logger.info(result, "Import completed");
 
     return result;
@@ -163,6 +163,11 @@ function detectChanges(existing, incoming) {
     }
 
     return changes;
+}
+
+function auditValue(value) {
+    if (value instanceof Date) return value.toISOString();
+    return value ?? null;
 }
 
 function isEqual(a, b) {
