@@ -56,21 +56,8 @@ $ pnpm install
 $ mise run up   # start PostgreSQL container
 $ reload        # load environment variables
 $ mise migrate  # run database migrations
-$ toggl-pg-mirror --help
-toggl-pg-mirror <command>
-
-Commands:
-  toggl-pg-mirror import <file>  Import a Toggl CSV export
-  toggl-pg-mirror sync           Start periodic sync daemon
-
-Options:
-  --help         Show help                                             [boolean]
-  --version      Show version number                                   [boolean]
-  --db-host      PostgreSQL host                 [string] [default: "localhost"]
-  --db-port      PostgreSQL port                        [number] [default: 5432]
-  --db-name      PostgreSQL database name                    [string] [required]
-  --db-user      PostgreSQL user                             [string] [required]
-  --db-password  PostgreSQL password                         [string] [required]
+$ toggl-pg-mirror import toggle-export-data/Toggl_time_entries_2025-01-01_to_2025-12-31.csv
+[2026-06-01 13:55:42.423] INFO: CSV import completed {"deleted":2437,"inserted":19583,"dateRange":{"min":"2025-01-01T00:01:53.000Z","max":"2025-12-31T20:03:28.000Z"}}
 
 $ mise teardown # stop the database and delete all data
 
@@ -78,5 +65,3 @@ $ mise teardown # stop the database and delete all data
 
 The `deployment-playground/` directory contains a local playground for testing the application in a production-like environment.
 ```
-
-
