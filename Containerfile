@@ -11,7 +11,7 @@ COPY src/ ./src/
 COPY sqls/ ./sqls/
 COPY entrypoint.sh /entrypoint.sh
 
-ENV POSTGRES_HOST=postgres
+ENV TOGGL_PG_MIRROR_POSTGRES_URL=postgres://postgres:postgres@postgres:5432/postgres
 ENV NODE_ENV=production
 
 ENTRYPOINT ["/entrypoint.sh"]

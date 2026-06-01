@@ -16,7 +16,6 @@
     "seed": "node src/seed.js",
 
     "cli": "node src/cli.js",
-    "hello": "node src/hello_world.js",
 
     "postinstall": "mkdir -p node_modules/.bin && ln -sf ../../src/cli.js node_modules/.bin/toggl-pg-mirror"
   },
