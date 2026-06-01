@@ -4,6 +4,13 @@
   "author": "Stéphane Klein",
   "license": "MIT",
   "scripts": {
+    "lint": "biome lint",
+    "format": "biome format --write",
+    "check": "biome check --write"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "{{ last_biome_version }}"
+  },
     "migrate": "node src/migrate.js",
     "seed": "node src/seed.js",
     "hello": "node src/hello_world.js"

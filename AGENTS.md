@@ -14,6 +14,15 @@ A Node.js service that mirrors Toggl time-tracking data into a self-controlled P
 - Always use `pnpm` for installing, adding, and removing packages.
 - Never use `npm` or `yarn`.
 
+## Code Quality
+
+This project uses [Biome](https://biomejs.dev) for linting and formatting:
+- `pnpm lint` — check for code issues
+- `pnpm format` — auto-format code
+- `pnpm check` — run both (format + lint + organize imports)
+
+Configuration: `biome.jsonc`
+
 ## Version Control
 
 This project uses **Jujutsu** for version control.
