@@ -114,10 +114,7 @@ yargs(hideBin(process.argv))
         async () => {
             try {
                 const { user, quotaRemaining, quotaResetsIn } = await ping();
-                logger.info(
-                    { email: user.email, name: user.name },
-                    "Toggl API access OK",
-                );
+                logger.info({ email: user.email, name: user.name }, "Toggl API access OK");
                 logQuota(quotaRemaining, quotaResetsIn);
                 process.exit(0);
             } catch (err) {
