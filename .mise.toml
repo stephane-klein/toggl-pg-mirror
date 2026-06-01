@@ -42,10 +42,10 @@ run = "./scripts/dump-schema.sh"
 run = "podman compose down -v --remove-orphans"
 
 [tasks.clean]
-run = "usql postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@127.0.0.1:${POSTGRES_PORT}/${POSTGRES_DB} < sqls/clean.sql"
+run = "usql ${TOGGL_PG_MIRROR_POSTGRES_URL} < sqls/clean.sql"
 
 [tasks.enter-in-pg]
-run = "usql postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@127.0.0.1:${POSTGRES_PORT}/${POSTGRES_DB}"
+run = "usql ${TOGGL_PG_MIRROR_POSTGRES_URL}"
 
 [tasks.build-image]
 run = "podman build -t toggl-pg-mirror ."
