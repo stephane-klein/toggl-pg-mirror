@@ -5,9 +5,9 @@ _.source = [
   { path = 'scripts/load_postgres_variables.sh', tools = true, cacheable = false }
 ]
 _.file = '.secret'
+
 [shell_alias]
 reload = "source scripts/load_postgres_variables.sh"
-
 
 [tools]
 node = "24.16.0"

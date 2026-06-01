@@ -4,6 +4,7 @@ import { hideBin } from "yargs/helpers";
 import { importCsv } from "./csv-importer.js";
 import { logger } from "./logger.js";
 import { sql } from "./pg.js";
+import { ping } from "./toggl-client.js";
 
 yargs(hideBin(process.argv))
     .env("TOGGL_PG_MIRROR")
@@ -44,6 +45,21 @@ yargs(hideBin(process.argv))
         async () => {
             await sql`SELECT 1`;
             console.log("sync command: database connection OK");
+        },
+    )
+    .command(
+        "toggl ping",
+        "Test Toggl API access",
+        () => {},
+        async () => {
+            try {
+                const user = await ping();
+                logger.info({ email: user.email, name: user.name }, "Toggl API access OK");
+                process.exit(0);
+            } catch (err) {
+                logger.error({ err }, "Toggl API access failed");
+                process.exit(1);
+            }
         },
     )
     .demandCommand(1, "Use one of the available commands")
