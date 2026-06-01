@@ -1,10 +1,9 @@
 #!/usr/bin/env node
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { join, dirname } from "node:path";
-
 import { logger } from "./logger.js";
-import { sql, waitForDb } from "./db.js";
+import { sql, waitForDb } from "./pg.js";
 
 await waitForDb();
 

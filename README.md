@@ -45,7 +45,9 @@ For Stéphane Klein (gopass user), generate `.secret` directly from the password
 ```bash
 $ mise run setup-secret
 ```
+
 Mise loads `.secret` automatically when present — no additional setup needed.
+
 ## Getting Started
 
 ```bash
@@ -54,7 +56,22 @@ $ pnpm install
 $ mise run up   # start PostgreSQL container
 $ reload        # load environment variables
 $ mise migrate  # run database migrations
-$ mise seed     # populate with demo data
+$ toggl-pg-mirror --help
+toggl-pg-mirror <command>
+
+Commands:
+  toggl-pg-mirror import <file>  Import a Toggl CSV export
+  toggl-pg-mirror sync           Start periodic sync daemon
+
+Options:
+  --help         Show help                                             [boolean]
+  --version      Show version number                                   [boolean]
+  --db-host      PostgreSQL host                 [string] [default: "localhost"]
+  --db-port      PostgreSQL port                        [number] [default: 5432]
+  --db-name      PostgreSQL database name                    [string] [required]
+  --db-user      PostgreSQL user                             [string] [required]
+  --db-password  PostgreSQL password                         [string] [required]
+
 $ mise teardown # stop the database and delete all data
 
 ## Deployment Playground

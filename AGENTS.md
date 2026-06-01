@@ -39,6 +39,11 @@ The complete schema (consolidated) is written by hand in `sqls/schema.sql`.
 
 ## Node.js Paradigms
 
+### Code style
+
+- Inline simple logic: prefer inline expressions over extracting helper functions for trivial operations (e.g., single `await sql` calls).
+- Extract functions only when code reuse, readability, or testability genuinely benefits.
+
 ### Functional style
 
 - Prefer chaining `.map()`, `.filter()`, `.reduce()`, `.forEach()` over imperative loops.

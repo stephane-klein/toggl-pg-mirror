@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 import { fileURLToPath } from "node:url";
 import shift from "postgres-shift";
-
 import { logger } from "./logger.js";
-import { sql, waitForDb } from "./db.js";
+import { sql, waitForDb } from "./pg.js";
 
 await waitForDb();
 
