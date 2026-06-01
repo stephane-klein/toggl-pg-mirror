@@ -37,6 +37,22 @@ Migrations are managed by [`postgres-shift`](https://github.com/porsager/postgre
 
 The complete schema (consolidated) is written by hand in `sqls/schema.sql`.
 
+## Node.js Paradigms
+
+### Functional style
+
+- Prefer chaining `.map()`, `.filter()`, `.reduce()`, `.forEach()` over imperative loops.
+- Avoid intermediate variables without semantic value (*expression-oriented*):
+  prefer `getMonths().map(...)` to `const months = getMonths(); months.map(...)`.
+  Prefer `(await Promise.all(...)).forEach(...)` to `const results = []; for (...)`.
+  If a step is complex, prefer a comment over a superfluous variable.
+- Avoid mutations: no `.push()` in a loop if `.map()` suffices (*immutability*).
+
+### To avoid
+
+- Tacit programming / point-free style: always explicitly name function arguments.
+  Prefer `[1,2,3].map(n => add1(n))` to `[1,2,3].map(add1)`.
+
 ## Agent skills
 
 ### Issue tracker
