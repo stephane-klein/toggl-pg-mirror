@@ -49,10 +49,26 @@ run = "usql ${TOGGL_PG_MIRROR_POSTGRES_URL} < sqls/clean.sql"
 run = "usql ${TOGGL_PG_MIRROR_POSTGRES_URL}"
 
 [tasks.build-image]
-run = "podman build -t toggl-pg-mirror ."
+run = "podman build -t ghcr.io/stephane-klein/toggl-pg-mirror:latest ."
 
 [tasks.build-image-cache]
-run = "podman build --layers -t toggl-pg-mirror ."
+run = "podman build --layers -t ghcr.io/stephane-klein/toggl-pg-mirror:latest ."
+
+[tasks.login-ghcr]
+run = """
+if ! gh auth token &>/dev/null; then
+    echo "Error: gh not authenticated. Please run:"
+    echo "  gh auth login -s repo,write:packages,read:org"
+    exit 1
+fi
+podman logout ghcr.io 2>/dev/null || true
+podman login ghcr.io -u stephane-klein --password-stdin <<< "$(gh auth token)"
+"""
+description = "Login to GitHub Container Registry using gh CLI"
+
+[tasks.push-image]
+run = "podman push ghcr.io/stephane-klein/toggl-pg-mirror:latest"
+description = "Push the container image to GitHub Container Registry"
 
 [tasks.setup-secret]
 description = "Generate .secret from scripts/generate-secret.sh via gopass"

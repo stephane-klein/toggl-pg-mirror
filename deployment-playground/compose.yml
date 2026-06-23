@@ -14,7 +14,7 @@ services:
       start_period: 30s
 
   app:
-    image: toggl-pg-mirror
+    image: ghcr.io/stephane-klein/toggl-pg-mirror:latest
     build: ../
     volumes:
       - ../toggl-export-data/:/toggl-export-data/
