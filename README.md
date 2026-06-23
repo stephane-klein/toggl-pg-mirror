@@ -78,6 +78,32 @@ $ toggl-pg-mirror start-api-sync  # starts the periodic sync daemon (14-day slid
 $ mise teardown # stop the database and delete all data
 ```
 
+## Help
+
+```bash
+$ toggl-pg-mirror --help
+toggl-pg-mirror <command>
+
+Commands:
+  toggl-pg-mirror csv-import <file>  Import a Toggl CSV export
+  toggl-pg-mirror api-import         Import time entries from Toggl API
+  toggl-pg-mirror start-api-sync     Start periodic sync daemon
+  toggl-pg-mirror api-ping           Test Toggl API access
+
+Options:
+  --help          Show help                                            [boolean]
+  --version       Show version number                                  [boolean]
+  --postgres-url  PostgreSQL connection URL                             [string]
+
+
+Environment variables:
+  TOGGL_PG_MIRROR_POSTGRES_URL              PostgreSQL connection URL (e.g.
+  postgres://user:pass@localhost:5432/db)
+  TOGGL_PG_MIRROR_POSTGRES_SCHEMA           PostgreSQL schema name (default: public)
+  TOGGL_PG_MIRROR_TOGGL_API_TOKEN           Toggl API token
+  TOGGL_PG_MIRROR_POLL_INTERVAL_SECONDS     Sync daemon polling interval in seconds (default: 600)
+```
+
 ## Deployment Playground
 
 The `deployment-playground/` directory contains a local playground for testing the application in a production-like environment.
