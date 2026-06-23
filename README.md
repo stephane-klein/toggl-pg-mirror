@@ -114,6 +114,15 @@ $ mise run login-ghcr
 $ mise run push-image
 ````
 
+## Publish Helm chart
+
+```bash
+$ mise run login-ghcr-helm    # one-time: authenticate Helm with GHCR
+$ mise run publish-chart      # package and push to oci://ghcr.io/stephane-klein/charts
+```
+
+The chart is published at `oci://ghcr.io/stephane-klein/charts/toggl-pg-mirror`.
+
 ## Deployment Playground
 
 The `deployment-playground/` directory contains a local playground for testing the application in a production-like environment.

@@ -1,0 +1,77 @@
+# Default values for toggl-pg-mirror.
+# This is a YAML-formatted file.
+
+app:
+  command: start-api-sync
+
+  image:
+    repository: ghcr.io/stephane-klein/toggl-pg-mirror
+    tag: latest
+    pullPolicy: Always
+
+  replicaCount: 1
+
+# PostgreSQL connection — the app connects to an existing CloudNativePG cluster
+# via a connection URL built from the copied CNPG secret.
+postgresql:
+  schema: public
+
+# CloudNativePG cluster configuration
+cnpg:
+  clusterName: memex
+  # Namespace where the CNPG cluster lives. Used to construct the full hostname.
+  # The secret's "host" field contains a short service name (e.g. memex-cluster-rw)
+  # that only resolves within its own namespace. The deployment template appends
+  # ".{{ .Values.cnpg.namespace }}" so the connection URL works across namespaces:
+  #   <host>.<namespace>  →  memex-cluster-rw.memex
+  # This follows standard Kubernetes DNS: <service>.<namespace>.svc.cluster.local
+  namespace: memex
+  # Name of the secret CNPG creates for application access.
+  # The secret keys are: host, port, dbname, username, password, jdbc-uri, pgpass.
+  secretName: memex-app
+  # Name of the copied secret in the target namespace (populated by ESO or manually).
+  copySecretName: memex-app
+
+# Toggl API token — must be created manually in the target namespace:
+#   kubectl create secret generic toggl-api-token \
+#     -n toggl-pg-mirror \
+#     --from-literal=token=YOUR_TOGGL_API_TOKEN
+toggl:
+  existingSecret:
+    name: toggl-api-token
+    key: token
+
+# Healthcheck server
+healthcheck:
+  port: 8080
+  livenessPath: /health
+  readinessPath: /ready
+  initialDelaySeconds: 10
+  periodSeconds: 15
+  failureThreshold: 3
+
+# External Secrets Operator — copies the CNPG app secret from the source
+# namespace (e.g. memex) to the release namespace automatically.
+# Requires ClusterSecretStore + ClusterExternalSecret CRDs (ESO installed).
+# Disable if you copy secrets manually instead.
+eso:
+  enabled: true
+  # Name of the ClusterSecretStore to create.
+  clusterSecretStoreName: kubernetes-cnpg-memex
+  # When using the kubernetes provider without explicit auth, ESO uses
+  # its own service account. The operator must have RBAC to read secrets
+  # in the source namespace (cnpg.namespace).
+
+# Resource limits
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+# Node selector, tolerations, affinity (optional)
+nodeSelector: {}
+tolerations: []
+affinity: {}
