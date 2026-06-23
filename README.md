@@ -107,4 +107,32 @@ Environment variables:
 ## Deployment Playground
 
 The `deployment-playground/` directory contains a local playground for testing the application in a production-like environment.
+
+## Contribution
+
+### Secret detection with gitleaks
+
+[Gitleaks](https://github.com/gitleaks/gitleaks) scans for secrets before they
+reach the remote repository. It runs at two points:
+
+- **`git commit`** — the `git-hooks/pre-commit` hook checks staged files.
+- **`jj publish`** — local alias that runs `mise run gitleaks-check-push` before
+  `jj git push`.
+
+Configuration is in `.gitleaks.toml`.
+
+**One-time setup after clone:**
+
+```bash
+$ mise install
+$ mise run setup-git-hooks
+$ mise run setup-jj-alias
+```
+
+**Manual scan** (outside of hooks):
+
+```bash
+$ mise run gitleaks-scan        # full project scan
+$ mise run gitleaks-check-push  # pre-push scan (called by `jj publish`)
+```
 ```
