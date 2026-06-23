@@ -1,0 +1,9 @@
+apiVersion: v2
+name: toggl-pg-mirror
+description: A Helm chart for toggl-pg-mirror — mirrors Toggl time-tracking data into PostgreSQL
+type: application
+version: 0.1.0
+appVersion: latest
+home: https://github.com/users/stephane-klein/packages/container/package/charts%2Ftoggl-pg-mirror
+sources:
+  - https://github.com/stephane-klein/toggl-pg-mirror
