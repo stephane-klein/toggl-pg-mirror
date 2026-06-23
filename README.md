@@ -1,5 +1,7 @@
 # toggl-pg-mirror
 
+This project implements the idea described in [Projet 36 — "toggl-pg-mirror: Agréger mon historique de temps dans PostgreSQL"](https://notes.sklein.xyz/Projet%2036/zen/).
+
 A Node.js service that mirrors Toggl time-tracking data into a self-controlled PostgreSQL database, keeping it in sync to serve as a source of truth. Enables querying and enriching historical data — e.g., via LLMs — for weekly, monthly, or per-activity time reports.
 
 ## Tech Stack
