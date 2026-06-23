@@ -22,6 +22,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
+      TOGGL_PG_MIRROR_POSTGRES_SCHEMA: memex
       TOGGL_PG_MIRROR_POSTGRES_URL: postgres://postgres:password@postgres:5432/postgres
       TOGGL_PG_MIRROR_TOGGL_API_TOKEN: ${TOGGL_PG_MIRROR_TOGGL_API_TOKEN}
 
