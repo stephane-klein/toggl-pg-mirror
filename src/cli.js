@@ -3,6 +3,7 @@ import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { importCsv } from "./csv-importer.js";
 import { parseDate } from "./date-parser.js";
+import { startHealthServer, stopHealthServer } from "./health.js";
 import { importTimeEntries } from "./importer.js";
 import { logger } from "./logger.js";
 import { startSyncDaemon, stopSyncDaemon } from "./sync.js";
@@ -107,8 +108,11 @@ yargs(hideBin(process.argv))
 
             logger.info({ pollIntervalSeconds }, "Sync daemon starting");
 
+            startHealthServer();
+
             const handleShutdown = () => {
                 logger.info("Shutdown signal received, stopping sync daemon...");
+                stopHealthServer();
                 stopSyncDaemon();
             };
             process.on("SIGINT", handleShutdown);
@@ -140,5 +144,6 @@ Environment variables:
   TOGGL_PG_MIRROR_POSTGRES_SCHEMA           PostgreSQL schema name (default: public)
   TOGGL_PG_MIRROR_TOGGL_API_TOKEN           Toggl API token
   TOGGL_PG_MIRROR_POLL_INTERVAL_SECONDS     Sync daemon polling interval in seconds (default: 600)
+  TOGGL_PG_MIRROR_HEALTH_PORT               Healthcheck HTTP server port (default: 8080)
 `)
     .parse();

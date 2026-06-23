@@ -18,9 +18,17 @@ services:
     build: ../
     volumes:
       - ../toggl-export-data/:/toggl-export-data/
+    ports:
+      - 8080
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/ready"]
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
     environment:
       TOGGL_PG_MIRROR_POSTGRES_SCHEMA: memex
       TOGGL_PG_MIRROR_POSTGRES_URL: postgres://postgres:password@postgres:5432/postgres
