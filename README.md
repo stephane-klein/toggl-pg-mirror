@@ -106,6 +106,14 @@ Environment variables:
   TOGGL_PG_MIRROR_POLL_INTERVAL_SECONDS     Sync daemon polling interval in seconds (default: 600)
 ```
 
+## Build and push container image
+
+```bash
+$ mise run build-image
+$ mise run login-ghcr
+$ mise run push-image
+````
+
 ## Deployment Playground
 
 The `deployment-playground/` directory contains a local playground for testing the application in a production-like environment.
