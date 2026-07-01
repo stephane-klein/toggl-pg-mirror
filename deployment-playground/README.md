@@ -34,7 +34,16 @@ $ mise enter-in-pg
 psql (18.4 (Debian 18.4-1.pgdg13+1))
 Type "help" for help.
 
-postgres=# select count(*) from time_entries;
+postgres=# \dt memex.*
+                  List of tables
+ Schema |         Name         | Type  |  Owner
+--------+----------------------+-------+----------
+ memex  | migrations           | table | postgres
+ memex  | time_entries         | table | postgres
+ memex  | time_entry_audit_log | table | postgres
+(3 rows)
+
+postgres=# select count(*) from memex.time_entries;
  count
 -------
  11916
