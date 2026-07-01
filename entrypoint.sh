@@ -12,9 +12,9 @@ case "$COMMAND" in
         node src/migrate.js
         node src/seed.js
         ;;
-    start-api-sync|"")
+    serve|"")
         node src/migrate.js
-        node src/cli.js start-api-sync
+        exec node /app/build/index.js
         ;;
     *)
         if command -v "$1" > /dev/null 2>&1; then

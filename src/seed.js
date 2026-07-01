@@ -2,8 +2,8 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { logger } from "./logger.js";
-import { sql, waitForDb } from "./pg.js";
+import { logger } from "./lib/backend/logger.js";
+import { sql, waitForDb } from "./lib/backend/pg.js";
 
 await waitForDb();
 

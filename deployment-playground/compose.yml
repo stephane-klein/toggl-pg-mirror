@@ -19,7 +19,7 @@ services:
     volumes:
       - ../toggl-export-data/:/toggl-export-data/
     ports:
-      - 8080
+      - 3000
     depends_on:
       postgres:
         condition: service_healthy

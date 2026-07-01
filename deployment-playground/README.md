@@ -8,6 +8,8 @@ Local playground for testing the application in a production-like environment.
 $ podman compose build
 $ podman compose run --rm app seed
 $ podman compose up -d app
+$ mise show-url
+Open your browser on http://localhost:38547
 ```
 
 ## Logs

@@ -55,22 +55,22 @@ spec:
                   name: {{ .Values.toggl.existingSecret.name }}
                   key: {{ .Values.toggl.existingSecret.key }}
           ports:
-            - name: health
-              containerPort: {{ .Values.healthcheck.port }}
+            - name: http
+              containerPort: {{ .Values.port }}
               protocol: TCP
           livenessProbe:
             httpGet:
-              path: {{ .Values.healthcheck.livenessPath }}
-              port: health
-            initialDelaySeconds: {{ .Values.healthcheck.initialDelaySeconds }}
-            periodSeconds: {{ .Values.healthcheck.periodSeconds }}
-            failureThreshold: {{ .Values.healthcheck.failureThreshold }}
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: {{ .Values.healthcheck.readinessPath }}
-              port: health
-            initialDelaySeconds: {{ .Values.healthcheck.initialDelaySeconds }}
-            periodSeconds: {{ .Values.healthcheck.periodSeconds }}
-            failureThreshold: {{ .Values.healthcheck.failureThreshold }}
+              path: /ready
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            failureThreshold: 3
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
