@@ -19,12 +19,6 @@ spec:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.app.image.repository }}:{{ .Values.app.image.tag }}"
           imagePullPolicy: {{ .Values.app.image.pullPolicy }}
-          command:
-            - /bin/sh
-            - -c
-            - |
-              export TOGGL_PG_MIRROR_POSTGRES_URL="postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}.{{ .Values.cnpg.namespace }}:${DB_PORT}/${DB_NAME}"
-              exec /entrypoint.sh {{ .Values.app.command }}
           env:
             - name: DB_HOST
               valueFrom:
@@ -51,6 +45,8 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.cnpg.copySecretName }}
                   key: password
+            - name: TOGGL_PG_MIRROR_POSTGRES_URL
+              value: "postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST).{{ .Values.cnpg.namespace }}:$(DB_PORT)/$(DB_NAME)"
             - name: TOGGL_PG_MIRROR_POSTGRES_SCHEMA
               value: {{ .Values.postgresql.schema }}
             - name: TOGGL_PG_MIRROR_TOGGL_API_TOKEN
