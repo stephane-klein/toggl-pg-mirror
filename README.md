@@ -11,6 +11,8 @@ A Node.js service that mirrors Toggl time-tracking data into a self-controlled P
 - Database: PostgreSQL 18
 - SQL client: [postgres](https://github.com/porsager/postgres)
 - Migrations: [postgres-shift](https://github.com/porsager/postgres-shift)
+- HTTP server: SvelteKit 2 with adapter-node (SSR)
+- Build tool: Vite
 - Containers: Podman Compose
 - Tooling: mise
 
@@ -69,13 +71,14 @@ $ toggl-pg-mirror toggl api-import # -48h by default to now
 [2026-06-01 20:43:08.375] INFO: Toggl import completed {"deletedCsv":0,"deleted":0,"inserted":0,"updated":0,"unchanged":7,"quotaRemaining":"20","quotaResetsIn":"1855"}
 [2026-06-01 20:43:08.375] INFO: Toggl API quota: 20 calls remaining, resets in 31 min {"quotaRemaining":"20","quotaResetsIn":"1855"}
 
-$ toggl-pg-mirror start-api-sync  # starts the periodic sync daemon (14-day sliding window, every 10 min by default)
-[2026-06-01 21:21:27.458] INFO: Sync daemon starting {"pollIntervalSeconds":600}
-[2026-06-01 21:21:27.460] INFO: Sync daemon started {"pollIntervalSeconds":600}
-[2026-06-01 21:21:27.779] INFO: Fetched time entries from Toggl {"count":698,"startDate":"2026-05-18T21:21:27.461Z","endDate":"2026-06-01T21:21:27.461Z"}
-[2026-06-01 21:21:27.780] INFO: Fetched all time entries {"total":698,"pages":1}
-[2026-06-01 21:21:27.910] INFO: Import completed {"deletedCsv":601,"deleted":0,"inserted":594,"updated":1,"unchanged":103,"quotaRemaining":"29","quotaResetsIn":"3600"}
-[2026-06-01 21:21:27.910] INFO: Sync cycle completed {"deletedCsv":601,"deleted":0,"inserted":594,"updated":1,"unchanged":103,"quotaRemaining":"29","quotaResetsIn":"3600"}
+$ pnpm dev  # starts SvelteKit dev server with sync daemon
+$ curl http://localhost:5173/health
+{"status":"ok"}
+$ curl http://localhost:5173/ready
+{"status":"ok","ready":true}
+
+# or for production:
+$ pnpm build && node build
 
 $ mise teardown # stop the database and delete all data
 ```
@@ -89,7 +92,6 @@ toggl-pg-mirror <command>
 Commands:
   toggl-pg-mirror csv-import <file>  Import a Toggl CSV export
   toggl-pg-mirror api-import         Import time entries from Toggl API
-  toggl-pg-mirror start-api-sync     Start periodic sync daemon
   toggl-pg-mirror api-ping           Test Toggl API access
 
 Options:

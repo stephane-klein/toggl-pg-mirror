@@ -2,8 +2,6 @@
 # This is a YAML-formatted file.
 
 app:
-  command: start-api-sync
-
   image:
     repository: ghcr.io/stephane-klein/toggl-pg-mirror
     tag: latest
@@ -41,14 +39,17 @@ toggl:
     name: toggl-api-token
     key: token
 
-# Healthcheck server
-healthcheck:
-  port: 8080
-  livenessPath: /health
-  readinessPath: /ready
-  initialDelaySeconds: 10
-  periodSeconds: 15
-  failureThreshold: 3
+# HTTP server (SvelteKit adapter-node)
+port: 3000
+
+# Ingress — expose the HTTP service externally
+ingress:
+  enabled: false
+  host: ""
+  path: /
+  className: ""
+  annotations: {}
+  tls: []
 
 # External Secrets Operator — copies the CNPG app secret from the source
 # namespace (e.g. memex) to the release namespace automatically.

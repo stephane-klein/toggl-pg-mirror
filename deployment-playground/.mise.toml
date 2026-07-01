@@ -3,3 +3,23 @@ run = "podman compose exec app bash"
 
 [tasks.enter-in-pg]
 run = "podman compose exec postgres psql -U postgres postgres"
+
+[tasks.show-url]
+description = "Display the external HTTP URL of the app service"
+quiet = true
+run = """\
+  PORT=$(podman compose port app 3000 2>/dev/null | sed 's/.*://') && \
+  echo "Open your browser on http://localhost:${PORT}" \
+  || echo "App service is not running (run 'mise run up' first)" \
+"""
+
+[tasks.up]
+run = """
+podman compose build
+podman compose run --rm app seed
+podman compose up -d app
+mise show-url
+"""
+
+[tasks.teardown]
+run = "podman compose down -v"

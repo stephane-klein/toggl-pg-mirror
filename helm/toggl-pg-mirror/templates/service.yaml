@@ -7,10 +7,10 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: {{ .Values.healthcheck.port }}
-      targetPort: health
+    - port: {{ .Values.port }}
+      targetPort: http
       protocol: TCP
-      name: health
+      name: http
   selector:
     app.kubernetes.io/name: toggl-pg-mirror
     app.kubernetes.io/instance: {{ .Release.Name }}

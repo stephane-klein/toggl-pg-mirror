@@ -1,5 +1,7 @@
 node_modules/
 dist/
+.svelte-kit/
+build/
 NEXT_STEPS.md
 TODO.md
 TASKS.md
