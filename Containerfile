@@ -7,6 +7,16 @@ WORKDIR /app/
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
+ARG GIT_HASH=unknown
+ARG GIT_BRANCH=unknown
+ARG GIT_DATE=unknown
+ARG BUILD_STAMP=unknown
+
+ENV PUBLIC_GIT_HASH=$GIT_HASH \
+    PUBLIC_GIT_BRANCH=$GIT_BRANCH \
+    PUBLIC_GIT_DATE=$GIT_DATE \
+    PUBLIC_BUILD_STAMP=$BUILD_STAMP
+
 COPY . .
 RUN pnpm build
 

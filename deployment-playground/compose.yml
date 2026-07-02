@@ -15,7 +15,13 @@ services:
 
   app:
     image: ghcr.io/stephane-klein/toggl-pg-mirror:latest
-    build: ../
+    build:
+      context: ../
+      args:
+        GIT_HASH:
+        GIT_BRANCH:
+        GIT_DATE:
+        BUILD_STAMP:
     volumes:
       - ../toggl-export-data/:/toggl-export-data/
     ports:
