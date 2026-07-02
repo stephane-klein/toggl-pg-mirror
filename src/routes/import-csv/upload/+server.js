@@ -3,6 +3,8 @@ import { json } from "@sveltejs/kit";
 import { importCsvFromStream } from "$lib/backend/csv-importer.js";
 import { logger } from "$lib/backend/logger.js";
 
+export const trailingSlash = "always";
+
 export async function POST({ request }) {
     const contentType = request.headers.get("content-type") ?? "";
 
