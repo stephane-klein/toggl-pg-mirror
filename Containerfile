@@ -21,6 +21,7 @@ WORKDIR /app/
 ENV PATH="/app/node_modules/.bin:${PATH}"
 ENV NODE_ENV=production
 ENV TOGGL_PG_MIRROR_POSTGRES_URL=postgres://postgres:postgres@postgres:5432/postgres
+ENV BODY_SIZE_LIMIT=50M
 
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile --prod
