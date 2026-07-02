@@ -2,7 +2,7 @@
 
 ## Project Context
 
-A Node.js service that mirrors Toggl time-tracking data into a self-controlled PostgreSQL database, keeping it in sync to serve as a source of truth. Enables querying and enriching historical data — e.g., via LLMs — for weekly, monthly, or per-activity time reports.
+A Node.js service that mirrors Toggl time-tracking data into a self-controlled PostgreSQL database, keeping it in sync to serve as a source of truth. The service runs as a SvelteKit SSR application (adapter-node) that handles both HTTP endpoints and the background sync daemon.
 
 ## Language Policy
 
@@ -22,6 +22,37 @@ This project uses [Biome](https://biomejs.dev) for linting and formatting:
 - `pnpm check` — run both (format + lint + organize imports)
 
 Configuration: `biome.jsonc`
+
+## SvelteKit SSR
+
+This project uses SvelteKit with `@sveltejs/adapter-node` for SSR.
+
+Build commands:
+- `pnpm dev` — start development server with hot reload
+- `pnpm build` — production build (outputs to `build/`)
+- `pnpm preview` — preview the production build locally
+
+The built server is started with `node build/index.js` (PORT env var, default 3000).
+
+## Project Structure
+
+### SvelteKit Routes
+
+- `src/routes/` — page and API routes (`+page.svelte`, `+server.js`)
+- `src/routes/health/+server.js` — `/health` endpoint
+- `src/routes/ready/+server.js` — `/ready` endpoint (DB check)
+- `src/hooks.server.js` — server hooks (sync daemon initialization, graceful shutdown)
+- `src/app.html` — HTML shell
+
+### Backend Modules
+
+- `src/lib/backend/` — business logic modules (sync, importer, logger, pg client, etc.)
+- `src/cli.js` — CLI entrypoint for non-server commands
+- `sqls/` — database migrations and schema
+
+### Static Assets
+
+- `static/` — files served at root (favicon, etc.)
 
 ## Version Control
 
