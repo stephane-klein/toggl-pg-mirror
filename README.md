@@ -60,7 +60,7 @@ $ pnpm install
 $ mise run up   # start PostgreSQL container
 $ reload        # load environment variables
 $ mise migrate  # run database migrations
-$ toggl-pg-mirror import toggl-export-data/Toggl_time_entries_2025-01-01_to_2025-12-31.csv
+$ toggl-pg-mirror csv-import toggl-export-data/Toggl_time_entries_2025-01-01_to_2025-12-31.csv
 [2026-06-01 13:55:42.423] INFO: CSV import completed {"deleted":2437,"inserted":19583,"dateRange":{"min":"2025-01-01T00:01:53.000Z","max":"2025-12-31T20:03:28.000Z"}}
 
 $ toggl-pg-mirror toggl api-import # -48h by default to now
