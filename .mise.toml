@@ -51,10 +51,40 @@ run = "usql ${TOGGL_PG_MIRROR_POSTGRES_URL} < sqls/clean.sql"
 run = "usql ${TOGGL_PG_MIRROR_POSTGRES_URL}"
 
 [tasks.build-image]
-run = "podman build -t ghcr.io/stephane-klein/toggl-pg-mirror:latest ."
+quiet = true
+run = """
+GIT_BRANCH=$(
+  jj log -r '::@ & bookmarks()' --no-graph -T 'bookmarks' 2>/dev/null ||
+  git rev-parse --abbrev-ref HEAD 2>/dev/null ||
+  echo "unknown"
+)
+GIT_BRANCH=${GIT_BRANCH:-unknown}
+[ "$GIT_BRANCH" = "HEAD" ] && GIT_BRANCH="unknown"
+podman build \\
+  --build-arg GIT_HASH=$(git rev-parse HEAD) \\
+  --build-arg GIT_BRANCH="$GIT_BRANCH" \\
+  --build-arg GIT_DATE="$(git show -s --format=%ci)" \\
+  --build-arg BUILD_STAMP="$(env TZ=Europe/Paris date '+%Y-%m-%d_%H:%M:%S-%Z')" \\
+  -t ghcr.io/stephane-klein/toggl-pg-mirror:latest .
+"""
 
 [tasks.build-image-cache]
-run = "podman build --layers -t ghcr.io/stephane-klein/toggl-pg-mirror:latest ."
+quiet = true
+run = """
+GIT_BRANCH=$(
+  jj log -r '::@ & bookmarks()' --no-graph -T 'bookmarks' 2>/dev/null ||
+  git rev-parse --abbrev-ref HEAD 2>/dev/null ||
+  echo "unknown"
+)
+GIT_BRANCH=${GIT_BRANCH:-unknown}
+[ "$GIT_BRANCH" = "HEAD" ] && GIT_BRANCH="unknown"
+podman build --layers \\
+  --build-arg GIT_HASH=$(git rev-parse HEAD) \\
+  --build-arg GIT_BRANCH="$GIT_BRANCH" \\
+  --build-arg GIT_DATE="$(git show -s --format=%ci)" \\
+  --build-arg BUILD_STAMP="$(env TZ=Europe/Paris date '+%Y-%m-%d_%H:%M:%S-%Z')" \\
+  -t ghcr.io/stephane-klein/toggl-pg-mirror:latest .
+"""
 
 [tasks.login-ghcr]
 run = """
