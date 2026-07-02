@@ -92,12 +92,12 @@ or scripted uploads:
 $ pnpm dev   # start the dev server
 
 # Basic curl upload
-$ curl -X POST http://localhost:5173/import-csv/ \
+$ curl -X POST http://localhost:5173/import-csv/upload/ \
     -F "file=@toggl-export-data/Toggl_time_entries_2025-01-01_to_2025-12-31.csv"
 {"deleted":0,"inserted":19583,"dateRange":{"min":"2025-01-01T00:01:53.000Z","max":"2025-12-31T20:03:28.000Z"}}
 
 # With xh and fzf for interactive file selection
-$ xh -b --form POST http://localhost:5173/import-csv/ file@$(fzf)
+$ xh -b --form POST http://localhost:5173/import-csv/upload/ file@$(fzf)
 ```
 
 ## Help
