@@ -1,19 +1,15 @@
 import { createReadStream } from "node:fs";
-import { stat } from "node:fs/promises";
 import { parse } from "csv-parse";
 import { logger } from "./logger.js";
 import { sql } from "./pg.js";
 
 export async function importCsv(filePath) {
-    let fileStat;
-    try {
-        fileStat = await stat(filePath);
-    } catch {
-        logger.error({ filePath }, "File not found");
-        throw new Error(`File not found: ${filePath}`);
-    }
+    const stream = createReadStream(filePath, { highWaterMark: 1024 * 1024 });
+    return importCsvFromStream(stream);
+}
 
-    const records = await parseFile(filePath, fileStat.size);
+export async function importCsvFromStream(readable) {
+    const records = await parseFileFromReadable(readable);
 
     if (records.length === 0) {
         logger.warn("Empty CSV (header only, no data rows)");
@@ -77,7 +73,7 @@ export async function importCsv(filePath) {
  *   },
  * ]
  */
-async function parseFile(filePath, _fileSize) {
+async function parseFileFromReadable(readable) {
     return new Promise((resolve, reject) => {
         const records = [];
         const parser = parse({
@@ -86,7 +82,7 @@ async function parseFile(filePath, _fileSize) {
             columns: true,
         });
 
-        createReadStream(filePath, { highWaterMark: 1024 * 1024 })
+        readable
             .pipe(parser)
             .on("data", (row) => {
                 const normalised = normaliseRow(row);
