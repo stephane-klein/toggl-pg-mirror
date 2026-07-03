@@ -1,4 +1,4 @@
-POSTGRES_CONTAINER_ID=$(podman ps --filter "name=postgres" --format '{{.ID}}')
+POSTGRES_CONTAINER_ID=$(podman ps --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME" --filter "label=com.docker.compose.service=postgres" --format '{{.ID}}')
 
 if [ -n "$POSTGRES_CONTAINER_ID" ]; then
   POSTGRES_USER=$(podman inspect "$POSTGRES_CONTAINER_ID" | jq -r '.[0].Config.Env[] | select(startswith("POSTGRES_USER=")) | split("=")[1]')
