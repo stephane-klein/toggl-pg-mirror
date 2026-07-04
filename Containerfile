@@ -37,8 +37,7 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile --prod
 
 COPY --from=build /app/build/ ./build/
-COPY src/lib/backend/ ./src/lib/backend/
-COPY src/cli.js src/migrate.js src/seed.js ./src/
+COPY src/ ./src/
 COPY sqls/ ./sqls/
 COPY entrypoint.sh /entrypoint.sh
 
