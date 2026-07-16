@@ -1,10 +1,23 @@
 import { logger } from "./logger.js";
 import { sql } from "./pg.js";
-import { getTimeEntries } from "./toggl-client.js";
+import { getTimeEntries, togglIsConfigured } from "./toggl-client.js";
 
 const IMPORT_SOURCE = "api_sync";
 
 export async function importTimeEntries({ startDate, endDate, debug = false }) {
+    if (!togglIsConfigured) {
+        logger.warn("Toggl import skipped — no API token configured");
+        return {
+            deletedCsv: 0,
+            deleted: 0,
+            inserted: 0,
+            updated: 0,
+            unchanged: 0,
+            quotaRemaining: null,
+            quotaResetsIn: null,
+        };
+    }
+
     const deletedCsvResult = await sql`
         DELETE FROM time_entries
         WHERE import_source = 'csv'

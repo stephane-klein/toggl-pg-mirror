@@ -5,7 +5,7 @@ import { importCsv } from "./lib/backend/csv-importer.js";
 import { parseDate } from "./lib/backend/date-parser.js";
 import { importTimeEntries } from "./lib/backend/importer.js";
 import { logger } from "./lib/backend/logger.js";
-import { ping } from "./lib/backend/toggl-client.js";
+import { ping, togglIsConfigured } from "./lib/backend/toggl-client.js";
 
 function formatDuration(seconds) {
     if (seconds === null || seconds === undefined) return null;
@@ -77,6 +77,11 @@ yargs(hideBin(process.argv))
                     describe: "End date (YYYY-MM-DDTHH:MM or relative like -7d)",
                 }),
         async (argv) => {
+            if (!togglIsConfigured) {
+                logger.error("Toggl API token not configured — set TOGGL_PG_MIRROR_TOGGL_API_TOKEN");
+                process.exit(1);
+            }
+
             if (argv.debug) {
                 logger.level = "debug";
             }
@@ -102,6 +107,11 @@ yargs(hideBin(process.argv))
         "Test Toggl API access",
         () => {},
         async () => {
+            if (!togglIsConfigured) {
+                logger.error("Toggl API token not configured — set TOGGL_PG_MIRROR_TOGGL_API_TOKEN");
+                process.exit(1);
+            }
+
             try {
                 const { user, quotaRemaining, quotaResetsIn } = await ping();
                 logger.info({ email: user.email, name: user.name }, "Toggl API access OK");

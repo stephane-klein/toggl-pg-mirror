@@ -1,5 +1,6 @@
 import { importTimeEntries } from "./importer.js";
 import { logger } from "./logger.js";
+import { togglIsConfigured } from "./toggl-client.js";
 
 const SYNC_WINDOW_DAYS = 14;
 
@@ -15,6 +16,11 @@ export function stopSyncDaemon() {
 }
 
 export async function startSyncDaemon(pollIntervalSeconds) {
+    if (!togglIsConfigured) {
+        logger.warn("Sync daemon not started — no Toggl API token configured");
+        return;
+    }
+
     stopRequested = false;
 
     logger.info({ pollIntervalSeconds }, "Sync daemon started");

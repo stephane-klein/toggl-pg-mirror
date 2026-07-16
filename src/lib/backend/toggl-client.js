@@ -2,8 +2,10 @@ import { logger } from "./logger.js";
 
 const TOGGL_API_TOKEN = process.env.TOGGL_PG_MIRROR_TOGGL_API_TOKEN;
 
+export const togglIsConfigured = !!TOGGL_API_TOKEN;
+
 if (!TOGGL_API_TOKEN) {
-    throw new Error("TOGGL_PG_MIRROR_TOGGL_API_TOKEN environment variable is required");
+    logger.warn("TOGGL_PG_MIRROR_TOGGL_API_TOKEN not set — Toggl API features disabled");
 }
 
 function buildAuthHeader(token) {
@@ -12,6 +14,11 @@ function buildAuthHeader(token) {
 }
 
 export async function ping() {
+    if (!isConfigured) {
+        logger.warn("Toggl API ping skipped — no API token configured");
+        return null;
+    }
+
     const authHeader = buildAuthHeader(TOGGL_API_TOKEN);
     const url = "https://api.track.toggl.com/api/v9/me";
     const t0 = performance.now();
@@ -96,6 +103,11 @@ async function fetchPage({ startDate, endDate, debug }) {
 }
 
 export async function getTimeEntries({ startDate, endDate, debug = false }) {
+    if (!isConfigured) {
+        logger.warn("Toggl API getTimeEntries skipped — no API token configured");
+        return { entries: [], quotaRemaining: null, quotaResetsIn: null };
+    }
+
     const allItems = [];
     let currentEnd = endDate;
     let page = 0;
