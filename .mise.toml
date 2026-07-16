@@ -9,6 +9,25 @@ _.file = '.secret'
 [shell_alias]
 reload = "source scripts/load_postgres_variables.sh"
 
+[tasks.dev]
+run = "pnpm run dev"
+
+[tasks.build]
+run = "pnpm run build"
+
+[tasks.preview]
+run = "pnpm run preview"
+
+[tasks.preview-prod-build]
+description = "Build and run the production server with CSRF origin set to http://localhost:3000"
+run = """
+pnpm run build
+ORIGIN=http://localhost:3000 node build/index.js
+"""
+
+[tasks.stop]
+run = "podman compose stop"
+
 [tools]
 node = "24.16.0"
 pnpm = "11.5.0"
