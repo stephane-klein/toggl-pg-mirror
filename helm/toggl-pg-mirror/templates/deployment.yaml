@@ -60,14 +60,14 @@ spec:
               protocol: TCP
           livenessProbe:
             httpGet:
-              path: /health
+              path: /-/healthy
               port: http
             initialDelaySeconds: 10
             periodSeconds: 15
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /ready
+              path: /-/ready
               port: http
             initialDelaySeconds: 10
             periodSeconds: 15

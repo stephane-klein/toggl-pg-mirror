@@ -72,9 +72,9 @@ $ toggl-pg-mirror toggl api-import # -48h by default to now
 [2026-06-01 20:43:08.375] INFO: Toggl API quota: 20 calls remaining, resets in 31 min {"quotaRemaining":"20","quotaResetsIn":"1855"}
 
 $ pnpm dev  # starts SvelteKit dev server with sync daemon
-$ curl http://localhost:5173/health
+$ curl http://localhost:5173/-/healthy
 {"status":"ok"}
-$ curl http://localhost:5173/ready
+$ curl http://localhost:5173/-/ready
 {"status":"ok","ready":true}
 
 # or for production:

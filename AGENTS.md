@@ -39,8 +39,8 @@ The built server is started with `node build/index.js` (PORT env var, default 30
 ### SvelteKit Routes
 
 - `src/routes/` — page and API routes (`+page.svelte`, `+server.js`)
-- `src/routes/health/+server.js` — `/health` endpoint
-- `src/routes/ready/+server.js` — `/ready` endpoint (DB check)
+- `src/routes/(infra)/-/healthy/+server.js` — `/-/healthy` endpoint
+- `src/routes/(infra)/-/ready/+server.js` — `/-/ready` endpoint (DB check, sync status)
 - `src/hooks.server.js` — server hooks (sync daemon initialization, graceful shutdown)
 - `src/app.html` — HTML shell
 

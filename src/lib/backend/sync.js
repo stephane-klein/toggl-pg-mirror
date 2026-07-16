@@ -6,6 +6,11 @@ const SYNC_WINDOW_DAYS = 14;
 
 let stopRequested = false;
 let currentTimeout = null;
+let syncDaemonStarted = false;
+
+export function isSyncDaemonRunning() {
+    return syncDaemonStarted;
+}
 
 export function stopSyncDaemon() {
     stopRequested = true;
@@ -24,6 +29,7 @@ export async function startSyncDaemon(pollIntervalSeconds) {
     stopRequested = false;
 
     logger.info({ pollIntervalSeconds }, "Sync daemon started");
+    syncDaemonStarted = true;
 
     while (!stopRequested) {
         const endDate = new Date();
@@ -44,4 +50,5 @@ export async function startSyncDaemon(pollIntervalSeconds) {
     }
 
     logger.info("Sync daemon stopped");
+    syncDaemonStarted = false;
 }
