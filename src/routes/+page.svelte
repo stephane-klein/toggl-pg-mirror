@@ -50,6 +50,23 @@
         </table>
     </section>
 
+    <section class="mb-8">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">App</h2>
+        <table class="w-full text-sm border-collapse">
+            <tbody>
+                <tr>
+                    <td class="py-1.5 pr-4 font-mono text-xs">
+                        <a
+                            href="/time-entries"
+                            class="text-blue-600 no-underline hover:underline">/time-entries</a
+                        >
+                    </td>
+                    <td class="py-1.5 text-gray-500">Browse and explore time entries</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
     <section>
         <h2 class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Data import</h2>
         <table class="w-full text-sm border-collapse">

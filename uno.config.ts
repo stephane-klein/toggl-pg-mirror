@@ -5,6 +5,6 @@ export default defineConfig({
     presets: [presetWind4()],
     extractors: [extractorSvelte()],
     shortcuts: {
-        page: "max-w-4xl mx-auto",
+        page: "max-w-none mx-auto",
     },
 });
