@@ -37,6 +37,16 @@ Build commands:
 
 The built server is started with `node build/index.js` (PORT env var, default 3000).
 
+### Component colocation
+
+When a Svelte component is used only by a single page or a subtree of
+routes, colocate it under `src/routes/.../_components/` instead of
+`src/lib/components/`. The `_` prefix tells SvelteKit to ignore the
+directory for routing.
+
+Components shared across multiple unrelated route groups stay in
+`src/lib/components/`.
+
 ## Project Structure
 
 ### SvelteKit Routes
