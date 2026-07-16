@@ -1,8 +1,7 @@
 <script>
-import "uno.css";
+    import "uno.css";
 
-// biome-ignore lint/correctness/noUnusedVariables: used in template via {@render}
-let { children } = $props();
+    let { children } = $props();
 </script>
 
 {@render children()}
@@ -11,13 +10,11 @@ let { children } = $props();
     <div class="page px-5 py-3 text-xs text-gray-500 flex items-center justify-between">
         <a
             href="https://github.com/stephane-klein/toggl-pg-mirror"
-            class="text-gray-500 no-underline hover:underline"
-            >GitHub</a
+            class="text-gray-500 no-underline hover:underline">GitHub</a
         >
         <a
             href="/-/version.json"
-            class="text-gray-500 no-underline hover:underline"
-            >Version</a
+            class="text-gray-500 no-underline hover:underline">Version</a
         >
     </div>
 </footer>

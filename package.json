@@ -7,9 +7,9 @@
   },
   "type": "module",
   "scripts": {
-    "check": "biome check --write",
-    "format": "biome format --write",
-    "lint": "biome lint",
+    "check": "prettier --check . && eslint .",
+    "format": "prettier --write .",
+    "lint": "eslint .",
     "lint:pkg": "pnpm npmPkgJsonLint .",
     "migrate": "node src/migrate.js",
     "seed": "node src/seed.js",
@@ -28,8 +28,14 @@
     "yargs": "^18.0.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.16",
+    "@eslint/js": "^10.0.1",
     "@sveltejs/adapter-node": "^5.5.7",
+    "eslint": "^10.7.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-svelte": "^3.20.0",
+    "globals": "^17.7.0",
+    "prettier": "^3.9.5",
+    "prettier-plugin-svelte": "^4.1.1",
     "@sveltejs/kit": "^2.68.0",
     "@unocss/extractor-svelte": "^66.7.5",
     "npm-package-json-lint": "^10.4.0",

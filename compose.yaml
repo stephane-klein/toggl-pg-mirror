@@ -17,4 +17,4 @@ services:
 
 volumes:
   postgres:
-     name: ${COMPOSE_PROJECT_NAME}_postgres
+    name: ${COMPOSE_PROJECT_NAME}_postgres

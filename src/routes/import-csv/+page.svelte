@@ -1,6 +1,5 @@
 <script>
-// biome-ignore lint/correctness/noUnusedVariables: Used in template
-const { data } = $props();
+    const { data } = $props();
 </script>
 
 <h1>Import CSV</h1>
@@ -11,7 +10,8 @@ const { data } = $props();
 $ curl -X POST {data.origin}/import-csv/upload/ -F "file=@Toggl_time_entries_2025-01-01_to_2025-12-31.csv"
 </pre>
 
-Or with <a href="https://github.com/ducaale/xh">xh</a> and <a href="https://github.com/junegunn/fzf">fzf</a> to select the file:
+Or with<a href="https://github.com/ducaale/xh">xh</a> and <a href="https://github.com/junegunn/fzf">fzf</a> to select
+the file:
 
 <pre>
 $ xh -b --form POST {data.origin}/import-csv/upload/ file@$(fzf)

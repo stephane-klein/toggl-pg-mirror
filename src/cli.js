@@ -124,11 +124,13 @@ yargs(hideBin(process.argv))
         },
     )
     .demandCommand(1, "Use one of the available commands")
-    .epilogue(`
+    .epilogue(
+        `
 Environment variables:
   TOGGL_PG_MIRROR_POSTGRES_URL              PostgreSQL connection URL (e.g. postgres://user:pass@localhost:5432/db)
   TOGGL_PG_MIRROR_POSTGRES_SCHEMA           PostgreSQL schema name (default: public)
   TOGGL_PG_MIRROR_TOGGL_API_TOKEN           Toggl API token
   TOGGL_PG_MIRROR_POLL_INTERVAL_SECONDS     Sync daemon polling interval in seconds (default: 600)
-`)
+`,
+    )
     .parse();

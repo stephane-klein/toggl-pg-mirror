@@ -131,7 +131,7 @@ Environment variables:
 $ mise run build-image
 $ mise run login-ghcr
 $ mise run push-image
-````
+```
 
 ## Publish Helm chart
 
@@ -173,4 +173,7 @@ $ mise run setup-jj-alias
 $ mise run gitleaks-scan        # full project scan
 $ mise run gitleaks-check-push  # pre-push scan (called by `jj publish`)
 ```
+
+```
+
 ```
