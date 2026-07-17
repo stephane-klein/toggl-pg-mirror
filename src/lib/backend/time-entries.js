@@ -4,9 +4,17 @@ const DEFAULT_LIMIT = 50;
 const MIN_LIMIT = 10;
 const MAX_LIMIT = 200;
 
-export function parseLimit(raw) {
+const AUTO_LIMITS = { day: 500, week: 500, month: 50, range: 50 };
+
+export function parseLimit(raw, mode = "day") {
+    if (raw === "auto" || raw === null || raw === undefined) {
+        return AUTO_LIMITS[mode] || DEFAULT_LIMIT;
+    }
     const n = Number.parseInt(raw, 10);
-    return Number.isFinite(n) ? Math.min(MAX_LIMIT, Math.max(MIN_LIMIT, n)) : DEFAULT_LIMIT;
+    if (Number.isFinite(n)) {
+        return Math.min(MAX_LIMIT, Math.max(MIN_LIMIT, n));
+    }
+    return AUTO_LIMITS[mode] || DEFAULT_LIMIT;
 }
 
 function encodeCursor(startedAt, id) {

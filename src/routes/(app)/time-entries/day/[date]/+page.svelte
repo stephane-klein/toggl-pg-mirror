@@ -45,10 +45,13 @@
     <div class="flex items-baseline justify-between mb-4 flex-wrap gap-y-1">
         <GoTo {sort} />
         <div class="flex items-baseline gap-2">
-            <ModeSelector activeMode="day" {sort} />
+            <ModeSelector
+                activeMode="day"
+                {sort}
+            />
             <span class="text-gray-300">|</span>
             <LimitSelector
-                {limit}
+                mode="day"
                 baseQuery="date={currentDate}&sort={sort}"
             />
             <span class="text-gray-300">|</span>
@@ -72,6 +75,7 @@
         {prevCursor}
         {nextCursor}
         {limit}
+        {entries}
         baseQuery="date={currentDate}&sort={sort}"
     />
 </main>

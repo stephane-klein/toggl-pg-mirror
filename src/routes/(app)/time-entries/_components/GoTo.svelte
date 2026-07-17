@@ -17,12 +17,18 @@
 
 <nav class="text-[13px]">
     Go to
-    <a href="/time-entries/day/{today}{qs}"
-        class="text-gray-500 no-underline hover:text-blue-600 hover:underline">Today</a>
+    <a
+        href="/time-entries/day/{today}{qs}"
+        class="text-gray-500 no-underline hover:text-blue-600 hover:underline">Today</a
+    >
     <span class="text-gray-300">.</span>
-    <a href="/time-entries/week/{currentYear}/{currentWeek}{qs}"
-        class="text-gray-500 no-underline hover:text-blue-600 hover:underline">This week</a>
+    <a
+        href="/time-entries/week/{currentYear}/{currentWeek}{qs}"
+        class="text-gray-500 no-underline hover:text-blue-600 hover:underline">This week</a
+    >
     <span class="text-gray-300">.</span>
-    <a href="/time-entries/month/{currentMonth}{qs}"
-        class="text-gray-500 no-underline hover:text-blue-600 hover:underline">This month</a>
+    <a
+        href="/time-entries/month/{currentMonth}{qs}"
+        class="text-gray-500 no-underline hover:text-blue-600 hover:underline">This month</a
+    >
 </nav>

@@ -35,7 +35,7 @@ export async function load({ params, url }) {
 
     const from = firstOfMonth(year, monthNum);
     const to = firstOfMonth(year, monthNum + 1);
-    const limit = parseLimit(url.searchParams.get("limit"));
+    const limit = parseLimit(url.searchParams.get("limit"), "month");
     const before = url.searchParams.get("before");
     const after = url.searchParams.get("after");
     const sort = url.searchParams.get("sort") || "asc";

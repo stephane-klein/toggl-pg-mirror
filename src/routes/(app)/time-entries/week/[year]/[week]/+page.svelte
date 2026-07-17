@@ -46,10 +46,13 @@
     <div class="flex items-baseline justify-between mb-4 flex-wrap gap-y-1">
         <GoTo {sort} />
         <div class="flex items-baseline gap-2">
-            <ModeSelector activeMode="week" {sort} />
+            <ModeSelector
+                activeMode="week"
+                {sort}
+            />
             <span class="text-gray-300">|</span>
             <LimitSelector
-                {limit}
+                mode="week"
                 baseQuery="year={currentYear}&week={currentWeek}&sort={sort}"
             />
             <span class="text-gray-300">|</span>
@@ -74,6 +77,7 @@
         {prevCursor}
         {nextCursor}
         {limit}
+        {entries}
         baseQuery="year={currentYear}&week={currentWeek}&sort={sort}"
     />
 </main>

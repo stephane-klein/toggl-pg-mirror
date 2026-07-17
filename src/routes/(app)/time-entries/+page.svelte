@@ -28,6 +28,7 @@
         {prevCursor}
         {nextCursor}
         {limit}
+        {entries}
         baseQuery=""
     />
 </main>

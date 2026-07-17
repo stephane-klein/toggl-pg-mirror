@@ -25,7 +25,7 @@ export async function load({ url }) {
             entries: [],
             prevCursor: null,
             nextCursor: null,
-            limit: parseLimit(url.searchParams.get("limit")),
+            limit: parseLimit(url.searchParams.get("limit"), "range"),
             mode: "range",
             currentFrom: from || "",
             currentTo: to || "",
@@ -37,7 +37,7 @@ export async function load({ url }) {
     if (!isValidDate(to)) error(400, `Invalid to date: ${to}`);
 
     const toExclusive = addDays(to, 1);
-    const limit = parseLimit(url.searchParams.get("limit"));
+    const limit = parseLimit(url.searchParams.get("limit"), "range");
     const before = url.searchParams.get("before");
     const after = url.searchParams.get("after");
     const sort = url.searchParams.get("sort") || "asc";

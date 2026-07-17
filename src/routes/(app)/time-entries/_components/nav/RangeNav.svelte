@@ -2,11 +2,7 @@
     import { goto } from "$app/navigation";
     import DateInput from "$lib/components/DateInput.svelte";
 
-    let {
-        currentFrom = null,
-        currentTo = null,
-        sort = "",
-    } = $props();
+    let { currentFrom = null, currentTo = null, sort = "" } = $props();
 
     function withSort(path) {
         if (!sort || !path) return path;
@@ -56,7 +52,10 @@
 </script>
 
 <div class="mb-4">
-    <div class="grid items-center" style="grid-template-columns:1fr auto 1fr">
+    <div
+        class="grid items-center"
+        style="grid-template-columns:1fr auto 1fr"
+    >
         <div></div>
 
         <div class="justify-self-center">

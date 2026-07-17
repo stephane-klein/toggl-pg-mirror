@@ -36,7 +36,7 @@ export async function load({ params, url }) {
 
     const from = rawDate;
     const to = addDays(rawDate, 1);
-    const limit = parseLimit(url.searchParams.get("limit"));
+    const limit = parseLimit(url.searchParams.get("limit"), "day");
     const before = url.searchParams.get("before");
     const after = url.searchParams.get("after");
     const sort = url.searchParams.get("sort") || "asc";

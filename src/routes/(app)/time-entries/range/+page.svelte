@@ -26,10 +26,13 @@
     <div class="flex items-baseline justify-between mb-4 flex-wrap gap-y-1">
         <GoTo {sort} />
         <div class="flex items-baseline gap-2">
-            <ModeSelector activeMode="range" {sort} />
+            <ModeSelector
+                activeMode="range"
+                {sort}
+            />
             <span class="text-gray-300">|</span>
             <LimitSelector
-                {limit}
+                mode="range"
                 baseQuery="from={currentFrom}&to={currentTo}&sort={sort}"
             />
             <span class="text-gray-300">|</span>
@@ -49,6 +52,7 @@
             {prevCursor}
             {nextCursor}
             {limit}
+            {entries}
             baseQuery="from={currentFrom}&to={currentTo}&sort={sort}"
         />
     {:else}
