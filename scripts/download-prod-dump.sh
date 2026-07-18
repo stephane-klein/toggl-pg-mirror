@@ -5,7 +5,7 @@ cd "$(dirname "$0")/../"
 
 NAMESPACE="memex"
 CLUSTER="memex-cluster"
-DB_NAME="memex"
+DB_NAME="app"
 DATE=$(date +%Y-%m-%d_%H%M)
 OUTPUT_DIR="dumps/prod"
 OUTPUT_FILE="${OUTPUT_DIR}/${DATE}-memex.dump"
