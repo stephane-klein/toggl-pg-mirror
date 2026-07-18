@@ -1,5 +1,6 @@
 import { createReadStream } from "node:fs";
 import { parse } from "csv-parse";
+import { fromZonedTime } from "date-fns-tz";
 import { logger } from "./logger.js";
 import { sql } from "./pg.js";
 
@@ -113,7 +114,7 @@ function normaliseRow(row) {
 
     let started_at;
     try {
-        started_at = new Date(`${date} ${startTime}:00 UTC`);
+        started_at = fromZonedTime(`${date}T${startTime}`, "Europe/Paris");
     } catch {
         return null;
     }
@@ -122,7 +123,7 @@ function normaliseRow(row) {
     if (endDate && endTime) {
         const endDateStr = endDate > date ? endDate : date;
         try {
-            ended_at = new Date(`${endDateStr} ${endTime}:00 UTC`);
+            ended_at = fromZonedTime(`${endDateStr}T${endTime}`, "Europe/Paris");
         } catch {
             ended_at = null;
         }

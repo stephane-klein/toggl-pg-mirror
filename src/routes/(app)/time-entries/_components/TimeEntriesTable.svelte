@@ -37,7 +37,7 @@
     }
 
     function formatTimeRange(startedAt, endedAt) {
-        const opts = { hour: "2-digit", minute: "2-digit", hour12: false };
+        const opts = { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Europe/Paris" };
         const start = new Date(startedAt).toLocaleTimeString("en-US", opts);
         if (!endedAt) return `${start} – running`;
         const end = new Date(endedAt).toLocaleTimeString("en-US", opts);

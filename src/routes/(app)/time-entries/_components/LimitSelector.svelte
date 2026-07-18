@@ -12,9 +12,7 @@
         mode === "day" || mode === "week" ? `Auto — up to ${AUTO_LIMITS[mode]}` : `Auto — ${AUTO_LIMITS[mode]}`,
     );
 
-    let autoTitle = $derived(
-        `Auto: shows all entries for the current view (up to ${AUTO_LIMITS[mode]} for ${mode})`,
-    );
+    let autoTitle = $derived(`Auto: shows all entries for the current view (up to ${AUTO_LIMITS[mode]} for ${mode})`);
 
     function handleLimitChange(event) {
         const q = baseQuery ? `?${baseQuery}&limit=${event.target.value}` : `?limit=${event.target.value}`;
