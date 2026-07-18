@@ -17,11 +17,32 @@ export async function importCsvFromStream(readable) {
         return { deleted: 0, inserted: 0 };
     }
 
+    // Determine the time window covered by this CSV
     const minDate = records.reduce((min, r) => (r.started_at < min ? r.started_at : min), records[0].started_at);
     const maxDate = records.reduce((max, r) => (r.started_at > max ? r.started_at : max), records[0].started_at);
 
+    // Fetch started_at values already present via API sync in the same window
+    // to avoid creating duplicates for entries that Toggl API already provides
+    const existingApiTimestamps = await sql`
+        SELECT DISTINCT started_at FROM toggl.time_entries
+        WHERE import_source = 'api_sync'
+          AND deleted_at IS NULL
+          AND started_at >= ${minDate}
+          AND started_at <= ${maxDate}
+    `;
+    const apiTimestampSet = new Set(existingApiTimestamps.map((r) => r.started_at.getTime()));
+
+    // Keep only CSV records that don't have a matching API-synced entry
+    const toInsert = records.filter((r) => !apiTimestampSet.has(r.started_at.getTime()));
+
+    if (toInsert.length === 0) {
+        logger.info("All CSV records already exist via API sync — nothing to import");
+        return { deleted: 0, inserted: 0 };
+    }
+
+    // Remove stale CSV-only entries in the window before inserting fresh ones
     const deleted = await sql`
-        DELETE FROM time_entries
+        DELETE FROM toggl.time_entries
         WHERE import_source = 'csv'
           AND started_at >= ${minDate}
           AND started_at <= ${maxDate}
@@ -31,10 +52,10 @@ export async function importCsvFromStream(readable) {
     let inserted = 0;
     const allEntryIds = [];
 
-    for (let i = 0; i < records.length; i += BATCH_SIZE) {
-        const batch = records.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < toInsert.length; i += BATCH_SIZE) {
+        const batch = toInsert.slice(i, i + BATCH_SIZE);
         const result = await sql`
-            INSERT INTO time_entries ${sql(batch, "toggl_uid", "started_at", "ended_at", "tags", "description", "import_source", "project")}
+            INSERT INTO toggl.time_entries ${sql(batch, "toggl_uid", "started_at", "ended_at", "tags", "description", "import_source", "project")}
             RETURNING id
         `;
         const ids = result.map((row) => row.id);
@@ -42,7 +63,7 @@ export async function importCsvFromStream(readable) {
         inserted += batch.length;
     }
 
-    await insertAuditLogs(records, allEntryIds);
+    await insertAuditLogs(toInsert, allEntryIds);
 
     return {
         deleted: deleted.count,
