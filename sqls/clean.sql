@@ -1,5 +1,19 @@
-DROP SCHEMA public CASCADE;
-CREATE SCHEMA public;
+DO $$
+DECLARE
+  rec RECORD;
+BEGIN
+  FOR rec IN
+    SELECT nspname FROM pg_namespace
+    WHERE nspname NOT IN ('pg_catalog', 'information_schema', 'pg_toast')
+    AND nspname NOT LIKE 'pg_toast%'
+    AND nspname NOT LIKE 'pg_temp%'
+  LOOP
+    EXECUTE 'DROP SCHEMA IF EXISTS ' || quote_ident(rec.nspname) || ' CASCADE';
+  END LOOP;
+END;
+$$;
+
+CREATE SCHEMA IF NOT EXISTS public;
 GRANT ALL ON SCHEMA public TO public;
 GRANT ALL ON SCHEMA public TO postgres;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO public;

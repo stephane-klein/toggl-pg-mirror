@@ -146,6 +146,21 @@ The chart is published at `oci://ghcr.io/stephane-klein/charts/toggl-pg-mirror`.
 
 The `deployment-playground/` directory contains a local playground for testing the application in a production-like environment.
 
+## Production Dump Tools
+
+These commands are specific to Stéphane Klein's homelab environment and require
+access to his Kubernetes cluster (memex namespace, CNPG cluster `memex-cluster`).
+
+```bash
+# Download a logical dump from the production CNPG cluster
+$ mise run download-prod-dump
+# → dumps/prod/2026-07-18-memex.dump
+
+# Import a dump into the local PostgreSQL database
+# Cleans all user schemas first, then restores
+$ mise run import-dump-locally dumps/prod/2026-07-18-memex.dump
+```
+
 ## Contribution
 
 ### Secret detection with gitleaks

@@ -12,3 +12,4 @@ CONTEXT.md
 .commit-message.txt
 toggl-export-data/
 .secret
+dumps/

@@ -60,6 +60,15 @@ run = "node src/seed.js"
 [tasks.dump-schema]
 run = "./scripts/dump-schema.sh"
 
+[tasks.download-prod-dump]
+description = "Download a logical dump (pg_dump -Fc) from the CNPG memex cluster to dumps/prod/"
+run = "scripts/download-prod-dump.sh"
+
+[tasks.import-dump-locally]
+description = "Import a pg_dump -Fc dump into local PostgreSQL via podman compose"
+usage = 'arg "<dump_file>" help="Path to the dump file to import"'
+run = "scripts/import-dump-locally.sh {{usage.dump_file}}"
+
 [tasks.teardown]
 run = "podman compose down -v --remove-orphans"
 
