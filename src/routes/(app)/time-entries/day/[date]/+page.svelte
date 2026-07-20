@@ -68,6 +68,7 @@
             <ModeSelector
                 activeMode="day"
                 {sort}
+                referenceDate={currentDate}
             />
             <span class="text-gray-300">|</span>
             <LimitSelector

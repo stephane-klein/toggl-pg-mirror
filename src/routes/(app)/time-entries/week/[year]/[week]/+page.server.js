@@ -118,6 +118,7 @@ export async function load({ params, url }) {
         mode: "week",
         currentYear: year,
         currentWeek: week,
+        referenceDate: formatDate(fromDate),
         periodLabel: `Week ${week}, ${year} — ${formatPeriodLabel(fromDate)}`,
         prevPeriodUrl: `/time-entries/week/${prevYear}/${prevWeek}`,
         prevPeriodLabel: prevLabel,

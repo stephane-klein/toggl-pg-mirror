@@ -21,6 +21,7 @@
     let sort = $derived(data.sort);
     let currentYear = $derived(data.currentYear);
     let currentWeek = $derived(data.currentWeek);
+    let referenceDate = $derived(data.referenceDate);
     let nearestNonEmptyUrl = $derived(data.nearestNonEmptyUrl);
     let nearestNonEmptyLabel = $derived(data.nearestNonEmptyLabel);
     let todayHasEntries = $derived(data.todayHasEntries);
@@ -69,6 +70,7 @@
             <ModeSelector
                 activeMode="week"
                 {sort}
+                {referenceDate}
             />
             <span class="text-gray-300">|</span>
             <LimitSelector

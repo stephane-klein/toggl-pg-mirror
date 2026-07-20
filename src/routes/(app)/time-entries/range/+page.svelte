@@ -16,6 +16,7 @@
     let sort = $derived(data.sort);
     let currentFrom = $derived(data.currentFrom);
     let currentTo = $derived(data.currentTo);
+    const referenceDate = currentFrom || new Date().toISOString().split("T")[0];
     let todayHasEntries = $derived(data.todayHasEntries);
     let firstNonEmptyDayUrl = $derived(data.firstNonEmptyDayUrl);
     let firstNonEmptyDayLabel = $derived(data.firstNonEmptyDayLabel);
@@ -49,6 +50,7 @@
             <ModeSelector
                 activeMode="range"
                 {sort}
+                {referenceDate}
             />
             <span class="text-gray-300">|</span>
             <LimitSelector

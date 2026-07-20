@@ -20,6 +20,7 @@
     let nextPeriodLabel = $derived(data.nextPeriodLabel);
     let sort = $derived(data.sort);
     let currentMonth = $derived(data.currentMonth);
+    const referenceDate = currentMonth + "-01";
     let nearestNonEmptyUrl = $derived(data.nearestNonEmptyUrl);
     let nearestNonEmptyLabel = $derived(data.nearestNonEmptyLabel);
     let todayHasEntries = $derived(data.todayHasEntries);
@@ -68,6 +69,7 @@
             <ModeSelector
                 activeMode="month"
                 {sort}
+                {referenceDate}
             />
             <span class="text-gray-300">|</span>
             <LimitSelector
