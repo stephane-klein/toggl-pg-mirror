@@ -1,6 +1,12 @@
 import { error } from "@sveltejs/kit";
 
-import { fetchEntries, hasEntries, nearestDayWithEntries, parseLimit } from "$lib/backend/time-entries.js";
+import {
+    fetchEntries,
+    hasEntries,
+    nearestDayWithEntries,
+    parseLimit,
+    computeGoToData,
+} from "$lib/backend/time-entries.js";
 
 function addDays(dateStr, n) {
     const [y, m, d] = dateStr.split("-").map(Number);
@@ -79,7 +85,10 @@ export async function load({ params, url }) {
         nearestNonEmptyDate = await nearestDayWithEntries(rawDate);
     }
 
+    const gotoData = await computeGoToData();
+
     return {
+        ...gotoData,
         entries,
         prevCursor,
         nextCursor,

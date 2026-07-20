@@ -1,6 +1,12 @@
 import { error } from "@sveltejs/kit";
 
-import { fetchEntries, hasEntries, nearestDayWithEntries, parseLimit } from "$lib/backend/time-entries.js";
+import {
+    fetchEntries,
+    hasEntries,
+    nearestDayWithEntries,
+    parseLimit,
+    computeGoToData,
+} from "$lib/backend/time-entries.js";
 
 function getMonday(year, week) {
     const jan4 = new Date(year, 0, 4);
@@ -100,7 +106,10 @@ export async function load({ params, url }) {
         nearestNonEmptyLabel = `W ${nearestWeek} (first week no-empty)`;
     }
 
+    const gotoData = await computeGoToData();
+
     return {
+        ...gotoData,
         entries,
         prevCursor,
         nextCursor,

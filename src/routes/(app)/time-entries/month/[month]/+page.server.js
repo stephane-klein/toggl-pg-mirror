@@ -1,6 +1,12 @@
 import { error } from "@sveltejs/kit";
 
-import { fetchEntries, hasEntries, nearestDayWithEntries, parseLimit } from "$lib/backend/time-entries.js";
+import {
+    fetchEntries,
+    hasEntries,
+    nearestDayWithEntries,
+    parseLimit,
+    computeGoToData,
+} from "$lib/backend/time-entries.js";
 
 function firstOfMonth(year, month) {
     const d = new Date(year, month - 1, 1);
@@ -69,7 +75,10 @@ export async function load({ params, url }) {
         nearestNonEmptyLabel = `${formatLabel(nearestMonth)} (first month no-empty)`;
     }
 
+    const gotoData = await computeGoToData();
+
     return {
+        ...gotoData,
         entries,
         prevCursor,
         nextCursor,

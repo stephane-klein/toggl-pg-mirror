@@ -23,6 +23,15 @@
     let currentWeek = $derived(data.currentWeek);
     let nearestNonEmptyUrl = $derived(data.nearestNonEmptyUrl);
     let nearestNonEmptyLabel = $derived(data.nearestNonEmptyLabel);
+    let todayHasEntries = $derived(data.todayHasEntries);
+    let firstNonEmptyDayUrl = $derived(data.firstNonEmptyDayUrl);
+    let firstNonEmptyDayLabel = $derived(data.firstNonEmptyDayLabel);
+    let thisWeekHasEntries = $derived(data.thisWeekHasEntries);
+    let firstNonEmptyWeekUrl = $derived(data.firstNonEmptyWeekUrl);
+    let firstNonEmptyWeekLabel = $derived(data.firstNonEmptyWeekLabel);
+    let thisMonthHasEntries = $derived(data.thisMonthHasEntries);
+    let firstNonEmptyMonthUrl = $derived(data.firstNonEmptyMonthUrl);
+    let firstNonEmptyMonthLabel = $derived(data.firstNonEmptyMonthLabel);
 
     function handleKeydown(event) {
         if (event.target.tagName === "INPUT" || event.target.tagName === "SELECT") return;
@@ -44,7 +53,18 @@
 
 <main class="page px-5 pt-7 pb-24">
     <div class="flex items-baseline justify-between mb-4 flex-wrap gap-y-1">
-        <GoTo {sort} />
+        <GoTo
+            {sort}
+            {todayHasEntries}
+            {firstNonEmptyDayUrl}
+            {firstNonEmptyDayLabel}
+            {thisWeekHasEntries}
+            {firstNonEmptyWeekUrl}
+            {firstNonEmptyWeekLabel}
+            {thisMonthHasEntries}
+            {firstNonEmptyMonthUrl}
+            {firstNonEmptyMonthLabel}
+        />
         <div class="flex items-baseline gap-2">
             <ModeSelector
                 activeMode="week"

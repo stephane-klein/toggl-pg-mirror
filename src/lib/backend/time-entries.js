@@ -69,6 +69,110 @@ export async function nearestDayWithEntries(fromDate) {
     return Math.abs(f - p) <= Math.abs(f - n) ? before[0].day : after[0].day;
 }
 
+function addDays(dateStr, n) {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const date = new Date(y, m - 1, d);
+    date.setDate(date.getDate() + n);
+    const yy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    return `${yy}-${mm}-${dd}`;
+}
+
+function getISOWeek(d) {
+    const isoDow = ((d.getDay() + 6) % 7) + 1;
+    const thursday = new Date(d);
+    thursday.setDate(d.getDate() - isoDow + 4);
+    const year = thursday.getFullYear();
+    const jan1 = new Date(year, 0, 1);
+    const days = (thursday - jan1) / 86400000;
+    const week = Math.ceil((days + jan1.getDay() + 1) / 7);
+    return { year, week };
+}
+
+export async function computeGoToData() {
+    const now = new Date();
+    const today = now.toISOString().split("T")[0];
+    const nextDay = addDays(today, 1);
+
+    const { year: thisYear, week: thisWeek } = getISOWeek(now);
+    const thisMonth = today.slice(0, 7);
+
+    const getMonday = (year, week) => {
+        const jan4 = new Date(year, 0, 4);
+        const dow = jan4.getDay() || 7;
+        const week1Monday = new Date(jan4);
+        week1Monday.setDate(jan4.getDate() - (dow - 1));
+        const monday = new Date(week1Monday);
+        monday.setDate(week1Monday.getDate() + (week - 1) * 7);
+        return monday;
+    };
+
+    const weekMonday = getMonday(thisYear, thisWeek);
+    const weekTo = addDays(weekMonday.toISOString().split("T")[0], 7);
+
+    const monthFirst = firstOfMonth(thisYear, thisMonth.split("-")[1]);
+    const monthTo = firstOfMonth(Number(thisMonth.split("-")[0]), Number(thisMonth.split("-")[1]) + 1);
+
+    const [todayHas, weekHas, monthHas] = await Promise.all([
+        hasEntries(today, nextDay),
+        hasEntries(weekMonday.toISOString().split("T")[0], weekTo),
+        hasEntries(monthFirst, monthTo),
+    ]);
+
+    let firstNonEmptyDayUrl = null;
+    let firstNonEmptyDayLabel = null;
+    let firstNonEmptyWeekUrl = null;
+    let firstNonEmptyWeekLabel = null;
+    let firstNonEmptyMonthUrl = null;
+    let firstNonEmptyMonthLabel = null;
+
+    if (!todayHas) {
+        const nearest = await nearestDayWithEntries(today);
+        if (nearest) {
+            firstNonEmptyDayUrl = `/time-entries/day/${nearest}`;
+            firstNonEmptyDayLabel = nearest;
+        }
+    }
+
+    if (!weekHas) {
+        const nearest = await nearestDayWithEntries(weekMonday.toISOString().split("T")[0]);
+        if (nearest) {
+            const { year: ny, week: nw } = getISOWeek(new Date(nearest));
+            firstNonEmptyWeekUrl = `/time-entries/week/${ny}/${nw}`;
+            firstNonEmptyWeekLabel = `W ${nw}`;
+        }
+    }
+
+    if (!monthHas) {
+        const nearest = await nearestDayWithEntries(monthFirst);
+        if (nearest) {
+            const nm = nearest.slice(0, 7);
+            firstNonEmptyMonthUrl = `/time-entries/month/${nm}`;
+            firstNonEmptyMonthLabel = nm;
+        }
+    }
+
+    return {
+        todayHasEntries: todayHas,
+        firstNonEmptyDayUrl,
+        firstNonEmptyDayLabel,
+        thisWeekHasEntries: weekHas,
+        firstNonEmptyWeekUrl,
+        firstNonEmptyWeekLabel,
+        thisMonthHasEntries: monthHas,
+        firstNonEmptyMonthUrl,
+        firstNonEmptyMonthLabel,
+    };
+}
+
+function firstOfMonth(year, month) {
+    const d = new Date(year, month - 1, 1);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    return `${y}-${m}-01`;
+}
+
 export async function fetchEntries({ from, to, before, after, limit, sort = "asc" }) {
     const cursor = before ? decodeCursor(before) : after ? decodeCursor(after) : null;
     const isAsc = sort === "asc";

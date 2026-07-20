@@ -1,6 +1,6 @@
 import { error } from "@sveltejs/kit";
 
-import { fetchEntries, parseLimit } from "$lib/backend/time-entries.js";
+import { fetchEntries, parseLimit, computeGoToData } from "$lib/backend/time-entries.js";
 
 function addDays(dateStr, n) {
     const [y, m, d] = dateStr.split("-").map(Number);
@@ -20,8 +20,11 @@ export async function load({ url }) {
     const from = url.searchParams.get("from");
     const to = url.searchParams.get("to");
 
+    const gotoData = await computeGoToData();
+
     if (!from || !to) {
         return {
+            ...gotoData,
             entries: [],
             prevCursor: null,
             nextCursor: null,
@@ -52,6 +55,7 @@ export async function load({ url }) {
     });
 
     return {
+        ...gotoData,
         entries,
         prevCursor,
         nextCursor,
