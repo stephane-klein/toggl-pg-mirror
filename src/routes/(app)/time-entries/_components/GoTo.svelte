@@ -31,35 +31,35 @@
         href="/time-entries/day/{today}{qs}"
         class="text-gray-500 no-underline hover:text-blue-600 hover:underline">Today</a
     >
-    {#if !todayHasEntries && firstNonEmptyDayUrl}
-        <a
-            href="{firstNonEmptyDayUrl}{qs}"
-            class="text-gray-500 no-underline hover:text-blue-600 hover:underline"
-            >(first non-empty: {firstNonEmptyDayLabel})</a
-        >
-    {/if}
     <span class="text-gray-300">|</span>
     <a
         href="/time-entries/week/{currentYear}/{currentWeek}{qs}"
         class="text-gray-500 no-underline hover:text-blue-600 hover:underline">This week</a
     >
-    {#if !thisWeekHasEntries && firstNonEmptyWeekUrl}
-        <a
-            href="{firstNonEmptyWeekUrl}{qs}"
-            class="text-gray-500 no-underline hover:text-blue-600 hover:underline"
-            >(first non-empty: {firstNonEmptyWeekLabel})</a
-        >
-    {/if}
     <span class="text-gray-300">|</span>
     <a
         href="/time-entries/month/{currentMonth}{qs}"
         class="text-gray-500 no-underline hover:text-blue-600 hover:underline">This month</a
     >
+    {#if !todayHasEntries && firstNonEmptyDayUrl}
+        <span class="text-gray-300">|</span>
+        <a
+            href="{firstNonEmptyDayUrl}{qs}"
+            class="text-gray-500 no-underline hover:text-blue-600 hover:underline">First non-empty day</a
+        >
+    {/if}
+    {#if !thisWeekHasEntries && firstNonEmptyWeekUrl}
+        <span class="text-gray-300">|</span>
+        <a
+            href="{firstNonEmptyWeekUrl}{qs}"
+            class="text-gray-500 no-underline hover:text-blue-600 hover:underline">First non-empty week</a
+        >
+    {/if}
     {#if !thisMonthHasEntries && firstNonEmptyMonthUrl}
+        <span class="text-gray-300">|</span>
         <a
             href="{firstNonEmptyMonthUrl}{qs}"
-            class="text-gray-500 no-underline hover:text-blue-600 hover:underline"
-            >(first non-empty: {firstNonEmptyMonthLabel})</a
+            class="text-gray-500 no-underline hover:text-blue-600 hover:underline">First non-empty month</a
         >
     {/if}
 </nav>
