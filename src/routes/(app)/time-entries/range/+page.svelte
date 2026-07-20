@@ -75,6 +75,7 @@
             {nextCursor}
             {limit}
             {entries}
+            {sort}
             baseQuery="from={currentFrom}&to={currentTo}&sort={sort}"
         />
     {:else}

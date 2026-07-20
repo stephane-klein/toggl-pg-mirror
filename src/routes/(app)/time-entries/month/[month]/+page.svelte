@@ -98,6 +98,7 @@
         {nextCursor}
         {limit}
         {entries}
+        {sort}
         baseQuery="month={currentMonth}&sort={sort}"
     />
 </main>

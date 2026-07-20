@@ -1,33 +1,40 @@
 <script>
-    let { prevCursor, nextCursor, limit, baseQuery = "", entries = [] } = $props();
+    let { prevCursor, nextCursor, limit, baseQuery = "", entries = [], sort = "asc" } = $props();
 
     let allShown = $derived(!prevCursor && !nextCursor && entries.length > 0);
+
+    let leftCursor = $derived(sort === "asc" ? nextCursor : prevCursor);
+    let rightCursor = $derived(sort === "asc" ? prevCursor : nextCursor);
+    let leftParam = $derived(sort === "asc" ? "before" : "after");
+    let rightParam = $derived(sort === "asc" ? "after" : "before");
+    let leftLabel = $derived(sort === "asc" ? "Older" : "Newer");
+    let rightLabel = $derived(sort === "asc" ? "Newer" : "Older");
 </script>
 
 {#if allShown}
     <p class="text-gray-500 italic text-[13px] mt-6">All entries displayed.</p>
 {:else if prevCursor || nextCursor}
     <nav class="flex items-center gap-3 mt-6 text-[13px]">
-        {#if prevCursor}
+        {#if leftCursor}
             <a
                 href="?{baseQuery
-                    ? `${baseQuery}&limit=${limit}&after=${prevCursor}`
-                    : `limit=${limit}&after=${prevCursor}`}"
-                class="text-blue-600 no-underline hover:underline">‹ Newer</a
+                    ? `${baseQuery}&limit=${limit}&${leftParam}=${leftCursor}`
+                    : `limit=${limit}&${leftParam}=${leftCursor}`}"
+                class="text-blue-600 no-underline hover:underline">‹ {leftLabel}</a
             >
         {:else}
-            <span class="text-gray-400">‹ Newer</span>
+            <span class="text-gray-400">‹ {leftLabel}</span>
         {/if}
         <span class="text-gray-300">·</span>
-        {#if nextCursor}
+        {#if rightCursor}
             <a
                 href="?{baseQuery
-                    ? `${baseQuery}&limit=${limit}&before=${nextCursor}`
-                    : `limit=${limit}&before=${nextCursor}`}"
-                class="text-blue-600 no-underline hover:underline">Older ›</a
+                    ? `${baseQuery}&limit=${limit}&${rightParam}=${rightCursor}`
+                    : `limit=${limit}&${rightParam}=${rightCursor}`}"
+                class="text-blue-600 no-underline hover:underline">{rightLabel} ›</a
             >
         {:else}
-            <span class="text-gray-400">Older ›</span>
+            <span class="text-gray-400">{rightLabel} ›</span>
         {/if}
     </nav>
 {/if}

@@ -97,6 +97,7 @@
         {nextCursor}
         {limit}
         {entries}
+        {sort}
         baseQuery="date={currentDate}&sort={sort}"
     />
 </main>

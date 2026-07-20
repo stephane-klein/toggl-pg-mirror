@@ -100,6 +100,7 @@
         {nextCursor}
         {limit}
         {entries}
+        {sort}
         baseQuery="year={currentYear}&week={currentWeek}&sort={sort}"
     />
 </main>
