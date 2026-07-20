@@ -13,3 +13,4 @@ CONTEXT.md
 toggl-export-data/
 .secret
 dumps/
+.playwright-mcp/
