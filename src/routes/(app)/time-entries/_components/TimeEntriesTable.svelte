@@ -1,7 +1,16 @@
 <script>
     /* eslint-disable svelte/prefer-svelte-reactivity -- new Date() used in ephemeral formatting functions, not reactive state */
 
-    let { entries = [], selectedIds = $bindable(new Set()), sort = "asc" } = $props();
+    let { entries = [], selectedIds = $bindable(new Set()), sort = "asc",
+          prevCursor = null, nextCursor = null, limit = 25, baseQuery = "" } = $props();
+
+    let leftCursor = $derived(sort === "asc" ? nextCursor : prevCursor);
+    let rightCursor = $derived(sort === "asc" ? prevCursor : nextCursor);
+    let leftParam = $derived(sort === "asc" ? "before" : "after");
+    let rightParam = $derived(sort === "asc" ? "after" : "before");
+    let leftLabel = $derived(sort === "asc" ? "Older" : "Newer");
+    let rightLabel = $derived(sort === "asc" ? "Newer" : "Older");
+    let hasTopNav = $derived(prevCursor || nextCursor);
 
     function dayLabel(dateStr) {
         const date = new Date(dateStr);
@@ -256,6 +265,31 @@
                     >
                 {/if}
             </div>
+        {/if}
+        {#if hasTopNav}
+            <nav class="ml-auto flex items-center gap-3 text-[13px]">
+                {#if leftCursor}
+                    <a
+                        href="?{baseQuery
+                            ? `${baseQuery}&limit=${limit}&${leftParam}=${leftCursor}`
+                            : `limit=${limit}&${leftParam}=${leftCursor}`}"
+                        class="text-blue-600 no-underline hover:underline">‹ {leftLabel}</a
+                    >
+                {:else}
+                    <span class="text-gray-400">‹ {leftLabel}</span>
+                {/if}
+                <span class="text-gray-300">·</span>
+                {#if rightCursor}
+                    <a
+                        href="?{baseQuery
+                            ? `${baseQuery}&limit=${limit}&${rightParam}=${rightCursor}`
+                            : `limit=${limit}&${rightParam}=${rightCursor}`}"
+                        class="text-blue-600 no-underline hover:underline">{rightLabel} ›</a
+                    >
+                {:else}
+                    <span class="text-gray-400">{rightLabel} ›</span>
+                {/if}
+            </nav>
         {/if}
     </div>
 {/if}

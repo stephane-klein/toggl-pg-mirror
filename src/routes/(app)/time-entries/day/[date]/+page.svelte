@@ -91,7 +91,7 @@
         {sort}
     />
 
-    <TimeEntriesTable {entries} {sort} />
+    <TimeEntriesTable {entries} {sort} {prevCursor} {nextCursor} {limit} baseQuery="date={currentDate}&sort={sort}" />
     <Pagination
         {prevCursor}
         {nextCursor}

@@ -92,7 +92,7 @@
         {sort}
     />
 
-    <TimeEntriesTable {entries} {sort} />
+    <TimeEntriesTable {entries} {sort} {prevCursor} {nextCursor} {limit} baseQuery="month={currentMonth}&sort={sort}" />
     <Pagination
         {prevCursor}
         {nextCursor}
