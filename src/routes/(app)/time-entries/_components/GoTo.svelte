@@ -38,7 +38,7 @@
             >(first non-empty: {firstNonEmptyDayLabel})</a
         >
     {/if}
-    <span class="text-gray-300">.</span>
+    <span class="text-gray-300">|</span>
     <a
         href="/time-entries/week/{currentYear}/{currentWeek}{qs}"
         class="text-gray-500 no-underline hover:text-blue-600 hover:underline">This week</a
@@ -50,7 +50,7 @@
             >(first non-empty: {firstNonEmptyWeekLabel})</a
         >
     {/if}
-    <span class="text-gray-300">.</span>
+    <span class="text-gray-300">|</span>
     <a
         href="/time-entries/month/{currentMonth}{qs}"
         class="text-gray-500 no-underline hover:text-blue-600 hover:underline">This month</a
