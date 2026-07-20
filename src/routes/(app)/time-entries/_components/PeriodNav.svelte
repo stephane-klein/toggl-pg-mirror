@@ -55,12 +55,9 @@
         if (!currentYear || !currentWeek) return "";
         const jan4 = new Date(currentYear, 0, 4);
         const dow = jan4.getDay() || 7;
-        const week1Monday = new Date(jan4);
-        week1Monday.setDate(jan4.getDate() - (dow - 1));
-        const monday = new Date(week1Monday);
-        monday.setDate(week1Monday.getDate() + (currentWeek - 1) * 7);
-        const sunday = new Date(monday);
-        sunday.setDate(monday.getDate() + 6);
+        const week1MondayOffset = 4 - (dow - 1);
+        const monday = new Date(currentYear, 0, week1MondayOffset + (currentWeek - 1) * 7);
+        const sunday = new Date(currentYear, 0, week1MondayOffset + (currentWeek - 1) * 7 + 6);
         const sameMonth = monday.getMonth() === sunday.getMonth();
         const mondayOpts = sameMonth
             ? { weekday: "long", day: "numeric" }

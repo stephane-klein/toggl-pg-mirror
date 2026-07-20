@@ -7,8 +7,7 @@
 
     const jan4 = new Date(now.getFullYear(), 0, 4);
     const dow = jan4.getDay();
-    const mondayOfWeek1 = new Date(jan4);
-    mondayOfWeek1.setDate(jan4.getDate() - (dow === 0 ? 6 : dow - 1));
+    const mondayOfWeek1 = new Date(now.getFullYear(), 0, 4 - (dow === 0 ? 6 : dow - 1));
     const currentWeek = Math.ceil(((now - mondayOfWeek1) / 86400000 + mondayOfWeek1.getDay() + 1) / 7);
     const currentYear = now.getFullYear();
 
