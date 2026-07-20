@@ -87,15 +87,76 @@
         selectedIds = next;
     }
 
-    let copied = $state(false);
-    let copiedText = $derived(copied ? "Copied!" : "Copy selected as JSON");
+    import * as yaml from "js-yaml";
 
-    function copySelectedAsJson() {
+    const formatLabels = {
+        json: "JSON",
+        yaml: "YAML",
+        tsv: "TSV",
+        "md-items": "MD items",
+        "md-table": "MD table",
+    };
+
+    let copiedFormat = $state(null);
+
+    function durationSeconds(startedAt, endedAt) {
+        const end = endedAt ? new Date(endedAt) : new Date();
+        return Math.floor((end - new Date(startedAt)) / 1000);
+    }
+
+    function generateText(selected, format) {
+        switch (format) {
+            case "json":
+                return JSON.stringify(selected, null, 2);
+            case "yaml":
+                return yaml.dump(selected);
+            case "tsv": {
+                const headers = ["id", "description", "tags", "started_at", "ended_at", "duration_seconds"];
+                const rows = selected.map((e) =>
+                    [
+                        e.id,
+                        (e.description || "").replace(/\t/g, " "),
+                        (e.tags || []).join(","),
+                        e.started_at,
+                        e.ended_at || "",
+                        durationSeconds(e.started_at, e.ended_at),
+                    ].join("\t"),
+                );
+                return [headers.join("\t"), ...rows].join("\n");
+            }
+            case "md-items":
+                return selected
+                    .map((e) => {
+                        const desc = e.description || "(no description)";
+                        const tags = (e.tags || []).join(", ");
+                        const time = formatTimeRange(e.started_at, e.ended_at);
+                        const dur = formatDuration(e.started_at, e.ended_at);
+                        let line = `- **${desc}** — ${time} _(duration: ${dur})_`;
+                        if (tags) line += ` — ${tags}`;
+                        return line;
+                    })
+                    .join("\n");
+            case "md-table": {
+                const header = "| Description | Tags | Time range | Duration |";
+                const sep = "| --- | --- | --- | --- |";
+                const rows = selected.map((e) => {
+                    const desc = (e.description || "(no description)").replace(/\|/g, "\\|");
+                    const tags = (e.tags || []).join(", ").replace(/\|/g, "\\|");
+                    const time = formatTimeRange(e.started_at, e.ended_at);
+                    const dur = formatDuration(e.started_at, e.ended_at);
+                    return `| ${desc} | ${tags} | ${time} | ${dur} |`;
+                });
+                return [header, sep, ...rows].join("\n");
+            }
+        }
+    }
+
+    function copySelected(format) {
         const selected = entries.filter((e) => selectedIds.has(e.id));
-        navigator.clipboard.writeText(JSON.stringify(selected, null, 2));
-        copied = true;
+        navigator.clipboard.writeText(generateText(selected, format));
+        copiedFormat = format;
         setTimeout(() => {
-            copied = false;
+            copiedFormat = null;
         }, 2000);
     }
 
@@ -131,13 +192,36 @@
             </span>
         </div>
         {#if selectedIds.size > 0}
-            <div class="absolute left-1/2 -translate-x-1/2">
-                <button
-                    onclick={copySelectedAsJson}
-                    class="text-sm text-indigo-600 hover:text-indigo-800 underline underline-offset-2 whitespace-nowrap"
-                >
-                    {copiedText}
-                </button>
+            <div class="absolute left-1/2 -translate-x-1/2 flex items-center gap-1 text-sm">
+                {#if copiedFormat}
+                    <span class="text-green-600">{formatLabels[copiedFormat]} copied!</span>
+                {:else}
+                    <span class="text-gray-500 select-none">Copy selected as</span>
+                    <button
+                        onclick={() => copySelected("json")}
+                        class="text-indigo-600 hover:text-indigo-800 underline underline-offset-2 cursor-pointer">JSON</button
+                    >
+                    <span class="text-gray-300">|</span>
+                    <button
+                        onclick={() => copySelected("yaml")}
+                        class="text-indigo-600 hover:text-indigo-800 underline underline-offset-2 cursor-pointer">YAML</button
+                    >
+                    <span class="text-gray-300">|</span>
+                    <button
+                        onclick={() => copySelected("tsv")}
+                        class="text-indigo-600 hover:text-indigo-800 underline underline-offset-2 cursor-pointer">TSV</button
+                    >
+                    <span class="text-gray-300">|</span>
+                    <button
+                        onclick={() => copySelected("md-items")}
+                        class="text-indigo-600 hover:text-indigo-800 underline underline-offset-2 cursor-pointer">MD items</button
+                    >
+                    <span class="text-gray-300">|</span>
+                    <button
+                        onclick={() => copySelected("md-table")}
+                        class="text-indigo-600 hover:text-indigo-800 underline underline-offset-2 cursor-pointer">MD table</button
+                    >
+                {/if}
             </div>
         {/if}
     </div>
