@@ -44,6 +44,22 @@
         return `${start} – ${end}`;
     }
 
+    function formatDate(dateStr) {
+        const d = new Date(dateStr);
+        const parts = new Intl.DateTimeFormat("en", {
+            timeZone: "Europe/Paris",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false,
+        }).formatToParts(d);
+        const get = (type) => parts.find((p) => p.type === type).value;
+        return `${get("year")}-${get("month")}-${get("day")} ${get("hour")}:${get("minute")}:${get("second")}`;
+    }
+
     function isIndeterminate(node, param) {
         node.indeterminate = param;
         return {
@@ -105,46 +121,55 @@
     }
 
     function generateText(selected, format) {
+        const exportEntries = selected.map((e) => ({
+            id: e.id,
+            description: e.description,
+            tags: e.tags,
+            started_at: formatDate(e.started_at),
+            ended_at: e.ended_at ? formatDate(e.ended_at) : null,
+            duration_seconds: durationSeconds(e.started_at, e.ended_at),
+        }));
+
         switch (format) {
             case "json":
-                return JSON.stringify(selected, null, 2);
+                return JSON.stringify(exportEntries, null, 2);
             case "yaml":
-                return yaml.dump(selected);
+                return yaml.dump(exportEntries);
             case "tsv": {
                 const headers = ["id", "description", "tags", "started_at", "ended_at", "duration_seconds"];
-                const rows = selected.map((e) =>
+                const rows = exportEntries.map((e) =>
                     [
                         e.id,
                         (e.description || "").replace(/\t/g, " "),
                         (e.tags || []).join(","),
                         e.started_at,
                         e.ended_at || "",
-                        durationSeconds(e.started_at, e.ended_at),
+                        e.duration_seconds,
                     ].join("\t"),
                 );
                 return [headers.join("\t"), ...rows].join("\n");
             }
             case "md-items":
-                return selected
+                return exportEntries
                     .map((e) => {
                         const desc = e.description || "(no description)";
                         const tags = (e.tags || []).join(", ");
-                        const time = formatTimeRange(e.started_at, e.ended_at);
                         const dur = formatDuration(e.started_at, e.ended_at);
-                        let line = `- **${desc}** — ${time} _(duration: ${dur})_`;
+                        let line = `- **${desc}** — ${e.started_at}`;
+                        line += e.ended_at ? ` – ${e.ended_at}` : " – running";
+                        line += ` _(duration: ${dur})_`;
                         if (tags) line += ` — ${tags}`;
                         return line;
                     })
                     .join("\n");
             case "md-table": {
-                const header = "| Description | Tags | Time range | Duration |";
-                const sep = "| --- | --- | --- | --- |";
-                const rows = selected.map((e) => {
+                const header = "| Description | Tags | Started at | Ended at | Duration (seconds) |";
+                const sep = "| --- | --- | --- | --- | --- |";
+                const rows = exportEntries.map((e) => {
                     const desc = (e.description || "(no description)").replace(/\|/g, "\\|");
                     const tags = (e.tags || []).join(", ").replace(/\|/g, "\\|");
-                    const time = formatTimeRange(e.started_at, e.ended_at);
-                    const dur = formatDuration(e.started_at, e.ended_at);
-                    return `| ${desc} | ${tags} | ${time} | ${dur} |`;
+                    const ended = e.ended_at || "running";
+                    return `| ${desc} | ${tags} | ${e.started_at} | ${ended} | ${e.duration_seconds} |`;
                 });
                 return [header, sep, ...rows].join("\n");
             }
@@ -199,27 +224,32 @@
                     <span class="text-gray-500 select-none">Copy selected as</span>
                     <button
                         onclick={() => copySelected("json")}
-                        class="text-indigo-600 hover:text-indigo-800 underline underline-offset-2 cursor-pointer">JSON</button
+                        class="text-indigo-600 hover:text-indigo-800 underline underline-offset-2 cursor-pointer"
+                        >JSON</button
                     >
                     <span class="text-gray-300">|</span>
                     <button
                         onclick={() => copySelected("yaml")}
-                        class="text-indigo-600 hover:text-indigo-800 underline underline-offset-2 cursor-pointer">YAML</button
+                        class="text-indigo-600 hover:text-indigo-800 underline underline-offset-2 cursor-pointer"
+                        >YAML</button
                     >
                     <span class="text-gray-300">|</span>
                     <button
                         onclick={() => copySelected("tsv")}
-                        class="text-indigo-600 hover:text-indigo-800 underline underline-offset-2 cursor-pointer">TSV</button
+                        class="text-indigo-600 hover:text-indigo-800 underline underline-offset-2 cursor-pointer"
+                        >TSV</button
                     >
                     <span class="text-gray-300">|</span>
                     <button
                         onclick={() => copySelected("md-items")}
-                        class="text-indigo-600 hover:text-indigo-800 underline underline-offset-2 cursor-pointer">MD items</button
+                        class="text-indigo-600 hover:text-indigo-800 underline underline-offset-2 cursor-pointer"
+                        >MD items</button
                     >
                     <span class="text-gray-300">|</span>
                     <button
                         onclick={() => copySelected("md-table")}
-                        class="text-indigo-600 hover:text-indigo-800 underline underline-offset-2 cursor-pointer">MD table</button
+                        class="text-indigo-600 hover:text-indigo-800 underline underline-offset-2 cursor-pointer"
+                        >MD table</button
                     >
                 {/if}
             </div>
