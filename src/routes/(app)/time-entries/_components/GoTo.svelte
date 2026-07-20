@@ -41,6 +41,11 @@
         href="/time-entries/month/{currentMonth}{qs}"
         class="text-gray-500 no-underline hover:text-blue-600 hover:underline">This month</a
     >
+    <span class="text-gray-300">|</span>
+    <a
+        href="/time-entries/range?from={currentYear}-01-01&to={currentYear}-12-31{sort ? `&sort=${sort}` : ""}"
+        class="text-gray-500 no-underline hover:text-blue-600 hover:underline">This year</a
+    >
     {#if !todayHasEntries && firstNonEmptyDayUrl}
         <span class="text-gray-300">|</span>
         <a
