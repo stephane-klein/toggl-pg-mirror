@@ -68,7 +68,6 @@
                             onconfirm={handleFromConfirm}
                         />
                     {/key}
-                    <span class="text-gray-300">|</span>
                     <span class="text-[13px] text-gray-600">To:</span>
                     {#key toInput}
                         <DateInput

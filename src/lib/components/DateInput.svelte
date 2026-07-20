@@ -57,25 +57,26 @@
 </script>
 
 <div class="relative w-36 mx-auto">
-    <input
-        type="text"
-        bind:value
-        oninput={onTextInput}
-        onpaste={onPaste}
-        onkeydown={handleKeydown}
-        onblur={handleBlur}
-        placeholder="yyyy-mm-dd"
-        inputmode="numeric"
-        aria-invalid={error}
-        class="w-36 text-center border rounded px-3 py-1.5 bg-white {error ? 'border-red-500' : 'border-gray-300'}"
-    />
-    <button
-        type="button"
-        onclick={openPicker}
-        aria-label="Open calendar"
-        tabindex="-1"
-        class="absolute -right-[30px] top-1/2 -translate-y-1/2 cursor-pointer bg-transparent border-none p-1 text-gray-500 hover:text-gray-700"
-    >
+    <div class="relative">
+        <input
+            type="text"
+            bind:value
+            oninput={onTextInput}
+            onpaste={onPaste}
+            onkeydown={handleKeydown}
+            onblur={handleBlur}
+            placeholder="yyyy-mm-dd"
+            inputmode="numeric"
+            aria-invalid={error}
+            class="w-36 text-center border rounded pr-8 pl-3 py-1.5 bg-white {error ? 'border-red-500' : 'border-gray-300'}"
+        />
+        <button
+            type="button"
+            onclick={openPicker}
+            aria-label="Open calendar"
+            tabindex="-1"
+            class="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer bg-transparent border-none p-0.5 text-gray-500 hover:text-gray-700"
+        >
         <svg
             xmlns="http://www.w3.org/2000/svg"
             width="18"
@@ -115,6 +116,7 @@
             />
         </svg>
     </button>
+</div>
     <input
         type="date"
         bind:this={nativeInput}
