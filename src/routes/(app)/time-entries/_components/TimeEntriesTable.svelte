@@ -1,7 +1,7 @@
 <script>
     /* eslint-disable svelte/prefer-svelte-reactivity -- new Date() used in ephemeral formatting functions, not reactive state */
 
-    let { entries = [], selectedIds = $bindable(new Set()) } = $props();
+    let { entries = [], selectedIds = $bindable(new Set()), sort = "asc" } = $props();
 
     function dayLabel(dateStr) {
         const date = new Date(dateStr);
@@ -198,7 +198,10 @@
             const end = entry.ended_at ? new Date(entry.ended_at) : new Date();
             map[day].totalSeconds += Math.floor((end - new Date(entry.started_at)) / 1000);
         }
-        return Object.values(map).sort((a, b) => new Date(b.date) - new Date(a.date));
+        return Object.values(map).sort((a, b) => {
+            const diff = new Date(b.date) - new Date(a.date);
+            return sort === "desc" ? diff : -diff;
+        });
     });
 </script>
 

@@ -91,7 +91,7 @@
         {sort}
     />
 
-    <TimeEntriesTable {entries} />
+    <TimeEntriesTable {entries} {sort} />
     <Pagination
         {prevCursor}
         {nextCursor}

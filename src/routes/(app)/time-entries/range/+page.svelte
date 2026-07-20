@@ -69,7 +69,7 @@
     />
 
     {#if periodLabel}
-        <TimeEntriesTable {entries} />
+        <TimeEntriesTable {entries} {sort} />
         <Pagination
             {prevCursor}
             {nextCursor}
