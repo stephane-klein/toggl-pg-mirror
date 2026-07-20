@@ -76,6 +76,13 @@
         const toOpts = { weekday: "long", day: "numeric", month: "long" };
         return `From ${from.toLocaleDateString("en-US", fromOpts)} to ${to.toLocaleDateString("en-US", toOpts)}`;
     });
+
+    let dayCount = $derived.by(() => {
+        if (!currentFrom || !currentTo) return null;
+        const from = new Date(currentFrom);
+        const to = new Date(currentTo);
+        return Math.round((Number(to) - Number(from)) / (1000 * 60 * 60 * 24)) + 1;
+    });
 </script>
 
 <div class="mb-4">
@@ -125,6 +132,9 @@
                 {#if rangeDateRange}
                     <div class="text-center text-[13px] text-gray-500 mt-1">
                         {rangeDateRange}
+                        {#if dayCount}
+                            — {dayCount} day{dayCount > 1 ? "s" : ""}
+                        {/if}
                     </div>
                 {/if}
             {/key}
