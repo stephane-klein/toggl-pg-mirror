@@ -216,7 +216,7 @@
 
 {#if entries.length > 0}
     <div class="relative flex items-center py-2 px-2 border-b border-gray-300">
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-1">
             <input
                 type="checkbox"
                 class="w-4 h-4"
@@ -267,7 +267,8 @@
             </div>
         {/if}
         {#if hasTopNav}
-            <nav class="ml-auto flex items-center gap-3 text-[13px]">
+            <nav class="ml-auto flex items-center gap-3 text-[12px]">
+                <span class="text-[11px] text-gray-400">Page</span>
                 {#if leftCursor}
                     <a
                         href="?{baseQuery

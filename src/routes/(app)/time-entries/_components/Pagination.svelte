@@ -14,7 +14,8 @@
 {#if allShown}
     <p class="text-gray-500 italic text-[13px] mt-6 text-right">All entries displayed.</p>
 {:else if prevCursor || nextCursor}
-    <nav class="flex items-center gap-3 mt-6 text-[13px] justify-end">
+        <nav class="flex items-center gap-3 mt-6 text-[12px] justify-end">
+        <span class="text-[11px] text-gray-400">Page</span>
         {#if leftCursor}
             <a
                 href="?{baseQuery
