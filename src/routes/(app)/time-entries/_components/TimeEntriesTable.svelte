@@ -296,7 +296,7 @@
 {/if}
 
 {#each dayGroups as group, i (group.date)}
-    <div class:mt-6={i > 0}>
+    <div class:mt-4={i > 0}>
         <div class="flex items-baseline justify-between py-[7px] px-2 border-b-2 border-gray-300 bg-gray-50 rounded-t">
             <div class="flex items-center gap-2">
                 <input
@@ -363,7 +363,7 @@
                             {/each}
                         </td>
                         <td class="px-2 py-[7px] border-b border-gray-300 align-middle text-[13px]">
-                            <div class="flex items-baseline gap-6 justify-end">
+                            <div class="flex items-baseline gap-4 justify-end">
                                 <span class="text-gray-500">{formatTimeRange(entry.started_at, entry.ended_at)}</span>
                                 <span
                                     class="font-mono font-semibold"

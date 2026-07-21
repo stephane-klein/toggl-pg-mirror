@@ -14,7 +14,7 @@
     <title>Time entries — toggl-pg-mirror</title>
 </svelte:head>
 
-<main class="page px-5 pt-7 pb-24">
+<main class="page px-5 pt-7 pb-12">
     <div class="flex items-baseline justify-between mb-5 flex-wrap gap-y-1">
         <h1 class="text-xl font-bold tracking-tight">Time entries</h1>
         <LimitSelector

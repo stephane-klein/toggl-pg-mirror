@@ -51,8 +51,8 @@
     <title>{periodLabel} — toggl-pg-mirror</title>
 </svelte:head>
 
-<main class="page px-5 pt-7 pb-24">
-    <div class="flex items-baseline justify-between mb-4 flex-wrap gap-y-1">
+<main class="page px-5 pt-2 pb-12">
+    <div class="flex items-baseline justify-between mb-2 flex-wrap gap-y-1">
         <GoTo
             {sort}
             {todayHasEntries}

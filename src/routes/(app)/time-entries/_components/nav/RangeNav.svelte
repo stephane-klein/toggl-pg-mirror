@@ -85,7 +85,7 @@
     });
 </script>
 
-<div class="mb-4">
+<div class="mb-3">
     <div
         class="grid items-center"
         style="grid-template-columns:1fr auto 1fr"
