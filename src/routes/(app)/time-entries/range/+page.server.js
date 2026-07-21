@@ -1,6 +1,6 @@
 import { error } from "@sveltejs/kit";
 
-import { fetchEntries, parseLimit, computeGoToData } from "$lib/backend/time-entries.js";
+import { fetchEntries, countEntries, parseLimit, computeGoToData } from "$lib/backend/time-entries.js";
 
 function addDays(dateStr, n) {
     const [y, m, d] = dateStr.split("-").map(Number);
@@ -22,6 +22,8 @@ export async function load({ url }) {
 
     const gotoData = await computeGoToData();
 
+    const q = url.searchParams.get("q") || "";
+
     if (!from || !to) {
         return {
             ...gotoData,
@@ -29,6 +31,8 @@ export async function load({ url }) {
             prevCursor: null,
             nextCursor: null,
             limit: parseLimit(url.searchParams.get("limit"), "range"),
+            q,
+            total: 0,
             mode: "range",
             currentFrom: from || "",
             currentTo: to || "",
@@ -45,14 +49,18 @@ export async function load({ url }) {
     const after = url.searchParams.get("after");
     const sort = url.searchParams.get("sort") || "asc";
 
-    const { entries, prevCursor, nextCursor } = await fetchEntries({
-        from,
-        to: toExclusive,
-        before,
-        after,
-        limit,
-        sort,
-    });
+    const [{ entries, prevCursor, nextCursor }, total] = await Promise.all([
+        fetchEntries({
+            from,
+            to: toExclusive,
+            before,
+            after,
+            limit,
+            sort,
+            q,
+        }),
+        countEntries({ from, to: toExclusive, q }),
+    ]);
 
     return {
         ...gotoData,
@@ -61,6 +69,8 @@ export async function load({ url }) {
         nextCursor,
         limit,
         sort,
+        q,
+        total,
         mode: "range",
         currentFrom: from,
         currentTo: to,

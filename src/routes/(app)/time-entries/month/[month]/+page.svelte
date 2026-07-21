@@ -5,6 +5,7 @@
     import SortToggle from "../../_components/SortToggle.svelte";
     import LimitSelector from "../../_components/LimitSelector.svelte";
     import MonthNav from "../../_components/nav/MonthNav.svelte";
+    import FilterDescription from "../../_components/FilterDescription.svelte";
     import TimeEntriesTable from "../../_components/TimeEntriesTable.svelte";
     import Pagination from "../../_components/Pagination.svelte";
 
@@ -19,7 +20,10 @@
     let nextPeriodUrl = $derived(data.nextPeriodUrl);
     let nextPeriodLabel = $derived(data.nextPeriodLabel);
     let sort = $derived(data.sort);
+    let q = $derived(data.q);
+    let total = $derived(data.total);
     let currentMonth = $derived(data.currentMonth);
+
     const referenceDate = currentMonth + "-01";
     let nearestNonEmptyUrl = $derived(data.nearestNonEmptyUrl);
     let nearestNonEmptyLabel = $derived(data.nearestNonEmptyLabel);
@@ -92,13 +96,15 @@
         {sort}
     />
 
+    <FilterDescription {total} />
+
     <TimeEntriesTable
         {entries}
         {sort}
         {prevCursor}
         {nextCursor}
         {limit}
-        baseQuery="month={currentMonth}&sort={sort}"
+        baseQuery="month={currentMonth}&sort={sort}&q={q}"
     />
     <Pagination
         {prevCursor}
@@ -106,6 +112,6 @@
         {limit}
         {entries}
         {sort}
-        baseQuery="month={currentMonth}&sort={sort}"
+        baseQuery="month={currentMonth}&sort={sort}&q={q}"
     />
 </main>

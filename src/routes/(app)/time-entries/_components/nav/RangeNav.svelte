@@ -3,12 +3,7 @@
     import { SvelteDate } from "svelte/reactivity";
     import DateInput from "$lib/components/DateInput.svelte";
 
-    let { currentFrom = null, currentTo = null, sort = "" } = $props();
-
-    function withSort(path) {
-        if (!sort || !path) return path;
-        return path.includes("?") ? `${path}&sort=${sort}` : `${path}?sort=${sort}`;
-    }
+    let { currentFrom = null, currentTo = null, sort = "", q = "" } = $props();
 
     let fromInput = $state(currentFrom ?? "");
     let toInput = $state(currentTo ?? "");
@@ -52,7 +47,10 @@
     function goToRange() {
         if (fromInput === currentFrom && toInput === currentTo) return;
         if (fromInput && toInput && isValidDate(fromInput) && isValidDate(toInput)) {
-            goto(withSort(`/time-entries/range?from=${fromInput}&to=${toInput}`));
+            let url = `/time-entries/range?from=${fromInput}&to=${toInput}`;
+            if (sort) url += `&sort=${sort}`;
+            if (q) url += `&q=${q}`;
+            goto(url);
         }
     }
 

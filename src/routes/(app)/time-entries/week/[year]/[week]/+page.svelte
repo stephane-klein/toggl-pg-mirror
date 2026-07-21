@@ -5,6 +5,7 @@
     import SortToggle from "../../../_components/SortToggle.svelte";
     import LimitSelector from "../../../_components/LimitSelector.svelte";
     import WeekNav from "../../../_components/nav/WeekNav.svelte";
+    import FilterDescription from "../../../_components/FilterDescription.svelte";
     import TimeEntriesTable from "../../../_components/TimeEntriesTable.svelte";
     import Pagination from "../../../_components/Pagination.svelte";
 
@@ -19,7 +20,10 @@
     let nextPeriodUrl = $derived(data.nextPeriodUrl);
     let nextPeriodLabel = $derived(data.nextPeriodLabel);
     let sort = $derived(data.sort);
+    let q = $derived(data.q);
+    let total = $derived(data.total);
     let currentYear = $derived(data.currentYear);
+
     let currentWeek = $derived(data.currentWeek);
     let referenceDate = $derived(data.referenceDate);
     let nearestNonEmptyUrl = $derived(data.nearestNonEmptyUrl);
@@ -94,13 +98,15 @@
         {sort}
     />
 
+    <FilterDescription {total} />
+
     <TimeEntriesTable
         {entries}
         {sort}
         {prevCursor}
         {nextCursor}
         {limit}
-        baseQuery="year={currentYear}&week={currentWeek}&sort={sort}"
+        baseQuery="year={currentYear}&week={currentWeek}&sort={sort}&q={q}"
     />
     <Pagination
         {prevCursor}
@@ -108,6 +114,6 @@
         {limit}
         {entries}
         {sort}
-        baseQuery="year={currentYear}&week={currentWeek}&sort={sort}"
+        baseQuery="year={currentYear}&week={currentWeek}&sort={sort}&q={q}"
     />
 </main>

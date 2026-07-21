@@ -173,9 +173,37 @@ function firstOfMonth(year, month) {
     return `${y}-${m}-01`;
 }
 
-export async function fetchEntries({ from, to, before, after, limit, sort = "asc" }) {
+function buildDescriptionFilter(q) {
+    if (!q) {
+        return sql``;
+    }
+    if (q === "/null") {
+        return sql`AND description IS NULL`;
+    }
+    const quoted = q.startsWith('"') && q.endsWith('"');
+    if (quoted) {
+        const phrase = q.slice(1, -1);
+        if (!phrase) return sql``;
+        return sql`AND immutable_unaccent(description) ILIKE immutable_unaccent(${phrase})`;
+    }
+    const words = q.split(" ").filter(Boolean);
+    if (words.length === 0) {
+        return sql``;
+    }
+    const conditions = words.map(
+        (w) => sql`immutable_unaccent(description) ILIKE immutable_unaccent(${"%" + w + "%"})`,
+    );
+    let combined = conditions[0];
+    for (let i = 1; i < conditions.length; i++) {
+        combined = sql`${combined} AND ${conditions[i]}`;
+    }
+    return sql`AND ${combined}`;
+}
+
+export async function fetchEntries({ from, to, before, after, limit, sort = "asc", q = "" }) {
     const cursor = before ? decodeCursor(before) : after ? decodeCursor(after) : null;
     const isAsc = sort === "asc";
+    const descFilter = buildDescriptionFilter(q);
 
     let rows;
     if (before && cursor) {
@@ -184,6 +212,7 @@ export async function fetchEntries({ from, to, before, after, limit, sort = "asc
                    started_at::text AS started_at_txt
             FROM time_entries
             WHERE deleted_at IS NULL
+              ${descFilter}
               AND started_at >= ${from}::timestamptz
               AND started_at <  ${to}::timestamptz
               AND (started_at, id) < (${cursor.startedAt}::timestamptz, ${cursor.id})
@@ -196,6 +225,7 @@ export async function fetchEntries({ from, to, before, after, limit, sort = "asc
                    started_at::text AS started_at_txt
             FROM time_entries
             WHERE deleted_at IS NULL
+              ${descFilter}
               AND started_at >= ${from}::timestamptz
               AND started_at <  ${to}::timestamptz
               AND (started_at, id) > (${cursor.startedAt}::timestamptz, ${cursor.id})
@@ -209,6 +239,7 @@ export async function fetchEntries({ from, to, before, after, limit, sort = "asc
                    started_at::text AS started_at_txt
             FROM time_entries
             WHERE deleted_at IS NULL
+              ${descFilter}
               AND started_at >= ${from}::timestamptz
               AND started_at <  ${to}::timestamptz
             ORDER BY started_at ${orderDir}, id ${orderDir}
@@ -255,4 +286,17 @@ export async function fetchEntries({ from, to, before, after, limit, sort = "asc
     }
 
     return { entries, prevCursor, nextCursor };
+}
+
+export async function countEntries({ from, to, q = "" }) {
+    const descFilter = buildDescriptionFilter(q);
+    const [row] = await sql`
+        SELECT count(*) AS total
+        FROM time_entries
+        WHERE deleted_at IS NULL
+          ${descFilter}
+          AND started_at >= ${from}::timestamptz
+          AND started_at <  ${to}::timestamptz
+    `;
+    return Number(row.total);
 }

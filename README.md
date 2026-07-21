@@ -9,6 +9,7 @@ A Node.js service that mirrors Toggl time-tracking data into a self-controlled P
 - Runtime: Node.js 24 (ESM)
 - Package manager: pnpm
 - Database: PostgreSQL 18
+- PostgreSQL extensions: pg_trgm, unaccent (trigram fuzzy search, accent-insensitive)
 - SQL client: [postgres](https://github.com/porsager/postgres)
 - Migrations: [postgres-shift](https://github.com/porsager/postgres-shift)
 - HTTP server: SvelteKit 2 with adapter-node (SSR)

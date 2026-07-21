@@ -2,6 +2,7 @@ import { error } from "@sveltejs/kit";
 
 import {
     fetchEntries,
+    countEntries,
     hasEntries,
     nearestDayWithEntries,
     parseLimit,
@@ -66,8 +67,12 @@ export async function load({ params, url }) {
     const before = url.searchParams.get("before");
     const after = url.searchParams.get("after");
     const sort = url.searchParams.get("sort") || "asc";
+    const q = url.searchParams.get("q") || "";
 
-    const { entries, prevCursor, nextCursor } = await fetchEntries({ from, to, before, after, limit, sort });
+    const [{ entries, prevCursor, nextCursor }, total] = await Promise.all([
+        fetchEntries({ from, to, before, after, limit, sort, q }),
+        countEntries({ from, to, q }),
+    ]);
 
     const prevPeriodDate = addDays(rawDate, -1);
     const nextPeriodDate = addDays(rawDate, 1);
@@ -94,6 +99,8 @@ export async function load({ params, url }) {
         nextCursor,
         limit,
         sort,
+        q,
+        total,
         mode: "day",
         currentDate: rawDate,
         periodLabel: formatPeriodLabel(rawDate),

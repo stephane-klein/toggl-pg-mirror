@@ -4,6 +4,7 @@
     import SortToggle from "../_components/SortToggle.svelte";
     import LimitSelector from "../_components/LimitSelector.svelte";
     import RangeNav from "../_components/nav/RangeNav.svelte";
+    import FilterDescription from "../_components/FilterDescription.svelte";
     import TimeEntriesTable from "../_components/TimeEntriesTable.svelte";
     import Pagination from "../_components/Pagination.svelte";
 
@@ -14,7 +15,10 @@
     let limit = $derived(data.limit);
     let periodLabel = $derived(data.periodLabel);
     let sort = $derived(data.sort);
+    let q = $derived(data.q);
+    let total = $derived(data.total);
     let currentFrom = $derived(data.currentFrom);
+
     let currentTo = $derived(data.currentTo);
     const referenceDate = currentFrom || new Date().toISOString().split("T")[0];
     let todayHasEntries = $derived(data.todayHasEntries);
@@ -66,7 +70,10 @@
         {currentFrom}
         {currentTo}
         {sort}
+        {q}
     />
+
+    <FilterDescription {total} />
 
     {#if periodLabel}
         <TimeEntriesTable
@@ -75,7 +82,7 @@
             {prevCursor}
             {nextCursor}
             {limit}
-            baseQuery="from={currentFrom}&to={currentTo}&sort={sort}"
+            baseQuery="from={currentFrom}&to={currentTo}&sort={sort}&q={q}"
         />
         <Pagination
             {prevCursor}
@@ -83,7 +90,7 @@
             {limit}
             {entries}
             {sort}
-            baseQuery="from={currentFrom}&to={currentTo}&sort={sort}"
+            baseQuery="from={currentFrom}&to={currentTo}&sort={sort}&q={q}"
         />
     {:else}
         <p class="text-gray-500 italic py-6">Select a date range above.</p>

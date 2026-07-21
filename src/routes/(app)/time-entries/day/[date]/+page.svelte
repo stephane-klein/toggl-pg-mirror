@@ -5,6 +5,7 @@
     import SortToggle from "../../_components/SortToggle.svelte";
     import LimitSelector from "../../_components/LimitSelector.svelte";
     import DayNav from "../../_components/nav/DayNav.svelte";
+    import FilterDescription from "../../_components/FilterDescription.svelte";
     import TimeEntriesTable from "../../_components/TimeEntriesTable.svelte";
     import Pagination from "../../_components/Pagination.svelte";
 
@@ -21,6 +22,8 @@
     let nearestNonEmptyUrl = $derived(data.nearestNonEmptyUrl);
     let nearestNonEmptyLabel = $derived(data.nearestNonEmptyLabel);
     let sort = $derived(data.sort);
+    let q = $derived(data.q);
+    let total = $derived(data.total);
     let currentDate = $derived(data.currentDate);
     let todayHasEntries = $derived(data.todayHasEntries);
     let firstNonEmptyDayUrl = $derived(data.firstNonEmptyDayUrl);
@@ -91,13 +94,15 @@
         {sort}
     />
 
+    <FilterDescription {total} />
+
     <TimeEntriesTable
         {entries}
         {sort}
         {prevCursor}
         {nextCursor}
         {limit}
-        baseQuery="date={currentDate}&sort={sort}"
+        baseQuery="date={currentDate}&sort={sort}&q={q}"
     />
     <Pagination
         {prevCursor}
@@ -105,6 +110,6 @@
         {limit}
         {entries}
         {sort}
-        baseQuery="date={currentDate}&sort={sort}"
+        baseQuery="date={currentDate}&sort={sort}&q={q}"
     />
 </main>
