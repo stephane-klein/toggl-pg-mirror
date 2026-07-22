@@ -1,5 +1,5 @@
 <script>
-    /* eslint-disable svelte/prefer-svelte-reactivity -- Date values used for default links, not reactive state */
+    import { SvelteDate } from "svelte/reactivity";
 
     let { activeMode = "day", sort = "", referenceDate = undefined } = $props();
 
@@ -9,14 +9,14 @@
 
     const currentYear = $derived.by(() => {
         const isoDow = ((refDate.getDay() + 6) % 7) + 1;
-        const thursday = new Date(refDate);
+        const thursday = new SvelteDate(refDate);
         thursday.setDate(refDate.getDate() - isoDow + 4);
         return thursday.getFullYear();
     });
 
     const currentWeek = $derived.by(() => {
         const isoDow = ((refDate.getDay() + 6) % 7) + 1;
-        const thursday = new Date(refDate);
+        const thursday = new SvelteDate(refDate);
         thursday.setDate(refDate.getDate() - isoDow + 4);
         const jan1 = new Date(currentYear, 0, 1);
         const days = Math.round((thursday - jan1) / 86400000);
@@ -29,7 +29,7 @@
 
     function addDays(dateStr, n) {
         const [y, m, d] = dateStr.split("-").map(Number);
-        const date = new Date(y, m - 1, d);
+        const date = new SvelteDate(y, m - 1, d);
         date.setDate(date.getDate() + n);
         return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
     }

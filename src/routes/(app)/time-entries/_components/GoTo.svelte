@@ -3,13 +3,10 @@
         sort = "",
         todayHasEntries = true,
         firstNonEmptyDayUrl = "",
-        firstNonEmptyDayLabel = "",
         thisWeekHasEntries = true,
         firstNonEmptyWeekUrl = "",
-        firstNonEmptyWeekLabel = "",
         thisMonthHasEntries = true,
         firstNonEmptyMonthUrl = "",
-        firstNonEmptyMonthLabel = "",
     } = $props();
 
     const now = new Date();

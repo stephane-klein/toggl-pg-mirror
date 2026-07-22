@@ -1,5 +1,6 @@
 <script>
     import { goto } from "$app/navigation";
+    import { SvelteDate } from "svelte/reactivity";
     import DateInput from "$lib/components/DateInput.svelte";
 
     let { currentFrom = null, currentTo = null, sort = "" } = $props();
@@ -23,7 +24,7 @@
 
     function offsetDate(dateStr, amount, unit) {
         const [y, m, d] = dateStr.split("-").map(Number);
-        const date = new Date(y, m - 1, d);
+        const date = new SvelteDate(y, m - 1, d);
         if (unit === "day") date.setDate(date.getDate() + amount);
         if (unit === "week") date.setDate(date.getDate() + amount * 7);
         if (unit === "month") date.setMonth(date.getMonth() + amount);
