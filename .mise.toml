@@ -75,6 +75,29 @@ run = "podman compose down -v --remove-orphans"
 [tasks.clean]
 run = "usql ${TOGGL_PG_MIRROR_POSTGRES_URL} < sqls/clean.sql"
 
+[tasks.db-reset]
+description = "Drop all schemas and re-run migrations from scratch"
+run = """
+mise run clean
+mise run migrate
+"""
+
+[tasks.import-csvs]
+description = "Import all CSV files from toggl-export-data/"
+run = """
+for f in toggl-export-data/*.csv; do
+  [ -f "$f" ] || continue
+  toggl-pg-mirror csv-import "$f"
+done
+"""
+
+[tasks.db-reset-and-import-csvs]
+description = "Drop all schemas, re-run migrations, then import all CSV files"
+run = """
+mise run db-reset
+mise run import-csvs
+"""
+
 [tasks.enter-in-pg]
 run = "usql ${TOGGL_PG_MIRROR_POSTGRES_URL}"
 
