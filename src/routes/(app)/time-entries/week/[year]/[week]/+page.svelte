@@ -94,7 +94,14 @@
         {sort}
     />
 
-    <TimeEntriesTable {entries} {sort} {prevCursor} {nextCursor} {limit} baseQuery="year={currentYear}&week={currentWeek}&sort={sort}" />
+    <TimeEntriesTable
+        {entries}
+        {sort}
+        {prevCursor}
+        {nextCursor}
+        {limit}
+        baseQuery="year={currentYear}&week={currentWeek}&sort={sort}"
+    />
     <Pagination
         {prevCursor}
         {nextCursor}

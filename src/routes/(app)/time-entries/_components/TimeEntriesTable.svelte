@@ -1,8 +1,15 @@
 <script>
     /* eslint-disable svelte/prefer-svelte-reactivity -- new Date() used in ephemeral formatting functions, not reactive state */
 
-    let { entries = [], selectedIds = $bindable(new Set()), sort = "asc",
-          prevCursor = null, nextCursor = null, limit = 25, baseQuery = "" } = $props();
+    let {
+        entries = [],
+        selectedIds = $bindable(new Set()),
+        sort = "asc",
+        prevCursor = null,
+        nextCursor = null,
+        limit = 25,
+        baseQuery = "",
+    } = $props();
 
     let leftCursor = $derived(sort === "asc" ? nextCursor : prevCursor);
     let rightCursor = $derived(sort === "asc" ? prevCursor : nextCursor);

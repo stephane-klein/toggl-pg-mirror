@@ -43,7 +43,7 @@
     >
     <span class="text-gray-300">|</span>
     <a
-        href="/time-entries/range?from={currentYear}-01-01&to={currentYear}-12-31{sort ? `&sort=${sort}` : ""}"
+        href="/time-entries/range?from={currentYear}-01-01&to={currentYear}-12-31{sort ? `&sort=${sort}` : ''}"
         class="text-gray-500 no-underline hover:text-blue-600 hover:underline">This year</a
     >
     {#if !todayHasEntries && firstNonEmptyDayUrl}

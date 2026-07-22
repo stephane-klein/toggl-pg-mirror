@@ -69,7 +69,14 @@
     />
 
     {#if periodLabel}
-        <TimeEntriesTable {entries} {sort} {prevCursor} {nextCursor} {limit} baseQuery="from={currentFrom}&to={currentTo}&sort={sort}" />
+        <TimeEntriesTable
+            {entries}
+            {sort}
+            {prevCursor}
+            {nextCursor}
+            {limit}
+            baseQuery="from={currentFrom}&to={currentTo}&sort={sort}"
+        />
         <Pagination
             {prevCursor}
             {nextCursor}

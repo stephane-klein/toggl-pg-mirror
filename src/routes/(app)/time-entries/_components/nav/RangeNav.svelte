@@ -92,22 +92,62 @@
     >
         <div class="flex flex-col items-start gap-0.5 justify-self-start">
             <div class="flex items-center gap-1">
-                <button type="button" onclick={() => handleLeftOffset(-1, "day")} class="text-blue-600 no-underline hover:underline bg-transparent border-none p-0 cursor-pointer inline text-[13px]">-1 day</button>
+                <button
+                    type="button"
+                    onclick={() => handleLeftOffset(-1, "day")}
+                    class="text-blue-600 no-underline hover:underline bg-transparent border-none p-0 cursor-pointer inline text-[13px]"
+                    >-1 day</button
+                >
                 <span class="text-gray-300">|</span>
-                <button type="button" onclick={() => handleLeftOffset(-1, "week")} class="text-blue-600 no-underline hover:underline bg-transparent border-none p-0 cursor-pointer inline text-[13px]">-1 week</button>
+                <button
+                    type="button"
+                    onclick={() => handleLeftOffset(-1, "week")}
+                    class="text-blue-600 no-underline hover:underline bg-transparent border-none p-0 cursor-pointer inline text-[13px]"
+                    >-1 week</button
+                >
                 <span class="text-gray-300">|</span>
-                <button type="button" onclick={() => handleLeftOffset(-1, "month")} class="text-blue-600 no-underline hover:underline bg-transparent border-none p-0 cursor-pointer inline text-[13px]">-1 month</button>
+                <button
+                    type="button"
+                    onclick={() => handleLeftOffset(-1, "month")}
+                    class="text-blue-600 no-underline hover:underline bg-transparent border-none p-0 cursor-pointer inline text-[13px]"
+                    >-1 month</button
+                >
                 <span class="text-gray-300">|</span>
-                <button type="button" onclick={() => handleLeftOffset(-1, "year")} class="text-blue-600 no-underline hover:underline bg-transparent border-none p-0 cursor-pointer inline text-[13px]">-1 year</button>
+                <button
+                    type="button"
+                    onclick={() => handleLeftOffset(-1, "year")}
+                    class="text-blue-600 no-underline hover:underline bg-transparent border-none p-0 cursor-pointer inline text-[13px]"
+                    >-1 year</button
+                >
             </div>
             <div class="flex items-center gap-1">
-                <button type="button" onclick={() => handleLeftOffset(1, "day")} class="text-blue-600 no-underline hover:underline bg-transparent border-none p-0 cursor-pointer inline text-[13px]">+1 day</button>
+                <button
+                    type="button"
+                    onclick={() => handleLeftOffset(1, "day")}
+                    class="text-blue-600 no-underline hover:underline bg-transparent border-none p-0 cursor-pointer inline text-[13px]"
+                    >+1 day</button
+                >
                 <span class="text-gray-300">|</span>
-                <button type="button" onclick={() => handleLeftOffset(1, "week")} class="text-blue-600 no-underline hover:underline bg-transparent border-none p-0 cursor-pointer inline text-[13px]">+1 week</button>
+                <button
+                    type="button"
+                    onclick={() => handleLeftOffset(1, "week")}
+                    class="text-blue-600 no-underline hover:underline bg-transparent border-none p-0 cursor-pointer inline text-[13px]"
+                    >+1 week</button
+                >
                 <span class="text-gray-300">|</span>
-                <button type="button" onclick={() => handleLeftOffset(1, "month")} class="text-blue-600 no-underline hover:underline bg-transparent border-none p-0 cursor-pointer inline text-[13px]">+1 month</button>
+                <button
+                    type="button"
+                    onclick={() => handleLeftOffset(1, "month")}
+                    class="text-blue-600 no-underline hover:underline bg-transparent border-none p-0 cursor-pointer inline text-[13px]"
+                    >+1 month</button
+                >
                 <span class="text-gray-300">|</span>
-                <button type="button" onclick={() => handleLeftOffset(1, "year")} class="text-blue-600 no-underline hover:underline bg-transparent border-none p-0 cursor-pointer inline text-[13px]">+1 year</button>
+                <button
+                    type="button"
+                    onclick={() => handleLeftOffset(1, "year")}
+                    class="text-blue-600 no-underline hover:underline bg-transparent border-none p-0 cursor-pointer inline text-[13px]"
+                    >+1 year</button
+                >
             </div>
         </div>
 
@@ -142,22 +182,62 @@
 
         <div class="flex flex-col items-end gap-0.5 justify-self-end">
             <div class="flex items-center gap-1">
-                <button type="button" onclick={() => handleRightOffset(-1, "day")} class="text-blue-600 no-underline hover:underline bg-transparent border-none p-0 cursor-pointer inline text-[13px]">-1 day</button>
+                <button
+                    type="button"
+                    onclick={() => handleRightOffset(-1, "day")}
+                    class="text-blue-600 no-underline hover:underline bg-transparent border-none p-0 cursor-pointer inline text-[13px]"
+                    >-1 day</button
+                >
                 <span class="text-gray-300">|</span>
-                <button type="button" onclick={() => handleRightOffset(-1, "week")} class="text-blue-600 no-underline hover:underline bg-transparent border-none p-0 cursor-pointer inline text-[13px]">-1 week</button>
+                <button
+                    type="button"
+                    onclick={() => handleRightOffset(-1, "week")}
+                    class="text-blue-600 no-underline hover:underline bg-transparent border-none p-0 cursor-pointer inline text-[13px]"
+                    >-1 week</button
+                >
                 <span class="text-gray-300">|</span>
-                <button type="button" onclick={() => handleRightOffset(-1, "month")} class="text-blue-600 no-underline hover:underline bg-transparent border-none p-0 cursor-pointer inline text-[13px]">-1 month</button>
+                <button
+                    type="button"
+                    onclick={() => handleRightOffset(-1, "month")}
+                    class="text-blue-600 no-underline hover:underline bg-transparent border-none p-0 cursor-pointer inline text-[13px]"
+                    >-1 month</button
+                >
                 <span class="text-gray-300">|</span>
-                <button type="button" onclick={() => handleRightOffset(-1, "year")} class="text-blue-600 no-underline hover:underline bg-transparent border-none p-0 cursor-pointer inline text-[13px]">-1 year</button>
+                <button
+                    type="button"
+                    onclick={() => handleRightOffset(-1, "year")}
+                    class="text-blue-600 no-underline hover:underline bg-transparent border-none p-0 cursor-pointer inline text-[13px]"
+                    >-1 year</button
+                >
             </div>
             <div class="flex items-center gap-1">
-                <button type="button" onclick={() => handleRightOffset(1, "day")} class="text-blue-600 no-underline hover:underline bg-transparent border-none p-0 cursor-pointer inline text-[13px]">+1 day</button>
+                <button
+                    type="button"
+                    onclick={() => handleRightOffset(1, "day")}
+                    class="text-blue-600 no-underline hover:underline bg-transparent border-none p-0 cursor-pointer inline text-[13px]"
+                    >+1 day</button
+                >
                 <span class="text-gray-300">|</span>
-                <button type="button" onclick={() => handleRightOffset(1, "week")} class="text-blue-600 no-underline hover:underline bg-transparent border-none p-0 cursor-pointer inline text-[13px]">+1 week</button>
+                <button
+                    type="button"
+                    onclick={() => handleRightOffset(1, "week")}
+                    class="text-blue-600 no-underline hover:underline bg-transparent border-none p-0 cursor-pointer inline text-[13px]"
+                    >+1 week</button
+                >
                 <span class="text-gray-300">|</span>
-                <button type="button" onclick={() => handleRightOffset(1, "month")} class="text-blue-600 no-underline hover:underline bg-transparent border-none p-0 cursor-pointer inline text-[13px]">+1 month</button>
+                <button
+                    type="button"
+                    onclick={() => handleRightOffset(1, "month")}
+                    class="text-blue-600 no-underline hover:underline bg-transparent border-none p-0 cursor-pointer inline text-[13px]"
+                    >+1 month</button
+                >
                 <span class="text-gray-300">|</span>
-                <button type="button" onclick={() => handleRightOffset(1, "year")} class="text-blue-600 no-underline hover:underline bg-transparent border-none p-0 cursor-pointer inline text-[13px]">+1 year</button>
+                <button
+                    type="button"
+                    onclick={() => handleRightOffset(1, "year")}
+                    class="text-blue-600 no-underline hover:underline bg-transparent border-none p-0 cursor-pointer inline text-[13px]"
+                    >+1 year</button
+                >
             </div>
         </div>
     </div>
