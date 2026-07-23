@@ -319,22 +319,22 @@
             <span class="text-sm font-mono text-gray-500">{formatPeriodDuration(group.totalSeconds)}</span>
         </div>
 
-        <table class="w-full border-collapse text-[14px]">
+        <table class="w-full table-fixed border-collapse text-[14px]">
             <thead>
                 <tr>
                     <th class="w-[48px] px-2 py-[7px] border-b-2 border-gray-300"></th>
                     <th
-                        class="px-2 py-[7px] border-b-2 border-gray-300 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider"
+                        class="w-1/2 px-2 py-[7px] border-b-2 border-gray-300 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider"
                     >
                         Description
                     </th>
                     <th
-                        class="px-2 py-[7px] border-b-2 border-gray-300 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider"
+                        class="w-1/4 px-2 py-[7px] border-b-2 border-gray-300 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider"
                     >
                         Tags
                     </th>
                     <th
-                        class="px-2 py-[7px] border-b-2 border-gray-300 text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wider"
+                        class="w-1/4 px-2 py-[7px] border-b-2 border-gray-300 text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wider"
                     >
                         Time / Duration
                     </th>

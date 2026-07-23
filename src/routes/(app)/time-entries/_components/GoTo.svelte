@@ -1,6 +1,7 @@
 <script>
     let {
         sort = "",
+        q = "",
         todayHasEntries = true,
         firstNonEmptyDayUrl = "",
         thisWeekHasEntries = true,
@@ -19,7 +20,14 @@
     const currentWeek = Math.ceil(((now - mondayOfWeek1) / 86400000 + mondayOfWeek1.getDay() + 1) / 7);
     const currentYear = now.getFullYear();
 
-    const qs = $derived(sort ? `?sort=${sort}` : "");
+    const extraParams = $derived.by(() => {
+        const p = [];
+        if (sort) p.push(`sort=${sort}`);
+        if (q) p.push(`q=${q}`);
+        return p;
+    });
+
+    const qs = $derived(extraParams.length ? `?${extraParams.join("&")}` : "");
 </script>
 
 <nav class="text-[13px]">
@@ -40,7 +48,9 @@
     >
     <span class="text-gray-300">|</span>
     <a
-        href="/time-entries/range?from={currentYear}-01-01&to={currentYear}-12-31{sort ? `&sort=${sort}` : ''}"
+        href="/time-entries/range?from={currentYear}-01-01&to={currentYear}-12-31{extraParams.length
+            ? `&${extraParams.join('&')}`
+            : ''}"
         class="text-gray-500 no-underline hover:text-blue-600 hover:underline">This year</a
     >
     {#if !todayHasEntries && firstNonEmptyDayUrl}

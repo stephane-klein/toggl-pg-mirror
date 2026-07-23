@@ -1,7 +1,7 @@
 <script>
     import { SvelteDate } from "svelte/reactivity";
 
-    let { activeMode = "day", sort = "", referenceDate = undefined } = $props();
+    let { activeMode = "day", sort = "", q = "", referenceDate = undefined } = $props();
 
     const refDate = $derived(referenceDate ? new Date(referenceDate + "T00:00:00") : new Date());
     const today = $derived(refDate.toISOString().split("T")[0]);
@@ -34,9 +34,16 @@
         return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
     }
 
+    const extraParams = $derived.by(() => {
+        const p = [];
+        if (sort) p.push(`sort=${sort}`);
+        if (q) p.push(`q=${q}`);
+        return p;
+    });
+
     const rangeHref = $derived.by(() => {
         if (activeMode === "range") {
-            return `/time-entries/range${sort ? `?sort=${sort}` : ""}`;
+            return `/time-entries/range${extraParams.length ? `?${extraParams.join("&")}` : ""}`;
         }
         const from = today;
         let to;
@@ -49,10 +56,10 @@
             to = today;
         }
         const params = `from=${from}&to=${to}`;
-        return `/time-entries/range${sort ? `?${params}&sort=${sort}` : `?${params}`}`;
+        return `/time-entries/range?${params}${extraParams.length ? `&${extraParams.join("&")}` : ""}`;
     });
 
-    const qs = $derived(sort ? `?sort=${sort}` : "");
+    const qs = $derived(extraParams.length ? `?${extraParams.join("&")}` : "");
 </script>
 
 <nav class="text-[13px]">

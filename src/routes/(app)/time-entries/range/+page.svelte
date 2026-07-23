@@ -40,6 +40,7 @@
     <div class="flex items-baseline justify-between mb-2 flex-wrap gap-y-1">
         <GoTo
             {sort}
+            {q}
             {todayHasEntries}
             {firstNonEmptyDayUrl}
             {firstNonEmptyDayLabel}
@@ -54,12 +55,13 @@
             <ModeSelector
                 activeMode="range"
                 {sort}
+                {q}
                 {referenceDate}
             />
             <span class="text-gray-300">|</span>
             <LimitSelector
                 mode="range"
-                baseQuery="from={currentFrom}&to={currentTo}&sort={sort}"
+                baseQuery="from={currentFrom}&to={currentTo}&sort={sort}&q={q}"
             />
             <span class="text-gray-300">|</span>
             <SortToggle {sort} />

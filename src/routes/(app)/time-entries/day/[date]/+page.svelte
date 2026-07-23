@@ -57,6 +57,7 @@
     <div class="flex items-baseline justify-between mb-2 flex-wrap gap-y-1">
         <GoTo
             {sort}
+            {q}
             {todayHasEntries}
             {firstNonEmptyDayUrl}
             {firstNonEmptyDayLabel}
@@ -71,12 +72,13 @@
             <ModeSelector
                 activeMode="day"
                 {sort}
+                {q}
                 referenceDate={currentDate}
             />
             <span class="text-gray-300">|</span>
             <LimitSelector
                 mode="day"
-                baseQuery="date={currentDate}&sort={sort}"
+                baseQuery="date={currentDate}&sort={sort}&q={q}"
             />
             <span class="text-gray-300">|</span>
             <SortToggle {sort} />
@@ -92,6 +94,7 @@
         {nearestNonEmptyUrl}
         {nearestNonEmptyLabel}
         {sort}
+        {q}
     />
 
     <FilterDescription {total} />

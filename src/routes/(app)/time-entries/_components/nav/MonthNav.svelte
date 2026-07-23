@@ -10,11 +10,16 @@
         nearestNonEmptyUrl = "",
         nearestNonEmptyLabel = "",
         sort = "",
+        q = "",
     } = $props();
 
     function withSort(path) {
-        if (!sort || !path) return path;
-        return path.includes("?") ? `${path}&sort=${sort}` : `${path}?sort=${sort}`;
+        if (!path) return path;
+        const p = [];
+        if (sort) p.push(`sort=${sort}`);
+        if (q) p.push(`q=${q}`);
+        if (!p.length) return path;
+        return path.includes("?") ? `${path}&${p.join("&")}` : `${path}?${p.join("&")}`;
     }
 
     let monthYearInput = $state(currentMonth ? currentMonth.split("-")[0] : "");
