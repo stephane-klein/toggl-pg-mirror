@@ -162,6 +162,14 @@ $ mise run download-prod-dump
 $ mise run import-dump-locally dumps/prod/2026-07-18-memex.dump
 ```
 
+## Documentation
+
+- [`docs/decisions/`](docs/decisions/) — Architecture Decision Records
+  (ADR) following the MADR convention. To create one, ask the agent to use
+  the skill `.opencode/skills/new-decision/`.
+- [`docs/agents/`](docs/agents/) — operational notes for AI agents
+  (OpenCode, etc.), loaded on demand.
+
 ## Contribution
 
 ### Secret detection with gitleaks

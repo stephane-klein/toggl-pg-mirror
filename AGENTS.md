@@ -119,3 +119,9 @@ Global overview of all issues at `.scratch/BACKLOG.md` — status, dependencies,
 ### Domain docs
 
 Multi-context layout — `CONTEXT-MAP.md` at root pointing to per-context `CONTEXT.md` files. See `docs/agents/domain.md`.
+
+## Supplementary Documentation
+
+- [`docs/agents/`](docs/agents/) — operational snapshots of subsystems (loaded on demand by the agent)
+- [`docs/decisions/`](docs/decisions/) — architecture decision records
+- `.opencode/skills/new-decision/` — skill for creating new decision records
