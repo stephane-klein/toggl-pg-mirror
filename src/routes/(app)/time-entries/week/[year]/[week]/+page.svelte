@@ -11,41 +11,55 @@
 
     let { data } = $props();
     let entries = $derived(data.entries);
-    let prevCursor = $derived(data.prevCursor);
-    let nextCursor = $derived(data.nextCursor);
-    let limit = $derived(data.limit);
     let periodLabel = $derived(data.periodLabel);
-    let prevPeriodUrl = $derived(data.prevPeriodUrl);
-    let prevPeriodLabel = $derived(data.prevPeriodLabel);
-    let nextPeriodUrl = $derived(data.nextPeriodUrl);
-    let nextPeriodLabel = $derived(data.nextPeriodLabel);
+    let prevHref = $derived(data.prevHref);
+    let prevLabel = $derived(data.prevLabel);
+    let nextHref = $derived(data.nextHref);
+    let nextLabel = $derived(data.nextLabel);
     let sort = $derived(data.sort);
-    let q = $derived(data.q);
     let total = $derived(data.total);
     let currentYear = $derived(data.currentYear);
-
     let currentWeek = $derived(data.currentWeek);
-    let referenceDate = $derived(data.referenceDate);
-    let nearestNonEmptyUrl = $derived(data.nearestNonEmptyUrl);
+    let nearestNonEmptyHref = $derived(data.nearestNonEmptyHref);
     let nearestNonEmptyLabel = $derived(data.nearestNonEmptyLabel);
-    let todayHasEntries = $derived(data.todayHasEntries);
-    let firstNonEmptyDayUrl = $derived(data.firstNonEmptyDayUrl);
-    let firstNonEmptyDayLabel = $derived(data.firstNonEmptyDayLabel);
-    let thisWeekHasEntries = $derived(data.thisWeekHasEntries);
-    let firstNonEmptyWeekUrl = $derived(data.firstNonEmptyWeekUrl);
-    let firstNonEmptyWeekLabel = $derived(data.firstNonEmptyWeekLabel);
-    let thisMonthHasEntries = $derived(data.thisMonthHasEntries);
-    let firstNonEmptyMonthUrl = $derived(data.firstNonEmptyMonthUrl);
-    let firstNonEmptyMonthLabel = $derived(data.firstNonEmptyMonthLabel);
+    let prevPageHref = $derived(data.prevPageHref);
+    let nextPageHref = $derived(data.nextPageHref);
+
+    let goToProps = $derived({
+        goToDayHref: data.goToDayHref,
+        goToWeekHref: data.goToWeekHref,
+        goToMonthHref: data.goToMonthHref,
+        goToYearHref: data.goToYearHref,
+        todayHasEntries: data.todayHasEntries,
+        firstNonEmptyDayHref: data.firstNonEmptyDayHref,
+        firstNonEmptyDayLabel: data.firstNonEmptyDayLabel,
+        thisWeekHasEntries: data.thisWeekHasEntries,
+        firstNonEmptyWeekHref: data.firstNonEmptyWeekHref,
+        firstNonEmptyWeekLabel: data.firstNonEmptyWeekLabel,
+        thisMonthHasEntries: data.thisMonthHasEntries,
+        firstNonEmptyMonthHref: data.firstNonEmptyMonthHref,
+        firstNonEmptyMonthLabel: data.firstNonEmptyMonthLabel,
+    });
+
+    let modeProps = $derived({
+        activeMode: "week",
+        modeDayHref: data.modeDayHref,
+        modeWeekHref: data.modeWeekHref,
+        modeMonthHref: data.modeMonthHref,
+        rangeFromDayHref: data.rangeFromDayHref,
+        rangeFromWeekHref: data.rangeFromWeekHref,
+        rangeFromMonthHref: data.rangeFromMonthHref,
+        rangeHref: data.rangeHref,
+    });
 
     function handleKeydown(event) {
         if (event.target.tagName === "INPUT" || event.target.tagName === "SELECT") return;
-        if (event.key === "ArrowLeft" && prevPeriodUrl) {
+        if (event.key === "ArrowLeft" && prevHref) {
             event.preventDefault();
-            goto(prevPeriodUrl);
-        } else if (event.key === "ArrowRight" && nextPeriodUrl) {
+            goto(prevHref);
+        } else if (event.key === "ArrowRight" && nextHref) {
             event.preventDefault();
-            goto(nextPeriodUrl);
+            goto(nextHref);
         }
     }
 </script>
@@ -58,47 +72,25 @@
 
 <main class="page px-5 pt-2 pb-12">
     <div class="flex items-baseline justify-between mb-2 flex-wrap gap-y-1">
-        <GoTo
-            {sort}
-            {q}
-            {todayHasEntries}
-            {firstNonEmptyDayUrl}
-            {firstNonEmptyDayLabel}
-            {thisWeekHasEntries}
-            {firstNonEmptyWeekUrl}
-            {firstNonEmptyWeekLabel}
-            {thisMonthHasEntries}
-            {firstNonEmptyMonthUrl}
-            {firstNonEmptyMonthLabel}
-        />
+        <GoTo {...goToProps} />
         <div class="flex items-baseline gap-2">
-            <ModeSelector
-                activeMode="week"
-                {sort}
-                {q}
-                {referenceDate}
-            />
+            <ModeSelector {...modeProps} />
             <span class="text-gray-300">|</span>
-            <LimitSelector
-                mode="week"
-                baseQuery="year={currentYear}&week={currentWeek}&sort={sort}&q={q}"
-            />
+            <LimitSelector mode="week" />
             <span class="text-gray-300">|</span>
             <SortToggle {sort} />
         </div>
     </div>
 
     <WeekNav
-        prevLabel={prevPeriodLabel}
-        prevUrl={prevPeriodUrl}
-        nextLabel={nextPeriodLabel}
-        nextUrl={nextPeriodUrl}
+        {prevLabel}
+        {prevHref}
+        {nextLabel}
+        {nextHref}
         {currentYear}
         {currentWeek}
-        {nearestNonEmptyUrl}
+        {nearestNonEmptyHref}
         {nearestNonEmptyLabel}
-        {sort}
-        {q}
     />
 
     <FilterDescription {total} />
@@ -106,17 +98,12 @@
     <TimeEntriesTable
         {entries}
         {sort}
-        {prevCursor}
-        {nextCursor}
-        {limit}
-        baseQuery="year={currentYear}&week={currentWeek}&sort={sort}&q={q}"
+        {prevPageHref}
+        {nextPageHref}
     />
     <Pagination
-        {prevCursor}
-        {nextCursor}
-        {limit}
+        {prevPageHref}
+        {nextPageHref}
         {entries}
-        {sort}
-        baseQuery="year={currentYear}&week={currentWeek}&sort={sort}&q={q}"
     />
 </main>

@@ -1,13 +1,11 @@
 <script>
     import { page } from "$app/stores";
-    import { SvelteURL } from "svelte/reactivity";
+    import { modifyCurrentUrl } from "$lib/url";
 
     let { sort = "asc" } = $props();
 
     function sortUrl(newSort) {
-        const url = new SvelteURL($page.url);
-        url.searchParams.set("sort", newSort);
-        return url.href;
+        return modifyCurrentUrl($page.url, null, { sort: newSort });
     }
 </script>
 

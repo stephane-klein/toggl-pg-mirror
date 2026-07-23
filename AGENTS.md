@@ -125,3 +125,10 @@ Multi-context layout — `CONTEXT-MAP.md` at root pointing to per-context `CONTE
 - [`docs/agents/`](docs/agents/) — operational snapshots of subsystems (loaded on demand by the agent)
 - [`docs/decisions/`](docs/decisions/) — architecture decision records
 - `.opencode/skills/new-decision/` — skill for creating new decision records
+
+## Local AGENTS.md
+
+When working inside a subdirectory that contains an `AGENTS.md`, read it for
+subsystem-specific instructions. Currently available:
+
+- `src/routes/(app)/time-entries/AGENTS.md` — URL conventions for time-entries UI

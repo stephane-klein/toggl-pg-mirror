@@ -1,26 +1,17 @@
 <script>
     import { goto } from "$app/navigation";
+    import { page } from "$app/stores";
+    import { modifyCurrentUrl } from "$lib/url";
 
     let {
         prevLabel = "",
-        prevUrl = "",
+        prevHref = null,
         nextLabel = "",
-        nextUrl = "",
+        nextHref = null,
         currentMonth = "",
-        nearestNonEmptyUrl = "",
+        nearestNonEmptyHref = null,
         nearestNonEmptyLabel = "",
-        sort = "",
-        q = "",
     } = $props();
-
-    function withSort(path) {
-        if (!path) return path;
-        const p = [];
-        if (sort) p.push(`sort=${sort}`);
-        if (q) p.push(`q=${q}`);
-        if (!p.length) return path;
-        return path.includes("?") ? `${path}&${p.join("&")}` : `${path}?${p.join("&")}`;
-    }
 
     let monthYearInput = $state(currentMonth ? currentMonth.split("-")[0] : "");
     let monthNumInput = $state(currentMonth ? currentMonth.split("-")[1] : "");
@@ -42,7 +33,7 @@
         if (/^\d{4}-\d{2}$/.test(target)) {
             const monthNum = Number.parseInt(m, 10);
             if (monthNum >= 1 && monthNum <= 12) {
-                goto(withSort(`/time-entries/month/${target}`));
+                goto(modifyCurrentUrl($page.url, `/time-entries/month/${target}`, { before: null, after: null }));
             }
         }
     }
@@ -78,16 +69,16 @@
         style="grid-template-columns:1fr auto 1fr"
     >
         <div class="flex items-center gap-1 justify-self-start">
-            {#if prevUrl}
+            {#if prevHref}
                 <a
-                    href={withSort(prevUrl)}
+                    href={prevHref}
                     class="text-blue-600 no-underline hover:underline">← {prevLabel}</a
                 >
             {/if}
-            {#if nearestNonEmptyUrl}
+            {#if nearestNonEmptyHref}
                 <span class="text-gray-300">|</span>
                 <a
-                    href={withSort(nearestNonEmptyUrl)}
+                    href={nearestNonEmptyHref}
                     class="text-blue-600 no-underline hover:underline"
                 >
                     {nearestNonEmptyLabel}
@@ -129,15 +120,15 @@
         </div>
 
         <div class="justify-self-end">
-            {#if nextUrl}
+            {#if nextHref}
                 <a
-                    href={withSort(nextUrl)}
+                    href={nextHref}
                     class="text-blue-600 no-underline hover:underline">{nextLabel} →</a
                 >
             {/if}
         </div>
     </nav>
-    {#if prevUrl || nextUrl}
+    {#if prevHref || nextHref}
         <div class="flex justify-end text-[11px] text-gray-400 mt-1">
             <span>
                 <kbd class="border border-gray-300 rounded px-[4px] pb-[1px] text-[11px] font-mono bg-gray-100">←</kbd>

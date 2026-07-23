@@ -5,19 +5,13 @@
         entries = [],
         selectedIds = $bindable(new Set()),
         sort = "asc",
-        prevCursor = null,
-        nextCursor = null,
-        limit = 25,
-        baseQuery = "",
+        prevPageHref = null,
+        nextPageHref = null,
     } = $props();
 
-    let leftCursor = $derived(sort === "asc" ? nextCursor : prevCursor);
-    let rightCursor = $derived(sort === "asc" ? prevCursor : nextCursor);
-    let leftParam = $derived(sort === "asc" ? "before" : "after");
-    let rightParam = $derived(sort === "asc" ? "after" : "before");
     let leftLabel = $derived(sort === "asc" ? "Older" : "Newer");
     let rightLabel = $derived(sort === "asc" ? "Newer" : "Older");
-    let hasTopNav = $derived(prevCursor || nextCursor);
+    let hasTopNav = $derived(!!prevPageHref || !!nextPageHref);
 
     function dayLabel(dateStr) {
         const date = new Date(dateStr);
@@ -276,22 +270,18 @@
         {#if hasTopNav}
             <nav class="ml-auto flex items-center gap-3 text-[12px]">
                 <span class="text-[11px] text-gray-400">Page</span>
-                {#if leftCursor}
+                {#if prevPageHref}
                     <a
-                        href="?{baseQuery
-                            ? `${baseQuery}&limit=${limit}&${leftParam}=${leftCursor}`
-                            : `limit=${limit}&${leftParam}=${leftCursor}`}"
+                        href={prevPageHref}
                         class="text-blue-600 no-underline hover:underline">‹ {leftLabel}</a
                     >
                 {:else}
                     <span class="text-gray-400">‹ {leftLabel}</span>
                 {/if}
                 <span class="text-gray-300">·</span>
-                {#if rightCursor}
+                {#if nextPageHref}
                     <a
-                        href="?{baseQuery
-                            ? `${baseQuery}&limit=${limit}&${rightParam}=${rightCursor}`
-                            : `limit=${limit}&${rightParam}=${rightCursor}`}"
+                        href={nextPageHref}
                         class="text-blue-600 no-underline hover:underline">{rightLabel} ›</a
                     >
                 {:else}

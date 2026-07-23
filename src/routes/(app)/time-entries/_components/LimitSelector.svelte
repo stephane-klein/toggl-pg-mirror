@@ -1,10 +1,11 @@
 <script>
     import { goto } from "$app/navigation";
     import { page } from "$app/stores";
+    import { modifyCurrentUrl } from "$lib/url";
 
     const AUTO_LIMITS = { day: 500, week: 500, month: 50, range: 50 };
 
-    let { baseQuery = "", mode = "day" } = $props();
+    let { mode = "day" } = $props();
 
     let rawLimit = $derived($page.url.searchParams.get("limit") || "auto");
 
@@ -15,8 +16,7 @@
     let autoTitle = $derived(`Auto: shows all entries for the current view (up to ${AUTO_LIMITS[mode]} for ${mode})`);
 
     function handleLimitChange(event) {
-        const q = baseQuery ? `?${baseQuery}&limit=${event.target.value}` : `?limit=${event.target.value}`;
-        goto(q);
+        goto(modifyCurrentUrl($page.url, null, { limit: event.target.value }));
     }
 </script>
 

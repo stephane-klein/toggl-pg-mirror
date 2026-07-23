@@ -1,4 +1,5 @@
 import { sql } from "./pg.js";
+import { modifyCurrentUrl } from "$lib/url";
 
 const DEFAULT_LIMIT = 50;
 const MIN_LIMIT = 10;
@@ -90,7 +91,7 @@ function getISOWeek(d) {
     return { year, week };
 }
 
-export async function computeGoToData() {
+export async function computeGoToData(url, sort, q) {
     const now = new Date();
     const today = now.toISOString().split("T")[0];
     const nextDay = addDays(today, 1);
@@ -153,15 +154,34 @@ export async function computeGoToData() {
         }
     }
 
+    const limitRaw = url.searchParams.get("limit");
+
+    function hreffy(path) {
+        const params = {
+            sort,
+            q,
+            from: null,
+            to: null,
+            year: null,
+            week: null,
+            month: null,
+            date: null,
+            before: null,
+            after: null,
+        };
+        if (limitRaw !== null) params.limit = limitRaw;
+        return modifyCurrentUrl(url, path, params);
+    }
+
     return {
         todayHasEntries: todayHas,
-        firstNonEmptyDayUrl,
+        firstNonEmptyDayHref: firstNonEmptyDayUrl ? hreffy(firstNonEmptyDayUrl) : null,
         firstNonEmptyDayLabel,
         thisWeekHasEntries: weekHas,
-        firstNonEmptyWeekUrl,
+        firstNonEmptyWeekHref: firstNonEmptyWeekUrl ? hreffy(firstNonEmptyWeekUrl) : null,
         firstNonEmptyWeekLabel,
         thisMonthHasEntries: monthHas,
-        firstNonEmptyMonthUrl,
+        firstNonEmptyMonthHref: firstNonEmptyMonthUrl ? hreffy(firstNonEmptyMonthUrl) : null,
         firstNonEmptyMonthLabel,
     };
 }
