@@ -14,6 +14,7 @@ docs/decisions/YYYY-MM_NNN-description.md
 ```
 
 Where:
+
 - `YYYY-MM` — year and month of the decision
 - `NNN` — zero-padded sequence number (increment highest existing)
 - `description` — kebab-case slug

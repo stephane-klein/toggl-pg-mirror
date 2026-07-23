@@ -8,6 +8,7 @@ import {
     parseLimit,
     computeGoToData,
 } from "$lib/backend/time-entries.js";
+import { computeTimeEntriesNav, hreffy, buildPaginationHrefs } from "$lib/backend/timeEntriesUrl.js";
 
 function getMonday(year, week) {
     const jan4 = new Date(year, 0, 4);
@@ -103,35 +104,34 @@ export async function load({ params, url }) {
         nearestNonEmptyDate = await nearestDayWithEntries(formatDate(fromDate));
     }
 
-    let nearestNonEmptyUrl = null;
+    let nearestNonEmptyHref = null;
     let nearestNonEmptyLabel = null;
     if (nearestNonEmptyDate) {
         const { year: nearestYear, week: nearestWeek } = getISOWeek(new Date(nearestNonEmptyDate));
-        nearestNonEmptyUrl = `/time-entries/week/${nearestYear}/${nearestWeek}`;
+        nearestNonEmptyHref = hreffy(url, `/time-entries/week/${nearestYear}/${nearestWeek}`);
         nearestNonEmptyLabel = `W ${nearestWeek} (first week no-empty)`;
     }
 
-    const gotoData = await computeGoToData();
+    const navData = computeTimeEntriesNav(url, from);
+    const gotoData = await computeGoToData(url, sort, q);
+    const { prevPageHref, nextPageHref } = buildPaginationHrefs(url, prevCursor, nextCursor, sort);
 
     return {
+        ...navData,
         ...gotoData,
         entries,
-        prevCursor,
-        nextCursor,
-        limit,
-        sort,
-        q,
         total,
         mode: "week",
         currentYear: year,
         currentWeek: week,
-        referenceDate: formatDate(fromDate),
         periodLabel: `Week ${week}, ${year} — ${formatPeriodLabel(fromDate)}`,
-        prevPeriodUrl: `/time-entries/week/${prevYear}/${prevWeek}`,
-        prevPeriodLabel: prevLabel,
-        nextPeriodUrl: `/time-entries/week/${nextYear}/${nextWeek}`,
-        nextPeriodLabel: nextLabel,
-        nearestNonEmptyUrl,
+        prevHref: hreffy(url, `/time-entries/week/${prevYear}/${prevWeek}`),
+        prevLabel,
+        nextHref: hreffy(url, `/time-entries/week/${nextYear}/${nextWeek}`),
+        nextLabel,
+        nearestNonEmptyHref,
         nearestNonEmptyLabel,
+        prevPageHref,
+        nextPageHref,
     };
 }

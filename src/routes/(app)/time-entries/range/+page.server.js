@@ -1,6 +1,7 @@
 import { error } from "@sveltejs/kit";
 
 import { fetchEntries, countEntries, parseLimit, computeGoToData } from "$lib/backend/time-entries.js";
+import { computeTimeEntriesNav, buildPaginationHrefs } from "$lib/backend/timeEntriesUrl.js";
 
 function addDays(dateStr, n) {
     const [y, m, d] = dateStr.split("-").map(Number);
@@ -19,24 +20,24 @@ function isValidDate(dateStr) {
 export async function load({ url }) {
     const from = url.searchParams.get("from");
     const to = url.searchParams.get("to");
-
-    const gotoData = await computeGoToData();
-
+    const sort = url.searchParams.get("sort") || "asc";
     const q = url.searchParams.get("q") || "";
+
+    const navData = computeTimeEntriesNav(url);
+    const gotoData = await computeGoToData(url, sort, q);
 
     if (!from || !to) {
         return {
+            ...navData,
             ...gotoData,
             entries: [],
-            prevCursor: null,
-            nextCursor: null,
-            limit: parseLimit(url.searchParams.get("limit"), "range"),
-            q,
             total: 0,
             mode: "range",
             currentFrom: from || "",
             currentTo: to || "",
             periodLabel: "",
+            prevPageHref: null,
+            nextPageHref: null,
         };
     }
 
@@ -47,7 +48,6 @@ export async function load({ url }) {
     const limit = parseLimit(url.searchParams.get("limit"), "range");
     const before = url.searchParams.get("before");
     const after = url.searchParams.get("after");
-    const sort = url.searchParams.get("sort") || "asc";
 
     const [{ entries, prevCursor, nextCursor }, total] = await Promise.all([
         fetchEntries({
@@ -62,18 +62,18 @@ export async function load({ url }) {
         countEntries({ from, to: toExclusive, q }),
     ]);
 
+    const { prevPageHref, nextPageHref } = buildPaginationHrefs(url, prevCursor, nextCursor, sort);
+
     return {
+        ...navData,
         ...gotoData,
         entries,
-        prevCursor,
-        nextCursor,
-        limit,
-        sort,
-        q,
         total,
         mode: "range",
         currentFrom: from,
         currentTo: to,
         periodLabel: `${from} – ${to}`,
+        prevPageHref,
+        nextPageHref,
     };
 }

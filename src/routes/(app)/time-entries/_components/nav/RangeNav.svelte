@@ -1,9 +1,11 @@
 <script>
     import { goto } from "$app/navigation";
+    import { page } from "$app/stores";
     import { SvelteDate } from "svelte/reactivity";
+    import { modifyCurrentUrl } from "$lib/url";
     import DateInput from "$lib/components/DateInput.svelte";
 
-    let { currentFrom = null, currentTo = null, sort = "", q = "" } = $props();
+    let { currentFrom = null, currentTo = null } = $props();
 
     let fromInput = $state(currentFrom ?? "");
     let toInput = $state(currentTo ?? "");
@@ -47,10 +49,14 @@
     function goToRange() {
         if (fromInput === currentFrom && toInput === currentTo) return;
         if (fromInput && toInput && isValidDate(fromInput) && isValidDate(toInput)) {
-            let url = `/time-entries/range?from=${fromInput}&to=${toInput}`;
-            if (sort) url += `&sort=${sort}`;
-            if (q) url += `&q=${q}`;
-            goto(url);
+            goto(
+                modifyCurrentUrl($page.url, "/time-entries/range", {
+                    from: fromInput,
+                    to: toInput,
+                    before: null,
+                    after: null,
+                }),
+            );
         }
     }
 

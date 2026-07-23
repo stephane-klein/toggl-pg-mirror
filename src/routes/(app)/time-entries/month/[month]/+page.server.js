@@ -8,6 +8,7 @@ import {
     parseLimit,
     computeGoToData,
 } from "$lib/backend/time-entries.js";
+import { computeTimeEntriesNav, hreffy, buildPaginationHrefs } from "$lib/backend/timeEntriesUrl.js";
 
 function firstOfMonth(year, month) {
     const d = new Date(year, month - 1, 1);
@@ -72,33 +73,33 @@ export async function load({ params, url }) {
         nearestNonEmptyDate = await nearestDayWithEntries(firstOfMonth(year, monthNum));
     }
 
-    let nearestNonEmptyUrl = null;
+    let nearestNonEmptyHref = null;
     let nearestNonEmptyLabel = null;
     if (nearestNonEmptyDate) {
         const nearestMonth = nearestNonEmptyDate.slice(0, 7);
-        nearestNonEmptyUrl = `/time-entries/month/${nearestMonth}`;
+        nearestNonEmptyHref = hreffy(url, `/time-entries/month/${nearestMonth}`);
         nearestNonEmptyLabel = `${formatLabel(nearestMonth)} (first month no-empty)`;
     }
 
-    const gotoData = await computeGoToData();
+    const navData = computeTimeEntriesNav(url, rawMonth + "-01");
+    const gotoData = await computeGoToData(url, sort, q);
+    const { prevPageHref, nextPageHref } = buildPaginationHrefs(url, prevCursor, nextCursor, sort);
 
     return {
+        ...navData,
         ...gotoData,
         entries,
-        prevCursor,
-        nextCursor,
-        limit,
-        sort,
-        q,
         total,
         mode: "month",
         currentMonth: rawMonth,
         periodLabel: formatLabel(rawMonth),
-        prevPeriodUrl: `/time-entries/month/${prevMonth}`,
-        prevPeriodLabel: prevLabel,
-        nextPeriodUrl: `/time-entries/month/${nextMonth}`,
-        nextPeriodLabel: nextLabel,
-        nearestNonEmptyUrl,
+        prevHref: hreffy(url, `/time-entries/month/${prevMonth}`),
+        prevLabel,
+        nextHref: hreffy(url, `/time-entries/month/${nextMonth}`),
+        nextLabel,
+        nearestNonEmptyHref,
         nearestNonEmptyLabel,
+        prevPageHref,
+        nextPageHref,
     };
 }

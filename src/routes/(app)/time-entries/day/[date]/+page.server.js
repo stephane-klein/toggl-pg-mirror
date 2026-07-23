@@ -8,6 +8,7 @@ import {
     parseLimit,
     computeGoToData,
 } from "$lib/backend/time-entries.js";
+import { computeTimeEntriesNav, hreffy, buildPaginationHrefs } from "$lib/backend/timeEntriesUrl.js";
 
 function addDays(dateStr, n) {
     const [y, m, d] = dateStr.split("-").map(Number);
@@ -90,25 +91,25 @@ export async function load({ params, url }) {
         nearestNonEmptyDate = await nearestDayWithEntries(rawDate);
     }
 
-    const gotoData = await computeGoToData();
+    const navData = computeTimeEntriesNav(url, rawDate);
+    const gotoData = await computeGoToData(url, sort, q);
+    const { prevPageHref, nextPageHref } = buildPaginationHrefs(url, prevCursor, nextCursor, sort);
 
     return {
+        ...navData,
         ...gotoData,
         entries,
-        prevCursor,
-        nextCursor,
-        limit,
-        sort,
-        q,
         total,
         mode: "day",
         currentDate: rawDate,
         periodLabel: formatPeriodLabel(rawDate),
-        prevPeriodUrl: `/time-entries/day/${prevPeriodDate}`,
-        prevPeriodLabel: prevLabel,
-        nextPeriodUrl: `/time-entries/day/${nextPeriodDate}`,
-        nextPeriodLabel: nextLabel,
-        nearestNonEmptyUrl: nearestNonEmptyDate ? `/time-entries/day/${nearestNonEmptyDate}` : null,
+        prevHref: hreffy(url, `/time-entries/day/${prevPeriodDate}`),
+        prevLabel,
+        nextHref: hreffy(url, `/time-entries/day/${nextPeriodDate}`),
+        nextLabel,
+        nearestNonEmptyHref: nearestNonEmptyDate ? hreffy(url, `/time-entries/day/${nearestNonEmptyDate}`) : null,
         nearestNonEmptyLabel: nearestNonEmptyDate ? `${formatLabel(nearestNonEmptyDate)} (first day no-empty)` : null,
+        prevPageHref,
+        nextPageHref,
     };
 }
