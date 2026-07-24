@@ -40,7 +40,7 @@ export function hreffy(url, path, extra = {}) {
 
 export function buildPaginationHrefs(url, prevCursor, nextCursor, sort) {
     const dir =
-        sort === "asc" ? { prevParam: "after", nextParam: "before" } : { prevParam: "before", nextParam: "after" };
+        sort === "asc" ? { prevParam: "before", nextParam: "after" } : { prevParam: "after", nextParam: "before" };
 
     const limitRaw = url.searchParams.get("limit");
     const base = {};

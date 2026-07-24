@@ -283,14 +283,14 @@ export async function fetchEntries({ from, to, before, after, limit, sort = "asc
 
     if (isAsc) {
         if (!before && !after) {
-            prevCursor = hasMore && last ? encodeCursor(last.started_at_txt, last.id) : null;
-            nextCursor = null;
+            prevCursor = null;
+            nextCursor = hasMore && last ? encodeCursor(last.started_at_txt, last.id) : null;
         } else if (before) {
-            prevCursor = last ? encodeCursor(last.started_at_txt, last.id) : null;
-            nextCursor = hasMore && first ? encodeCursor(first.started_at_txt, first.id) : null;
+            prevCursor = first ? encodeCursor(first.started_at_txt, first.id) : null;
+            nextCursor = hasMore && last ? encodeCursor(last.started_at_txt, last.id) : null;
         } else if (after) {
-            prevCursor = hasMore && last ? encodeCursor(last.started_at_txt, last.id) : null;
-            nextCursor = first ? encodeCursor(first.started_at_txt, first.id) : null;
+            prevCursor = first ? encodeCursor(first.started_at_txt, first.id) : null;
+            nextCursor = hasMore && last ? encodeCursor(last.started_at_txt, last.id) : null;
         }
     } else {
         if (!before && !after) {

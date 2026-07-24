@@ -106,5 +106,6 @@
         {prevPageHref}
         {nextPageHref}
         {entries}
+        {sort}
     />
 </main>

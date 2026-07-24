@@ -83,6 +83,7 @@
             {prevPageHref}
             {nextPageHref}
             {entries}
+            {sort}
         />
     {:else}
         <p class="text-gray-500 italic py-6">Select a date range above.</p>
