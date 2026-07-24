@@ -19,6 +19,18 @@
             goto(modifyCurrentUrl($page.url, `/time-entries/day/${newDate}`, { before: null, after: null }));
         }
     }
+
+    let dayFullDate = $derived.by(() => {
+        if (!currentDate) return "";
+        const [y, m, d] = currentDate.split("-").map(Number);
+        const date = new Date(y, m - 1, d);
+        return date.toLocaleDateString("en-US", {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+        });
+    });
 </script>
 
 <div class="mb-3">
@@ -50,6 +62,11 @@
                     value={currentDate}
                     onconfirm={handleConfirm}
                 />
+                {#if dayFullDate}
+                    <div class="text-center text-[13px] text-gray-500 mt-1">
+                        {dayFullDate}
+                    </div>
+                {/if}
             {/key}
         </div>
 
