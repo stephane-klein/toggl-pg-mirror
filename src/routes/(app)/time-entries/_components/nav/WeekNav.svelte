@@ -48,6 +48,8 @@
         }
     }
 
+    let dayCount = $derived(7);
+
     let weekDateRange = $derived.by(() => {
         if (!currentYear || !currentWeek) return "";
         const jan4 = new Date(currentYear, 0, 4);
@@ -115,6 +117,7 @@
                 {#if weekDateRange}
                     <div class="text-center text-[13px] text-gray-500 mt-1">
                         {weekDateRange}
+                        — {dayCount} day{dayCount > 1 ? "s" : ""}
                     </div>
                 {/if}
             {/key}

@@ -54,6 +54,12 @@
         }
     }
 
+    let dayCount = $derived.by(() => {
+        if (!currentMonth) return 0;
+        const [year, monthNum] = currentMonth.split("-").map(Number);
+        return new Date(year, monthNum, 0).getDate();
+    });
+
     let monthDateRange = $derived.by(() => {
         if (!currentMonth) return "";
         const [year, monthNum] = currentMonth.split("-").map(Number);
@@ -114,6 +120,9 @@
                 {#if monthDateRange}
                     <div class="text-center text-[13px] text-gray-500 mt-1">
                         {monthDateRange}
+                        {#if dayCount}
+                            — {dayCount} day{dayCount > 1 ? "s" : ""}
+                        {/if}
                     </div>
                 {/if}
             {/key}
