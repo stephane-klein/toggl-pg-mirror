@@ -121,6 +121,7 @@ export async function load({ params, url }) {
         ...gotoData,
         entries,
         total,
+        hasFilter: !!q,
         mode: "week",
         currentYear: year,
         currentWeek: week,

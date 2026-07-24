@@ -90,6 +90,7 @@ export async function load({ params, url }) {
         ...gotoData,
         entries,
         total,
+        hasFilter: !!q,
         mode: "month",
         currentMonth: rawMonth,
         periodLabel: formatLabel(rawMonth),

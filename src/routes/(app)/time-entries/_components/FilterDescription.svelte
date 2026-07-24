@@ -83,19 +83,15 @@
             {/if}
             <button
                 onclick={clearFilter}
-                class="text-gray-500 no-underline hover:text-blue-600 hover:underline cursor-pointer">Clear</button
+                class="text-blue-600 font-semibold hover:underline cursor-pointer">clear filter</button
             >
         {:else if inputValue}
-            <span class="text-gray-600 italic">Filter: {inputValue}</span>
-            {#if total !== null}
-                <span class="text-gray-400">· {total.toLocaleString("en")} result{total !== 1 ? "s" : ""}</span>
-            {/if}
             {#if isPending}
                 <span class="spinner text-gray-400">⟳</span>
             {/if}
             <button
                 onclick={clearFilter}
-                class="text-gray-500 no-underline hover:text-blue-600 hover:underline cursor-pointer">Clear</button
+                class="text-blue-600 font-semibold hover:underline cursor-pointer">clear filter</button
             >
         {:else}
             <span class="text-gray-500 select-none">Presets:</span>

@@ -7,6 +7,8 @@
         sort = "asc",
         prevPageHref = null,
         nextPageHref = null,
+        total = null,
+        hasFilter = false,
     } = $props();
 
     let leftLabel = $derived(sort === "asc" ? "Older" : "Newer");
@@ -228,6 +230,23 @@
             <span class="text-sm text-gray-600">
                 {selectedIds.size > 0 ? `${selectedIds.size} selected` : "Select all"}
             </span>
+            {#if total !== null}
+                <span class="text-[12px] text-gray-400">
+                    {#if hasFilter}
+                        {#if entries.length < total}
+                            {entries.length} shown · {total.toLocaleString("en")} match current filters
+                        {:else}
+                            {total.toLocaleString("en")} match current filters
+                        {/if}
+                    {:else}
+                        {#if entries.length < total}
+                            {entries.length} of {total.toLocaleString("en")} entries
+                        {:else}
+                            {total.toLocaleString("en")} entries
+                        {/if}
+                    {/if}
+                </span>
+            {/if}
         </div>
         {#if selectedIds.size > 0}
             <div class="absolute left-1/2 -translate-x-1/2 flex items-center gap-1 text-sm">

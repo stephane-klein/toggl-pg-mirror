@@ -24,6 +24,7 @@
     let nearestNonEmptyLabel = $derived(data.nearestNonEmptyLabel);
     let prevPageHref = $derived(data.prevPageHref);
     let nextPageHref = $derived(data.nextPageHref);
+    let hasFilter = $derived(data.hasFilter);
 
     let goToProps = $derived({
         goToDayHref: data.goToDayHref,
@@ -100,6 +101,8 @@
         {sort}
         {prevPageHref}
         {nextPageHref}
+        {total}
+        {hasFilter}
     />
     <Pagination
         {prevPageHref}
