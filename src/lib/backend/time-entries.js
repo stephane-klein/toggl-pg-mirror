@@ -132,7 +132,7 @@ export async function computeGoToData(url, sort, q) {
         const nearest = await nearestDayWithEntries(today);
         if (nearest) {
             firstNonEmptyDayUrl = `/time-entries/day/${nearest}`;
-            firstNonEmptyDayLabel = nearest;
+            firstNonEmptyDayLabel = `${nearest} (first day no-empty)`;
         }
     }
 
