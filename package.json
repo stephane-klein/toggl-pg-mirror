@@ -20,7 +20,7 @@
     "postinstall": "mkdir -p node_modules/.bin && ln -sf ../../src/cli.js node_modules/.bin/toggl-pg-mirror"
   },
   "dependencies": {
-    "csv-parse": "~6.2.1",
+    "csv-parse": "~7.0.1",
     "date-fns": "~4.4.0",
     "date-fns-tz": "~3.2.0",
     "js-yaml": "~5.2.2",
@@ -33,17 +33,17 @@
   "devDependencies": {
     "@eslint/js": "~10.0.1",
     "@sveltejs/adapter-node": "~5.5.7",
-    "@sveltejs/kit": "~2.68.0",
+    "@sveltejs/kit": "~2.70.1",
     "@unocss/extractor-svelte": "~66.7.5",
     "eslint": "~10.7.0",
     "eslint-config-prettier": "~10.1.8",
-    "eslint-plugin-svelte": "~3.20.0",
+    "eslint-plugin-svelte": "~3.22.0",
     "globals": "~17.7.0",
-    "npm-package-json-lint": "~10.4.0",
-    "prettier": "~3.9.5",
+    "npm-package-json-lint": "~10.4.1",
+    "prettier": "~3.9.6",
     "prettier-plugin-svelte": "~4.1.1",
-    "svelte": "~5.56.4",
+    "svelte": "~5.56.7",
     "unocss": "~66.7.5",
-    "vite": "~8.1.1"
+    "vite": "~8.1.5"
   }
 }
