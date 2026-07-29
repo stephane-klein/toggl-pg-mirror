@@ -4,6 +4,8 @@ This project implements the idea described in [Projet 36 — "toggl-pg-mirror: A
 
 A Node.js service that mirrors Toggl time-tracking data into a self-controlled PostgreSQL database, keeping it in sync to serve as a source of truth. Enables querying and enriching historical data — e.g., via LLMs — for weekly, monthly, or per-activity time reports.
 
+- **SSR/CSR tech info popup** — performance popup (bottom-right, `tech info` button) showing total time, server processing, PostgreSQL queries, network roundtrip, hydration/rendering, page weight, client startup, and version info (build timestamp, GitHub commit link) for both SSR (first full page load) and CSR (client navigation). Uses `Server-Timing` header + Performance API — no extra requests.
+
 ## Tech Stack
 
 - Runtime: Node.js 24 (ESM)

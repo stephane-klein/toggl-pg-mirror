@@ -6,6 +6,7 @@
     "toggl-pg-mirror": "src/cli.js"
   },
   "type": "module",
+  "repository": "github:stephane-klein/toggl-pg-mirror",
   "scripts": {
     "check": "prettier --check . && eslint .",
     "format": "prettier --list-different --write .",
@@ -14,9 +15,9 @@
     "migrate": "node src/migrate.js",
     "seed": "node src/seed.js",
     "cli": "node src/cli.js",
-    "dev": "vite dev",
+    "dev": "bash scripts/export-git-env.sh vite dev",
     "build": "vite build",
-    "preview": "vite preview",
+    "preview": "bash scripts/export-git-env.sh vite preview",
     "postinstall": "mkdir -p node_modules/.bin && ln -sf ../../src/cli.js node_modules/.bin/toggl-pg-mirror"
   },
   "dependencies": {
