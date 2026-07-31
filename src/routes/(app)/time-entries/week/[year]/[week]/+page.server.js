@@ -1,13 +1,6 @@
 import { error } from "@sveltejs/kit";
 
-import {
-    fetchEntries,
-    countEntries,
-    hasEntries,
-    nearestDayWithEntries,
-    parseLimit,
-    computeGoToData,
-} from "$lib/backend/time-entries.js";
+import { getTimeEntriesPageData, parseLimit, computeGoToData } from "$lib/backend/time-entries.js";
 import { computeTimeEntriesNav, hreffy, buildPaginationHrefs } from "$lib/backend/timeEntriesUrl.js";
 
 function getMonday(year, week) {
@@ -73,11 +66,6 @@ export async function load({ params, url }) {
     const sort = url.searchParams.get("sort") || "asc";
     const q = url.searchParams.get("q") || "";
 
-    const [{ entries, prevCursor, nextCursor }, total] = await Promise.all([
-        fetchEntries({ from, to, before, after, limit, sort, q }),
-        countEntries({ from, to, q }),
-    ]);
-
     const prevMonday = new Date(fromDate);
     prevMonday.setDate(fromDate.getDate() - 7);
     const { year: prevYear, week: prevWeek } = getISOWeek(prevMonday);
@@ -91,18 +79,25 @@ export async function load({ params, url }) {
     const nextWeekTo = new Date(nextMonday);
     nextWeekTo.setDate(nextMonday.getDate() + 7);
 
-    const [prevHasEntries, nextHasEntries] = await Promise.all([
-        hasEntries(formatDate(prevMonday), formatDate(prevWeekTo)),
-        hasEntries(formatDate(nextMonday), formatDate(nextWeekTo)),
-    ]);
+    const { entries, prevCursor, nextCursor, total, prevHasEntries, nextHasEntries, nearestPeriodDay, goto } =
+        await getTimeEntriesPageData({
+            from,
+            to,
+            before,
+            after,
+            limit,
+            sort,
+            q,
+            prevFrom: formatDate(prevMonday),
+            prevTo: formatDate(prevWeekTo),
+            nextFrom: formatDate(nextMonday),
+            nextTo: formatDate(nextWeekTo),
+        });
 
     const prevLabel = `W ${prevWeek}${prevHasEntries ? "" : " (empty)"}`;
     const nextLabel = `W ${nextWeek}${nextHasEntries ? "" : " (empty)"}`;
 
-    let nearestNonEmptyDate = null;
-    if (!prevHasEntries && !nextHasEntries) {
-        nearestNonEmptyDate = await nearestDayWithEntries(formatDate(fromDate));
-    }
+    const nearestNonEmptyDate = nearestPeriodDay;
 
     let nearestNonEmptyHref = null;
     let nearestNonEmptyLabel = null;
@@ -113,7 +108,7 @@ export async function load({ params, url }) {
     }
 
     const navData = computeTimeEntriesNav(url, from);
-    const gotoData = await computeGoToData(url, sort, q);
+    const gotoData = computeGoToData(url, sort, q, goto);
     const { prevPageHref, nextPageHref } = buildPaginationHrefs(url, prevCursor, nextCursor, sort);
 
     return {

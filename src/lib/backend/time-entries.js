@@ -31,45 +31,6 @@ function decodeCursor(raw) {
     }
 }
 
-export async function hasEntries(from, to) {
-    const [row] = await sql`
-        SELECT 1 AS found
-        FROM time_entries
-        WHERE deleted_at IS NULL
-          AND started_at >= ${from}::timestamptz
-          AND started_at <  ${to}::timestamptz
-        LIMIT 1
-    `;
-    return !!row;
-}
-
-export async function nearestDayWithEntries(fromDate) {
-    const [before, after] = await Promise.all([
-        sql`SELECT started_at::date::text AS day
-            FROM time_entries
-            WHERE deleted_at IS NULL
-              AND started_at::date < ${fromDate}::date
-            ORDER BY started_at DESC
-            LIMIT 1`,
-        sql`SELECT started_at::date::text AS day
-            FROM time_entries
-            WHERE deleted_at IS NULL
-              AND started_at::date > ${fromDate}::date
-            ORDER BY started_at ASC
-            LIMIT 1`,
-    ]);
-
-    if (!before.length && !after.length) return null;
-    if (!before.length) return after[0].day;
-    if (!after.length) return before[0].day;
-
-    const f = new Date(fromDate);
-    const p = new Date(before[0].day);
-    const n = new Date(after[0].day);
-
-    return Math.abs(f - p) <= Math.abs(f - n) ? before[0].day : after[0].day;
-}
-
 function addDays(dateStr, n) {
     const [y, m, d] = dateStr.split("-").map(Number);
     const date = new Date(y, m - 1, d);
@@ -91,99 +52,14 @@ function getISOWeek(d) {
     return { year, week };
 }
 
-export async function computeGoToData(url, sort, q) {
-    const now = new Date();
-    const today = now.toISOString().split("T")[0];
-    const nextDay = addDays(today, 1);
-
-    const { year: thisYear, week: thisWeek } = getISOWeek(now);
-    const thisMonth = today.slice(0, 7);
-
-    const getMonday = (year, week) => {
-        const jan4 = new Date(year, 0, 4);
-        const dow = jan4.getDay() || 7;
-        const week1Monday = new Date(jan4);
-        week1Monday.setDate(jan4.getDate() - (dow - 1));
-        const monday = new Date(week1Monday);
-        monday.setDate(week1Monday.getDate() + (week - 1) * 7);
-        return monday;
-    };
-
-    const weekMonday = getMonday(thisYear, thisWeek);
-    const weekTo = addDays(weekMonday.toISOString().split("T")[0], 7);
-
-    const monthFirst = firstOfMonth(thisYear, thisMonth.split("-")[1]);
-    const monthTo = firstOfMonth(Number(thisMonth.split("-")[0]), Number(thisMonth.split("-")[1]) + 1);
-
-    const [todayHas, weekHas, monthHas] = await Promise.all([
-        hasEntries(today, nextDay),
-        hasEntries(weekMonday.toISOString().split("T")[0], weekTo),
-        hasEntries(monthFirst, monthTo),
-    ]);
-
-    let firstNonEmptyDayUrl = null;
-    let firstNonEmptyDayLabel = null;
-    let firstNonEmptyWeekUrl = null;
-    let firstNonEmptyWeekLabel = null;
-    let firstNonEmptyMonthUrl = null;
-    let firstNonEmptyMonthLabel = null;
-
-    if (!todayHas) {
-        const nearest = await nearestDayWithEntries(today);
-        if (nearest) {
-            firstNonEmptyDayUrl = `/time-entries/day/${nearest}`;
-            firstNonEmptyDayLabel = `${nearest} (first day no-empty)`;
-        }
-    }
-
-    if (!weekHas) {
-        const nearest = await nearestDayWithEntries(weekMonday.toISOString().split("T")[0]);
-        if (nearest) {
-            const { year: ny, week: nw } = getISOWeek(new Date(nearest));
-            firstNonEmptyWeekUrl = `/time-entries/week/${ny}/${nw}`;
-            firstNonEmptyWeekLabel = `W ${nw}`;
-        }
-    }
-
-    if (!monthHas) {
-        const nearest = await nearestDayWithEntries(monthFirst);
-        if (nearest) {
-            const nm = nearest.slice(0, 7);
-            firstNonEmptyMonthUrl = `/time-entries/month/${nm}`;
-            firstNonEmptyMonthLabel = nm;
-        }
-    }
-
-    const limitRaw = url.searchParams.get("limit");
-
-    function hreffy(path) {
-        const params = {
-            sort,
-            q,
-            from: null,
-            to: null,
-            year: null,
-            week: null,
-            month: null,
-            date: null,
-            before: null,
-            after: null,
-        };
-        if (limitRaw !== null) params.limit = limitRaw;
-        return modifyCurrentUrl(url, path, params);
-    }
-
-    return {
-        todayHasEntries: todayHas,
-        firstNonEmptyDayHref: firstNonEmptyDayUrl ? hreffy(firstNonEmptyDayUrl) : null,
-        firstNonEmptyDayLabel,
-        thisWeekHasEntries: weekHas,
-        firstNonEmptyWeekHref: firstNonEmptyWeekUrl ? hreffy(firstNonEmptyWeekUrl) : null,
-        firstNonEmptyWeekLabel,
-        thisMonthHasEntries: monthHas,
-        firstNonEmptyMonthHref: firstNonEmptyMonthUrl ? hreffy(firstNonEmptyMonthUrl) : null,
-        firstNonEmptyMonthLabel,
-    };
+function getMonday(year, week) {
+    const jan4 = new Date(year, 0, 4);
+    const dow = jan4.getDay() || 7;
+    const week1Monday = new Date(jan4);
+    week1Monday.setDate(jan4.getDate() - (dow - 1));
+    const monday = new Date(week1Monday);
+    monday.setDate(week1Monday.getDate() + (week - 1) * 7);
+    return monday;
 }
 
 function firstOfMonth(year, month) {
@@ -193,85 +69,99 @@ function firstOfMonth(year, month) {
     return `${y}-${m}-01`;
 }
 
-function buildDescriptionFilter(q) {
-    if (!q) {
-        return sql``;
-    }
-    if (q === "/null") {
-        return sql`AND description IS NULL`;
-    }
-    const quoted = q.startsWith('"') && q.endsWith('"');
-    if (quoted) {
-        const phrase = q.slice(1, -1);
-        if (!phrase) return sql``;
-        return sql`AND immutable_unaccent(description) ILIKE immutable_unaccent(${phrase})`;
-    }
-    const words = q.split(" ").filter(Boolean);
-    if (words.length === 0) {
-        return sql``;
-    }
-    const conditions = words.map(
-        (w) => sql`immutable_unaccent(description) ILIKE immutable_unaccent(${"%" + w + "%"})`,
-    );
-    let combined = conditions[0];
-    for (let i = 1; i < conditions.length; i++) {
-        combined = sql`${combined} AND ${conditions[i]}`;
-    }
-    return sql`AND ${combined}`;
+function computeGotoBounds(now) {
+    const today = now.toISOString().split("T")[0];
+    const nextDay = addDays(today, 1);
+    const { year: thisYear, week: thisWeek } = getISOWeek(now);
+    const thisMonth = today.slice(0, 7);
+    const weekMonday = getMonday(thisYear, thisWeek);
+    const weekTo = addDays(weekMonday.toISOString().split("T")[0], 7);
+    const monthFirst = firstOfMonth(thisYear, thisMonth.split("-")[1]);
+    const monthTo = firstOfMonth(Number(thisMonth.split("-")[0]), Number(thisMonth.split("-")[1]) + 1);
+    return {
+        todayFrom: today,
+        todayTo: nextDay,
+        weekFrom: weekMonday.toISOString().split("T")[0],
+        weekTo,
+        monthFrom: monthFirst,
+        monthTo,
+    };
 }
 
-export async function fetchEntries({ from, to, before, after, limit, sort = "asc", q = "" }) {
+export async function getTimeEntriesPageData({
+    from,
+    to,
+    before,
+    after,
+    limit,
+    sort = "asc",
+    q = "",
+    prevFrom,
+    prevTo,
+    nextFrom,
+    nextTo,
+}) {
     const cursor = before ? decodeCursor(before) : after ? decodeCursor(after) : null;
-    const isAsc = sort === "asc";
-    const descFilter = buildDescriptionFilter(q);
+    const asc = cursor && before ? false : cursor && after ? true : sort === "asc";
+    const gotoBounds = computeGotoBounds(new Date());
 
-    let rows;
-    if (before && cursor) {
-        rows = await sql`
-            SELECT id, description, tags, started_at, ended_at,
-                   started_at::text AS started_at_txt
-            FROM time_entries
-            WHERE deleted_at IS NULL
-              ${descFilter}
-              AND started_at >= ${from}::timestamptz
-              AND started_at <  ${to}::timestamptz
-              AND (started_at, id) < (${cursor.startedAt}::timestamptz, ${cursor.id})
-            ORDER BY started_at DESC, id DESC
-            LIMIT ${limit + 1}
-          `;
-    } else if (after && cursor) {
-        rows = await sql`
-            SELECT id, description, tags, started_at, ended_at,
-                   started_at::text AS started_at_txt
-            FROM time_entries
-            WHERE deleted_at IS NULL
-              ${descFilter}
-              AND started_at >= ${from}::timestamptz
-              AND started_at <  ${to}::timestamptz
-              AND (started_at, id) > (${cursor.startedAt}::timestamptz, ${cursor.id})
-            ORDER BY started_at ASC, id ASC
-            LIMIT ${limit + 1}
-          `;
-    } else {
-        const orderDir = isAsc ? sql`ASC` : sql`DESC`;
-        rows = await sql`
-            SELECT id, description, tags, started_at, ended_at,
-                   started_at::text AS started_at_txt
-            FROM time_entries
-            WHERE deleted_at IS NULL
-              ${descFilter}
-              AND started_at >= ${from}::timestamptz
-              AND started_at <  ${to}::timestamptz
-            ORDER BY started_at ${orderDir}, id ${orderDir}
-            LIMIT ${limit + 1}
-          `;
-    }
+    const [row] = await sql.unsafe(
+        `SELECT get_time_entries_page_data(
+            _from => $1::date,
+            _to => $2::date,
+            _q => $3::text,
+            _limit => $4::int,
+            _asc => $5::boolean,
+            _before_started_at => $6::timestamptz,
+            _before_id => $7::bigint,
+            _after_started_at => $8::timestamptz,
+            _after_id => $9::bigint,
+            _prev_from => $10::date,
+            _prev_to => $11::date,
+            _next_from => $12::date,
+            _next_to => $13::date,
+            _goto_today_from => $14::date,
+            _goto_today_to => $15::date,
+            _goto_week_from => $16::date,
+            _goto_week_to => $17::date,
+            _goto_month_from => $18::date,
+            _goto_month_to => $19::date
+        ) AS data`,
+        [
+            from,
+            to,
+            q,
+            limit,
+            asc,
+            cursor && before ? cursor.startedAt : null,
+            cursor && before ? cursor.id : null,
+            cursor && after ? cursor.startedAt : null,
+            cursor && after ? cursor.id : null,
+            prevFrom,
+            prevTo,
+            nextFrom,
+            nextTo,
+            gotoBounds.todayFrom,
+            gotoBounds.todayTo,
+            gotoBounds.weekFrom,
+            gotoBounds.weekTo,
+            gotoBounds.monthFrom,
+            gotoBounds.monthTo,
+        ],
+        // prepare: false keeps this an unnamed statement, which PostgreSQL always
+        // plans custom: the real parameter values (_asc, dates, _limit, _q) are
+        // folded at plan time. The page CTE relies on this to prune the inactive
+        // UNION ALL branch and to choose index-only / index-ordered plans.
+        { prepare: false },
+    );
 
+    const data = row.data;
+    const rows = data.entries;
     const hasMore = rows.length > limit;
     if (hasMore) rows.pop();
 
     if (before && cursor) rows.reverse();
-    if (after && cursor && !isAsc) rows.reverse();
+    if (after && cursor && sort !== "asc") rows.reverse();
 
     const entries = rows;
 
@@ -281,7 +171,7 @@ export async function fetchEntries({ from, to, before, after, limit, sort = "asc
     let prevCursor = null;
     let nextCursor = null;
 
-    if (isAsc) {
+    if (sort === "asc") {
         if (!before && !after) {
             prevCursor = null;
             nextCursor = hasMore && last ? encodeCursor(last.started_at_txt, last.id) : null;
@@ -305,18 +195,77 @@ export async function fetchEntries({ from, to, before, after, limit, sort = "asc
         }
     }
 
-    return { entries, prevCursor, nextCursor };
+    return {
+        entries,
+        prevCursor,
+        nextCursor,
+        total: Number(data.total),
+        prevHasEntries: data.prev_period_has_entries,
+        nextHasEntries: data.next_period_has_entries,
+        nearestPeriodDay: data.nearest_period_day,
+        goto: {
+            todayHasEntries: data.goto.today_has_entries,
+            nearestTodayDay: data.goto.nearest_today_day,
+            weekHasEntries: data.goto.week_has_entries,
+            nearestWeekDay: data.goto.nearest_week_day,
+            monthHasEntries: data.goto.month_has_entries,
+            nearestMonthDay: data.goto.nearest_month_day,
+        },
+    };
 }
 
-export async function countEntries({ from, to, q = "" }) {
-    const descFilter = buildDescriptionFilter(q);
-    const [row] = await sql`
-        SELECT count(*) AS total
-        FROM time_entries
-        WHERE deleted_at IS NULL
-          ${descFilter}
-          AND started_at >= ${from}::timestamptz
-          AND started_at <  ${to}::timestamptz
-    `;
-    return Number(row.total);
+export function computeGoToData(url, sort, q, goto) {
+    const limitRaw = url.searchParams.get("limit");
+
+    function hreffy(path) {
+        const params = {
+            sort,
+            q,
+            from: null,
+            to: null,
+            year: null,
+            week: null,
+            month: null,
+            date: null,
+            before: null,
+            after: null,
+        };
+        if (limitRaw !== null) params.limit = limitRaw;
+        return modifyCurrentUrl(url, path, params);
+    }
+
+    let firstNonEmptyDayUrl = null;
+    let firstNonEmptyDayLabel = null;
+    if (!goto.todayHasEntries && goto.nearestTodayDay) {
+        firstNonEmptyDayUrl = `/time-entries/day/${goto.nearestTodayDay}`;
+        firstNonEmptyDayLabel = `${goto.nearestTodayDay} (first day no-empty)`;
+    }
+
+    let firstNonEmptyWeekUrl = null;
+    let firstNonEmptyWeekLabel = null;
+    if (!goto.weekHasEntries && goto.nearestWeekDay) {
+        const { year: ny, week: nw } = getISOWeek(new Date(goto.nearestWeekDay));
+        firstNonEmptyWeekUrl = `/time-entries/week/${ny}/${nw}`;
+        firstNonEmptyWeekLabel = `W ${nw}`;
+    }
+
+    let firstNonEmptyMonthUrl = null;
+    let firstNonEmptyMonthLabel = null;
+    if (!goto.monthHasEntries && goto.nearestMonthDay) {
+        const nm = goto.nearestMonthDay.slice(0, 7);
+        firstNonEmptyMonthUrl = `/time-entries/month/${nm}`;
+        firstNonEmptyMonthLabel = nm;
+    }
+
+    return {
+        todayHasEntries: goto.todayHasEntries,
+        firstNonEmptyDayHref: firstNonEmptyDayUrl ? hreffy(firstNonEmptyDayUrl) : null,
+        firstNonEmptyDayLabel,
+        thisWeekHasEntries: goto.weekHasEntries,
+        firstNonEmptyWeekHref: firstNonEmptyWeekUrl ? hreffy(firstNonEmptyWeekUrl) : null,
+        firstNonEmptyWeekLabel,
+        thisMonthHasEntries: goto.monthHasEntries,
+        firstNonEmptyMonthHref: firstNonEmptyMonthUrl ? hreffy(firstNonEmptyMonthUrl) : null,
+        firstNonEmptyMonthLabel,
+    };
 }

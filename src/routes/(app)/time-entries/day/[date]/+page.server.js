@@ -1,13 +1,6 @@
 import { error } from "@sveltejs/kit";
 
-import {
-    fetchEntries,
-    countEntries,
-    hasEntries,
-    nearestDayWithEntries,
-    parseLimit,
-    computeGoToData,
-} from "$lib/backend/time-entries.js";
+import { getTimeEntriesPageData, parseLimit, computeGoToData } from "$lib/backend/time-entries.js";
 import { computeTimeEntriesNav, hreffy, buildPaginationHrefs } from "$lib/backend/timeEntriesUrl.js";
 
 function addDays(dateStr, n) {
@@ -70,29 +63,31 @@ export async function load({ params, url }) {
     const sort = url.searchParams.get("sort") || "asc";
     const q = url.searchParams.get("q") || "";
 
-    const [{ entries, prevCursor, nextCursor }, total] = await Promise.all([
-        fetchEntries({ from, to, before, after, limit, sort, q }),
-        countEntries({ from, to, q }),
-    ]);
-
     const prevPeriodDate = addDays(rawDate, -1);
     const nextPeriodDate = addDays(rawDate, 1);
 
-    const [prevHasEntries, nextHasEntries] = await Promise.all([
-        hasEntries(prevPeriodDate, rawDate),
-        hasEntries(nextPeriodDate, addDays(nextPeriodDate, 1)),
-    ]);
+    const { entries, prevCursor, nextCursor, total, prevHasEntries, nextHasEntries, nearestPeriodDay, goto } =
+        await getTimeEntriesPageData({
+            from,
+            to,
+            before,
+            after,
+            limit,
+            sort,
+            q,
+            prevFrom: prevPeriodDate,
+            prevTo: rawDate,
+            nextFrom: nextPeriodDate,
+            nextTo: addDays(nextPeriodDate, 1),
+        });
 
     const prevLabel = `${formatLabel(prevPeriodDate)}${prevHasEntries ? "" : " (empty)"}`;
     const nextLabel = `${formatLabel(nextPeriodDate)}${nextHasEntries ? "" : " (empty)"}`;
 
-    let nearestNonEmptyDate = null;
-    if (!prevHasEntries && !nextHasEntries) {
-        nearestNonEmptyDate = await nearestDayWithEntries(rawDate);
-    }
+    const nearestNonEmptyDate = nearestPeriodDay;
 
     const navData = computeTimeEntriesNav(url, rawDate);
-    const gotoData = await computeGoToData(url, sort, q);
+    const gotoData = computeGoToData(url, sort, q, goto);
     const { prevPageHref, nextPageHref } = buildPaginationHrefs(url, prevCursor, nextCursor, sort);
 
     return {

@@ -30,9 +30,13 @@ Builds a href by carrying `sort`, `q`, `limit` from the current URL, dropping al
 
 Returns `{ prevPageHref, nextPageHref }` — full hrefs with cursor params, respecting sort direction (asc = prev = older with `before`, desc = prev = newer with `after`).
 
-### `computeGoToData(url, sort, q)` — in `$lib/backend/time-entries.js`
+### `computeGoToData(url, sort, q, goto)` — in `$lib/backend/time-entries.js`
 
-Returns `firstNonEmpty*Href` and `todayHasEntries`/`*HasEntries` booleans. Uses `modifyCurrentUrl` to build hrefs that carry `sort`, `q` and target the correct period.
+Returns `firstNonEmpty*Href` and `todayHasEntries`/`*HasEntries` booleans. The presence flags and nearest-day values come from the single SQL payload (`goto`), produced by `getTimeEntriesPageData()`. Uses `modifyCurrentUrl` to build hrefs that carry `sort`, `q` and target the correct period.
+
+### `getTimeEntriesPageData({ from, to, before, after, limit, sort, q, prevFrom, prevTo, nextFrom, nextTo })` — in `$lib/backend/time-entries.js`
+
+Single round-trip backend for every time-entries view. Calls the stored function `get_time_entries_page_data()` (see `sqls/migrations/00006_time_entries_page_data/index.sql`) and returns `{ entries, prevCursor, nextCursor, total, prevHasEntries, nextHasEntries, nearestPeriodDay, goto }`. Each route passes its view-specific prev/next period bounds (day: ±1 day, week: ±7 days, month: ±1 month, range: `null`).
 
 ## Client-side URL utility — `$lib/url.js`
 

@@ -31,6 +31,12 @@ CREATE TABLE IF NOT EXISTS time_entry_audit_log (
 CREATE INDEX IF NOT EXISTS idx_time_entries_started_at
     ON time_entries (started_at);
 
+-- Partial index on non-deleted entries ordered by (started_at, id): serves the
+-- time-entries page render (index-only count, presence probes, keyset pagination).
+CREATE INDEX IF NOT EXISTS idx_time_entries_started_at_id_active
+    ON time_entries (started_at DESC, id DESC)
+    WHERE deleted_at IS NULL;
+
 -- Look up the full change history of a given time entry.
 CREATE INDEX IF NOT EXISTS idx_time_entry_audit_log_entry_id
     ON time_entry_audit_log (entry_id);

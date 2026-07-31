@@ -9,6 +9,7 @@ decision month and `NNN` is a zero-padded sequence number.
 
 ## Index
 
-| ADR                                                     | Title                                               | Status   |
-| ------------------------------------------------------- | --------------------------------------------------- | -------- |
-| [001](2026-07_001-url-as-state-and-ssr-construction.md) | URL as global state and SSR-first href construction | accepted |
+| ADR                                                       | Title                                                | Status   |
+| --------------------------------------------------------- | ---------------------------------------------------- | -------- |
+| [001](2026-07_001-url-as-state-and-ssr-construction.md)   | URL as global state and SSR-first href construction  | accepted |
+| [002](2026-07_002-single-sql-function-per-page-render.md) | One stored SQL function (CTE + JSON) per page render | accepted |

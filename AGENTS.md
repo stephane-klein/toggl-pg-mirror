@@ -77,6 +77,33 @@ This project uses **PostgreSQL** as its database, accessed directly with raw SQL
 
 SQL queries are executed using the [`postgres`](https://github.com/porsager/postgres) library (package name: `postgres`).
 
+Persisted SQL functions live in a single file `sqls/functions.sql` (DROP + CREATE,
+idempotent), loaded automatically at the end of every migration run by `src/migrate.js`.
+Functions may depend on anything migrations create (tables, indexes, `immutable_unaccent`)
+but never the reverse: migrations run before `functions.sql` and must not call its functions.
+Every page render that needs several values from the database must be served by a
+single stored SQL function (CTE + JSON) — one round-trip per render.
+See `docs/decisions/2026-07_002-single-sql-function-per-page-render.md`.
+
+When calling a stored SQL function from a `postgres` query, prefer PostgreSQL's
+named-argument notation so each placeholder is labeled with its parameter name:
+
+```sql
+SELECT get_time_entries_page_data(
+    _from => $1::date,
+    _to => $2::date,
+    ...
+)
+```
+
+All arguments must use the named form — PostgreSQL rejects positional arguments
+that follow the first named one.
+
+Stored functions that rely on parameter-dependent plans (e.g. the direction-guarded
+`UNION ALL` branches in `get_time_entries_page_data`) must be called with
+`{ prepare: false }`: an unnamed statement is always custom-planned, so the real
+parameter values are folded at plan time. See ADR 002.
+
 Migrations are managed by [`postgres-shift`](https://github.com/porsager/postgres-shift) and located in `sqls/migrations/`.
 
 The complete schema (consolidated) is written by hand in `sqls/schema.sql`.
