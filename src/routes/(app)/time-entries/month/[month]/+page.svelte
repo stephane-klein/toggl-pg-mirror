@@ -53,7 +53,8 @@
     });
 
     function handleKeydown(event) {
-        if (event.target.tagName === "INPUT" || event.target.tagName === "SELECT") return;
+        if (event.target.tagName === "INPUT" || event.target.tagName === "SELECT" || event.target.isContentEditable)
+            return;
         if (event.key === "ArrowLeft" && prevHref) {
             event.preventDefault();
             goto(prevHref);

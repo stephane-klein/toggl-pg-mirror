@@ -1,5 +1,7 @@
 import { sql } from "./pg.js";
+import { error } from "@sveltejs/kit";
 import { modifyCurrentUrl } from "$lib/url";
+import { splitFilter, TagFilterError } from "./tagFilter.js";
 
 const DEFAULT_LIMIT = 50;
 const MIN_LIMIT = 10;
@@ -105,6 +107,15 @@ export async function getTimeEntriesPageData({
     const asc = cursor && before ? false : cursor && after ? true : sort === "asc";
     const gotoBounds = computeGotoBounds(new Date());
 
+    let description;
+    let tags;
+    try {
+        ({ description, tags } = splitFilter(q));
+    } catch (e) {
+        if (e instanceof TagFilterError) error(400, e.message);
+        throw e;
+    }
+
     const [row] = await sql.unsafe(
         `SELECT get_time_entries_page_data(
             _from => $1::date,
@@ -125,12 +136,13 @@ export async function getTimeEntriesPageData({
             _goto_week_from => $16::date,
             _goto_week_to => $17::date,
             _goto_month_from => $18::date,
-            _goto_month_to => $19::date
+            _goto_month_to => $19::date,
+            _tags => $20::jsonb
         ) AS data`,
         [
             from,
             to,
-            q,
+            description,
             limit,
             asc,
             cursor && before ? cursor.startedAt : null,
@@ -147,6 +159,7 @@ export async function getTimeEntriesPageData({
             gotoBounds.weekTo,
             gotoBounds.monthFrom,
             gotoBounds.monthTo,
+            tags,
         ],
         // prepare: false keeps this an unnamed statement, which PostgreSQL always
         // plans custom: the real parameter values (_asc, dates, _limit, _q) are

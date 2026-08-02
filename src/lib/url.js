@@ -9,7 +9,6 @@ export function modifyCurrentUrl(currentUrl, newPath = null, params = {}) {
             console.warn("modifyCurrentUrl: newPath contains query string, ignored. Use params argument instead.");
         }
         url.pathname = parsed.pathname;
-        url.search = "";
     }
 
     for (const [key, value] of Object.entries(params)) {

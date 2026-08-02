@@ -48,6 +48,14 @@ Signature: `modifyCurrentUrl(currentUrl, newPath, params)`
 - `newPath` — pathname to switch to, or `null` to keep the current path. Must NOT contain a query string.
 - `params` — object where keys are param names: `null` or `""` deletes the param, any value sets it.
 
+The current query string is always preserved: only the params listed in `params`
+are added, updated or deleted (`null`/`""`). Params not listed (e.g. `q`, `sort`,
+`limit`) survive a path switch — interactive handlers (DateInput, WeekNav,
+MonthNav, RangeNav) must therefore only pass the params they want to change or
+drop. URL builders that want a clean slate (`hreffy()`,
+`computeTimeEntriesNav()`, `computeGoToData()`) list every possible param,
+including the view-specific drops, so they behave as a full reset.
+
 Returns `"${pathname}${search}"` (relative URL string).
 
 Used in interactive handlers:
@@ -109,6 +117,31 @@ export const load = async ({ url, params, locals }) => {
 | `year`, `week` | week view             | route params                                    |
 | `month`        | month view            | route param                                     |
 | `from`, `to`   | range view            | `RangeNav` interactive handler                  |
+
+## The `q` filter DSL
+
+`q` mixes **description words/phrases** and **tag filters** (`#tag`). It is parsed
+by `splitFilter()` in `src/lib/backend/tagFilter.js`, which calls
+`svelte-codemirror-search-field/parser` with `implicitOp: "and"` and
+`implicitAutoCloseParents: true` — the same options the SearchField component
+(`_components/FilterDescription.svelte`) is hardcoded with, so the server
+accepts exactly what the UI shows.
+
+- Description words: space-separated, quoted phrases `"…"` for exact match —
+  the legacy `_q` DSL, with `/null` matching empty descriptions.
+- Tags: `#tag` with case-insensitive matching; `and`/`or`/`not` (or `et`,
+  `ou`, `non`, `&&`, `||`, `!`), parentheses, implicit `and` between
+  juxtaposed blocs.
+- `or`/`not` may only combine **tags**, never description words — mixing them
+  under `or`/`not` throws (a `400` from the server, or a client-side
+  « Invalid filter » line since `FilterDescription` validates on input).
+- `splitFilter` produces `{ description, tags }`: the description words
+  re-serialized for the `_q` parameter, and the tag expression as a DNF
+  (`[{ and: [...], not: [...] }, ...]`, OR over conjuncts) for the `_tags`
+  jsonb parameter of `get_time_entries_page_data()`.
+- The tag list for autocomplete comes live from
+  `_components/tags.remote.js` (`getAllTags` remote function, `SELECT DISTINCT
+unnest(tags)` over non-deleted entries).
 
 ## Rules for contributors
 

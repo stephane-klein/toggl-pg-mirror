@@ -7,6 +7,14 @@ const config = {
         csrf: {
             checkOrigin: false,
         },
+        experimental: {
+            remoteFunctions: true,
+        },
+    },
+    compilerOptions: {
+        experimental: {
+            async: true,
+        },
     },
 };
 

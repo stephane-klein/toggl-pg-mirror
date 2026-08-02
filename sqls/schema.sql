@@ -8,6 +8,21 @@ CREATE OR REPLACE FUNCTION immutable_unaccent(input_text text) RETURNS text
 LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT
 RETURN unaccent(input_text);
 
+-- IMMUTABLE lowercase wrappers for the case-insensitive tags GIN index
+-- (lower() is STABLE by default; PostgreSQL requires IMMUTABLE for index expressions).
+CREATE OR REPLACE FUNCTION immutable_lower(input_text text) RETURNS text
+LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT
+RETURN lower(input_text);
+
+CREATE OR REPLACE FUNCTION immutable_lower(input_texts text[]) RETURNS text[]
+LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT
+RETURN (
+    -- COALESCE: array_agg over an empty array yields NULL, which would make
+    -- "tags && NOT ..." exclude empty-tag rows (~46%) from negated filters.
+    SELECT COALESCE(array_agg(lower(elem) ORDER BY ord), '{}'::text[])
+    FROM unnest(input_texts) WITH ORDINALITY AS e(elem, ord)
+);
+
 -- Bronze layer: raw Toggl time entries, mirrored as-is.
 -- toggl_uid is the native Toggl API identifier, used as the natural deduplication key (NULL for CSV imports).
 -- import_source tracks the ingestion channel: 'api_sync' (synced via Toggl API) or 'csv' (bulk CSV import).
@@ -57,6 +72,13 @@ CREATE INDEX IF NOT EXISTS idx_time_entries_started_at_id_active
 -- restricted to non-deleted entries: all searches already filter deleted_at IS NULL.
 CREATE INDEX IF NOT EXISTS idx_time_entries_description_unaccent_trgm
     ON time_entries USING GIN (immutable_unaccent(description) gin_trgm_ops)
+    WHERE deleted_at IS NULL;
+
+-- Case-insensitive GIN index on the tags array for tag search (serves the @>
+-- and && predicates, matching tag names regardless of case); restricted to
+-- non-deleted entries like the other hot-path indexes.
+CREATE INDEX IF NOT EXISTS idx_time_entries_tags_active
+    ON time_entries USING GIN (immutable_lower(tags))
     WHERE deleted_at IS NULL;
 
 -- Look up the full change history of a given time entry.

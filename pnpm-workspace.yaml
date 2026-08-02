@@ -1,0 +1,14 @@
+minimumReleaseAgeExclude:
+  - svelte-codemirror-search-field@0.5.1
+  - svelte-codemirror-search-field@0.6.0
+  - svelte-codemirror-search-field@0.7.0
+  - svelte-codemirror-search-field@0.8.0
+  - svelte-codemirror-search-field@0.9.0
+  - esrap@2.3.4
+
+# Pin esrap to 2.3.4: 2.3.3 emits invalid JavaScript for JSDoc-annotated
+# parameters (e.g. `(/** @type {any} */ (reject))`), which breaks the remote
+# functions runtime with "SyntaxError: Invalid destructuring assignment target".
+# Fixed in 2.3.4 — see https://github.com/sveltejs/esrap/issues/164.
+overrides:
+  esrap: 2.3.4

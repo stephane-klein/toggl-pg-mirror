@@ -46,7 +46,7 @@ $$;
 CREATE FUNCTION get_time_entries_page_data(
     _from date,                     -- period start (inclusive)
     _to date,                       -- period end (exclusive)
-    _q text,                        -- description filter: '' none, '/null' IS NULL, '"…"' phrase, else space-separated words
+    _q text,                        -- description filter: '' none, '/null' IS NULL, '"…"' phrase, else space-separated words (tags split off into _tags by the caller)
     _limit integer,                 -- page size; returns _limit + 1 rows so the caller detects has_more
     _asc boolean,                   -- ordering: true = (started_at, id) ASC, false = DESC
     _before_started_at timestamptz, -- cursor (prev page): rows strictly before this started_at
@@ -62,7 +62,8 @@ CREATE FUNCTION get_time_entries_page_data(
     _goto_week_from date,           -- current ISO week start, Monday (inclusive) → goto.week_has_entries
     _goto_week_to date,             -- current week end (exclusive)
     _goto_month_from date,          -- current month start (inclusive) → goto.month_has_entries
-    _goto_month_to date             -- current month end (exclusive)
+    _goto_month_to date,            -- current month end (exclusive)
+    _tags jsonb                     -- tag filter as DNF: [{ and: [...], not: [...] }, ...] OR NULL
 ) RETURNS jsonb
 LANGUAGE sql STABLE PARALLEL SAFE
 AS $$
@@ -100,6 +101,23 @@ AS $$
                           FROM unnest(string_to_array(_q, ' ')) w
                           WHERE immutable_unaccent(description) NOT ILIKE immutable_unaccent('%' || w || '%')
                       )
+                  )
+              )
+              AND (
+                  _tags IS NULL
+                  OR EXISTS (
+                      SELECT 1
+                      FROM jsonb_array_elements(_tags) AS conj(j)
+                      WHERE immutable_lower(tags) @> ARRAY(
+                                SELECT immutable_lower(v)
+                                FROM jsonb_array_elements_text(conj.j -> 'and') AS v
+                            )
+                        AND NOT (
+                            immutable_lower(tags) && ARRAY(
+                                SELECT immutable_lower(v)
+                                FROM jsonb_array_elements_text(conj.j -> 'not') AS v
+                            )
+                        )
                   )
               )
               AND (
@@ -148,6 +166,23 @@ AS $$
                   )
               )
               AND (
+                  _tags IS NULL
+                  OR EXISTS (
+                      SELECT 1
+                      FROM jsonb_array_elements(_tags) AS conj(j)
+                      WHERE immutable_lower(tags) @> ARRAY(
+                                SELECT immutable_lower(v)
+                                FROM jsonb_array_elements_text(conj.j -> 'and') AS v
+                            )
+                        AND NOT (
+                            immutable_lower(tags) && ARRAY(
+                                SELECT immutable_lower(v)
+                                FROM jsonb_array_elements_text(conj.j -> 'not') AS v
+                            )
+                        )
+                  )
+              )
+              AND (
                   (_before_started_at IS NULL AND _after_started_at IS NULL)
                   OR (
                       _before_started_at IS NOT NULL
@@ -188,6 +223,23 @@ AS $$
                       FROM unnest(string_to_array(_q, ' ')) w
                       WHERE immutable_unaccent(description) NOT ILIKE immutable_unaccent('%' || w || '%')
                   )
+              )
+          )
+          AND (
+              _tags IS NULL
+              OR EXISTS (
+                  SELECT 1
+                  FROM jsonb_array_elements(_tags) AS conj(j)
+                  WHERE immutable_lower(tags) @> ARRAY(
+                            SELECT immutable_lower(v)
+                            FROM jsonb_array_elements_text(conj.j -> 'and') AS v
+                        )
+                    AND NOT (
+                        immutable_lower(tags) && ARRAY(
+                            SELECT immutable_lower(v)
+                            FROM jsonb_array_elements_text(conj.j -> 'not') AS v
+                        )
+                    )
               )
           )
     ),
