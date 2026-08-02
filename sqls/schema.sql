@@ -53,9 +53,11 @@ CREATE INDEX IF NOT EXISTS idx_time_entries_started_at_id_active
     ON time_entries (started_at DESC, id DESC)
     WHERE deleted_at IS NULL;
 
--- Accent-insensitive trigram search over entry descriptions (used by the _q filter).
+-- Accent-insensitive trigram search over entry descriptions (used by the _q filter),
+-- restricted to non-deleted entries: all searches already filter deleted_at IS NULL.
 CREATE INDEX IF NOT EXISTS idx_time_entries_description_unaccent_trgm
-    ON time_entries USING GIN (immutable_unaccent(description) gin_trgm_ops);
+    ON time_entries USING GIN (immutable_unaccent(description) gin_trgm_ops)
+    WHERE deleted_at IS NULL;
 
 -- Look up the full change history of a given time entry.
 CREATE INDEX IF NOT EXISTS idx_time_entry_audit_log_entry_id
