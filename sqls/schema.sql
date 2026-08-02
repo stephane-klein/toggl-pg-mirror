@@ -1,3 +1,13 @@
+-- Extensions used by the schema (loaded idempotently; installed in the app schema).
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE EXTENSION IF NOT EXISTS unaccent;
+
+-- IMMUTABLE wrapper around unaccent() for use in a trigram GIN index
+-- (PostgreSQL requires IMMUTABLE for index expressions; unaccent() is STABLE by default).
+CREATE OR REPLACE FUNCTION immutable_unaccent(input_text text) RETURNS text
+LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT
+RETURN unaccent(input_text);
+
 -- Bronze layer: raw Toggl time entries, mirrored as-is.
 -- toggl_uid is the native Toggl API identifier, used as the natural deduplication key (NULL for CSV imports).
 -- import_source tracks the ingestion channel: 'api_sync' (synced via Toggl API) or 'csv' (bulk CSV import).
@@ -31,11 +41,20 @@ CREATE TABLE IF NOT EXISTS time_entry_audit_log (
 CREATE INDEX IF NOT EXISTS idx_time_entries_started_at
     ON time_entries (started_at);
 
+-- Full (started_at, id) keyset ordering; the hot path filters on deleted_at and
+-- uses idx_time_entries_started_at_id_active instead.
+CREATE INDEX IF NOT EXISTS idx_time_entries_started_at_id
+    ON time_entries (started_at DESC, id DESC);
+
 -- Partial index on non-deleted entries ordered by (started_at, id): serves the
 -- time-entries page render (index-only count, presence probes, keyset pagination).
 CREATE INDEX IF NOT EXISTS idx_time_entries_started_at_id_active
     ON time_entries (started_at DESC, id DESC)
     WHERE deleted_at IS NULL;
+
+-- Accent-insensitive trigram search over entry descriptions (used by the _q filter).
+CREATE INDEX IF NOT EXISTS idx_time_entries_description_unaccent_trgm
+    ON time_entries USING GIN (immutable_unaccent(description) gin_trgm_ops);
 
 -- Look up the full change history of a given time entry.
 CREATE INDEX IF NOT EXISTS idx_time_entry_audit_log_entry_id
