@@ -22,7 +22,8 @@ CREATE TABLE IF NOT EXISTS time_entries (
     project       TEXT,
     created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    deleted_at    TIMESTAMPTZ  DEFAULT NULL
+    deleted_at    TIMESTAMPTZ  DEFAULT NULL,
+    CONSTRAINT time_entries_ended_at_check CHECK (ended_at IS NULL OR ended_at >= started_at)
 );
 
 -- Silver layer: records every modification to a time entry with full traceability.
