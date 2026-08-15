@@ -26,7 +26,7 @@ A Node.js service that mirrors Toggl time-tracking data into a self-controlled P
 This project was developed using:
 
 - [OpenCode](https://opencode.ai) CLI — coding assistant workflow (not vibe coding)
-- Models: GLM-5.1, Minimax-M2.5, Minimax-M.7
+- Models: DeepSeek v4 Flash (OpenCode Go)
 
 ## Principles
 
