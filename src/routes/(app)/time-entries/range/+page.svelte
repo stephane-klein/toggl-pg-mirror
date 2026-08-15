@@ -4,7 +4,7 @@
     import SortToggle from "../_components/SortToggle.svelte";
     import LimitSelector from "../_components/LimitSelector.svelte";
     import RangeNav from "../_components/nav/RangeNav.svelte";
-    import FilterDescription from "../_components/FilterDescription.svelte";
+    import TimeEntryFilter from "../_components/TimeEntryFilter.svelte";
     import TimeEntriesTable from "../_components/TimeEntriesTable.svelte";
     import Pagination from "../_components/Pagination.svelte";
 
@@ -68,7 +68,7 @@
         {currentTo}
     />
 
-    <FilterDescription {total} />
+    <TimeEntryFilter {total} />
 
     {#if periodLabel}
         <TimeEntriesTable

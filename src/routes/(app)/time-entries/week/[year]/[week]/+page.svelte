@@ -5,7 +5,7 @@
     import SortToggle from "../../../_components/SortToggle.svelte";
     import LimitSelector from "../../../_components/LimitSelector.svelte";
     import WeekNav from "../../../_components/nav/WeekNav.svelte";
-    import FilterDescription from "../../../_components/FilterDescription.svelte";
+    import TimeEntryFilter from "../../../_components/TimeEntryFilter.svelte";
     import TimeEntriesTable from "../../../_components/TimeEntriesTable.svelte";
     import Pagination from "../../../_components/Pagination.svelte";
 
@@ -95,7 +95,7 @@
         {nearestNonEmptyLabel}
     />
 
-    <FilterDescription {total} />
+    <TimeEntryFilter {total} />
 
     <TimeEntriesTable
         {entries}

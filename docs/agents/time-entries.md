@@ -124,7 +124,7 @@ export const load = async ({ url, params, locals }) => {
 by `splitFilter()` in `src/lib/backend/tagFilter.js`, which calls
 `svelte-codemirror-search-field/parser` with `implicitOp: "and"` and
 `implicitAutoCloseParents: true` — the same options the SearchField component
-(`_components/FilterDescription.svelte`) is hardcoded with, so the server
+(`_components/TimeEntryFilter.svelte`) is hardcoded with, so the server
 accepts exactly what the UI shows.
 
 - Description words: space-separated, quoted phrases `"…"` for exact match —
@@ -134,7 +134,7 @@ accepts exactly what the UI shows.
   juxtaposed blocs.
 - `or`/`not` may only combine **tags**, never description words — mixing them
   under `or`/`not` throws (a `400` from the server, or a client-side
-  « Invalid filter » line since `FilterDescription` validates on input).
+  « Invalid filter » line since `TimeEntryFilter` validates on input).
 - `splitFilter` produces `{ description, tags }`: the description words
   re-serialized for the `_q` parameter, and the tag expression as a DNF
   (`[{ and: [...], not: [...] }, ...]`, OR over conjuncts) for the `_tags`
