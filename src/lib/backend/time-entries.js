@@ -251,7 +251,7 @@ export function computeGoToData(url, sort, q, goto) {
     let firstNonEmptyDayLabel = null;
     if (!goto.todayHasEntries && goto.nearestTodayDay) {
         firstNonEmptyDayUrl = `/time-entries/day/${goto.nearestTodayDay}`;
-        firstNonEmptyDayLabel = `${goto.nearestTodayDay} (first day no-empty)`;
+        firstNonEmptyDayLabel = `${goto.nearestTodayDay} (no-empty)`;
     }
 
     let firstNonEmptyWeekUrl = null;
@@ -259,7 +259,7 @@ export function computeGoToData(url, sort, q, goto) {
     if (!goto.weekHasEntries && goto.nearestWeekDay) {
         const { year: ny, week: nw } = getISOWeek(new Date(goto.nearestWeekDay));
         firstNonEmptyWeekUrl = `/time-entries/week/${ny}/${nw}`;
-        firstNonEmptyWeekLabel = `W ${nw}`;
+        firstNonEmptyWeekLabel = `W ${nw} (no-empty)`;
     }
 
     let firstNonEmptyMonthUrl = null;
@@ -267,7 +267,7 @@ export function computeGoToData(url, sort, q, goto) {
     if (!goto.monthHasEntries && goto.nearestMonthDay) {
         const nm = goto.nearestMonthDay.slice(0, 7);
         firstNonEmptyMonthUrl = `/time-entries/month/${nm}`;
-        firstNonEmptyMonthLabel = nm;
+        firstNonEmptyMonthLabel = `${nm} (no-empty)`;
     }
 
     return {

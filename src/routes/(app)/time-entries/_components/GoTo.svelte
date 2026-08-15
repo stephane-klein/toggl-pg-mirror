@@ -42,7 +42,7 @@
         <a
             href={firstNonEmptyDayHref}
             class="text-gray-500 no-underline hover:text-blue-600 hover:underline"
-            >{firstNonEmptyDayLabel || "First non-empty day"}</a
+            >{firstNonEmptyDayLabel}</a
         >
     {/if}
     {#if !thisWeekHasEntries && firstNonEmptyWeekHref}
@@ -50,7 +50,7 @@
         <a
             href={firstNonEmptyWeekHref}
             class="text-gray-500 no-underline hover:text-blue-600 hover:underline"
-            >{firstNonEmptyWeekLabel || "First non-empty week"}</a
+            >{firstNonEmptyWeekLabel}</a
         >
     {/if}
     {#if !thisMonthHasEntries && firstNonEmptyMonthHref}
@@ -58,7 +58,7 @@
         <a
             href={firstNonEmptyMonthHref}
             class="text-gray-500 no-underline hover:text-blue-600 hover:underline"
-            >{firstNonEmptyMonthLabel || "First non-empty month"}</a
+            >{firstNonEmptyMonthLabel}</a
         >
     {/if}
 </nav>
