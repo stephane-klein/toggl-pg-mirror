@@ -1,5 +1,6 @@
 <script>
     import TimeEntriesTable from "./_components/TimeEntriesTable.svelte";
+    import BulkEditUndoStatus from "./_components/BulkEditUndoStatus.svelte";
     import Pagination from "./_components/Pagination.svelte";
     import LimitSelector from "./_components/LimitSelector.svelte";
 
@@ -22,6 +23,8 @@
             baseQuery=""
         />
     </div>
+
+    <BulkEditUndoStatus />
 
     <TimeEntriesTable {entries} />
     <Pagination

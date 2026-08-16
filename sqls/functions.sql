@@ -14,6 +14,8 @@
 DROP FUNCTION IF EXISTS get_time_entries_page_data;
 DROP FUNCTION IF EXISTS nearest_day_with_entries;
 DROP FUNCTION IF EXISTS upsert_time_entries;
+DROP FUNCTION IF EXISTS record_time_entry_edit_operation;
+DROP FUNCTION IF EXISTS undo_time_entry_edit_operation;
 
 -- Returns the day (as 'YYYY-MM-DD') closest to _ref that has at least one
 -- non-deleted entry, or NULL when no entry exists on either side of _ref.
@@ -503,6 +505,107 @@ BEGIN
         'inserted', (SELECT count(*) FROM inserted),
         'updated', (SELECT count(*) FROM updated),
         'unchanged', (SELECT count(*) FROM existing) - (SELECT count(*) FROM updated)
+    ) INTO result;
+
+    RETURN result;
+END;
+$$;
+
+-- Records an undoable edit operation (e.g. a bulk edit) with full before/after
+-- snapshots for every touched entry. Called inside the same transaction as the
+-- edit itself, so the operation is only recorded when the edit commits.
+-- _entries is a JSON array of { entry_id, before, after }; each before/after
+-- mirrors the editable time_entries columns (started_at, ended_at, tags,
+-- description, project). Returns the operation id.
+CREATE FUNCTION record_time_entry_edit_operation(
+    _kind    text,
+    _entries jsonb
+) RETURNS bigint
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    op_id bigint;
+BEGIN
+    INSERT INTO time_entry_edit_operations (kind)
+    VALUES (_kind)
+    RETURNING id INTO op_id;
+
+    INSERT INTO time_entry_edit_operation_entries (operation_id, entry_id, before_snapshot, after_snapshot)
+    SELECT op_id, r.entry_id, r.before::jsonb, r.after::jsonb
+    FROM jsonb_to_recordset(_entries) AS r(entry_id bigint, before jsonb, after jsonb);
+
+    RETURN op_id;
+END;
+$$;
+
+-- Undoes a recorded edit operation: restores every touched entry's editable
+-- fields to its before_snapshot, re-applying through upsert_time_entries with
+-- _source = 'manual'. The undo therefore writes new audit rows (old_value =
+-- post-operation state, new_value = restored state) and re-freezes the entries
+-- against the Toggl sync; nothing is ever deleted from the audit log.
+--
+-- Guards:
+-- - the operation must exist and not be already undone (RAISE EXCEPTION → 4xx);
+-- - an entry modified after the operation (updated_at > applied_at) makes the
+--   undo unsafe and aborts the whole undo. Manually bulk-edited entries are
+--   frozen against the sync daemon, so only a later manual edit can trigger it.
+CREATE FUNCTION undo_time_entry_edit_operation(
+    _operation_id bigint
+) RETURNS jsonb                     -- { undone }
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    op     record;
+    result jsonb;
+BEGIN
+    SELECT * INTO op FROM time_entry_edit_operations WHERE id = _operation_id;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Operation % not found', _operation_id;
+    END IF;
+    IF op.undone_at IS NOT NULL THEN
+        RAISE EXCEPTION 'Operation % already undone', _operation_id;
+    END IF;
+
+    -- Entries bulk-edited in the same transaction as the operation have
+    -- updated_at = applied_at; a later edit strictly increases updated_at.
+    PERFORM 1
+    FROM time_entry_edit_operation_entries oe
+    JOIN time_entries te ON te.id = oe.entry_id
+    WHERE oe.operation_id = _operation_id
+      AND te.updated_at > op.applied_at
+    LIMIT 1;
+    IF FOUND THEN
+        RAISE EXCEPTION 'One or more entries were modified after this operation; undo aborted';
+    END IF;
+
+    PERFORM upsert_time_entries(
+        _entries => (
+            SELECT jsonb_agg(jsonb_build_object(
+                'id',         te.id,
+                'toggl_uid',  te.toggl_uid,
+                'started_at', oe.before_snapshot ->> 'started_at',
+                'ended_at',   oe.before_snapshot ->> 'ended_at',
+                'tags',       oe.before_snapshot -> 'tags',
+                'description', oe.before_snapshot ->> 'description',
+                'project',    oe.before_snapshot ->> 'project',
+                'updated_at', now()
+            ))
+            FROM time_entry_edit_operation_entries oe
+            JOIN time_entries te ON te.id = oe.entry_id
+            WHERE oe.operation_id = _operation_id
+        ),
+        _source => 'manual',
+        -- Undo never inserts (the entries already exist), so this value is only
+        -- a placeholder for the unused insert branch of upsert_time_entries.
+        _import_source => 'api_sync'
+    );
+
+    UPDATE time_entry_edit_operations
+    SET undone_at = NOW()
+    WHERE id = _operation_id;
+
+    SELECT jsonb_build_object(
+        'undone', (SELECT count(*) FROM time_entry_edit_operation_entries WHERE operation_id = _operation_id)
     ) INTO result;
 
     RETURN result;

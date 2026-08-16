@@ -158,7 +158,7 @@ export async function updateTimeEntriesBulk({ ids, changes }) {
             );
         });
 
-        if (changedEntries.length === 0) return { updatedCount: 0 };
+        if (changedEntries.length === 0) return { updatedCount: 0, operationId: null };
 
         await tx.unsafe(
             `SELECT upsert_time_entries(
@@ -170,6 +170,47 @@ export async function updateTimeEntriesBulk({ ids, changes }) {
             { prepare: false },
         );
 
-        return { updatedCount: changedEntries.length };
+        // Record the undoable operation in the same transaction: full
+        // before/after snapshot per touched entry. Dates are serialized as ISO
+        // strings so the stored function can round-trip them as timestamptz.
+        const currentById = new Map(currentEntries.map((entry) => [Number(entry.id), entry]));
+        const snapshot = (entry) => ({
+            started_at: entry.started_at.toISOString(),
+            ended_at: entry.ended_at ? entry.ended_at.toISOString() : null,
+            tags: entry.tags || [],
+            description: entry.description,
+            project: entry.project,
+        });
+        const snapshots = changedEntries.map((entry) => ({
+            entry_id: entry.id,
+            before: snapshot(currentById.get(entry.id)),
+            after: snapshot(entry),
+        }));
+
+        const [opRow] = await tx.unsafe(
+            `SELECT record_time_entry_edit_operation($1::text, $2::jsonb) AS op_id`,
+            ["bulk_edit", snapshots],
+            { prepare: false },
+        );
+
+        return { updatedCount: changedEntries.length, operationId: Number(opRow.op_id) };
     });
+}
+
+// Undoes a recorded edit operation: restores every touched entry to its
+// before_snapshot via undo_time_entry_edit_operation (which re-applies through
+// upsert_time_entries with source 'manual', so new audit rows are written and
+// the entries are re-frozen against the Toggl sync).
+export async function undoTimeEntryOperation({ operationId }) {
+    let row;
+    try {
+        [row] = await sql.unsafe(`SELECT undo_time_entry_edit_operation($1::bigint) AS result`, [operationId], {
+            prepare: false,
+        });
+    } catch (err) {
+        const message = err?.message || String(err);
+        if (message.includes("not found")) error(404, message);
+        error(409, message);
+    }
+    return row.result;
 }

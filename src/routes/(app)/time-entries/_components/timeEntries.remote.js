@@ -2,7 +2,7 @@ import { command, getRequestEvent } from "$app/server";
 
 import { getTimeEntriesPageData } from "$lib/backend/time-entries.js";
 import { buildPaginationHrefs } from "$lib/backend/timeEntriesUrl.js";
-import { updateTimeEntry, updateTimeEntriesBulk } from "$lib/backend/updateTimeEntry.js";
+import { updateTimeEntry, updateTimeEntriesBulk, undoTimeEntryOperation } from "$lib/backend/updateTimeEntry.js";
 
 // Saves a manual edit to a time entry (single-flight): applies the partial
 // update + freeze + audit, then re-fetches the current view so the client can
@@ -49,4 +49,12 @@ export const bulkEditTimeEntries = command("unchecked", async ({ ids, changes, v
         nextPageHref,
         hasFilter: !!view.q,
     };
+});
+
+// Undoes the last bulk edit operation: the server restores every touched entry
+// to its pre-edit snapshot (see undo_time_entry_edit_operation) and returns the
+// DB result { undone }. The client then reloads the current view via
+// invalidateAll().
+export const undoTimeEntryEditOperation = command("unchecked", async ({ operationId }) => {
+    return undoTimeEntryOperation({ operationId });
 });

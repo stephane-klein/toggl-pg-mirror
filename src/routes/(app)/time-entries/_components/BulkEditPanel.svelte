@@ -3,6 +3,7 @@
     import { page } from "$app/stores";
     import * as yaml from "js-yaml";
     import { bulkEditTimeEntries } from "./timeEntries.remote.js";
+    import { pendingUndo, UNDO_WINDOW_MS } from "./undoStore.js";
     import InputTags from "./input-tags/InputTags.svelte";
     import { getAllTags } from "./tags.remote.js";
     import { fuzzyMatch } from "./fuzzyMatch.js";
@@ -50,7 +51,16 @@
         saving = true;
         saveError = null;
         try {
-            await bulkEditTimeEntries({ ids: [...selectedIds], changes, view });
+            const result = await bulkEditTimeEntries({ ids: [...selectedIds], changes, view });
+            if (result.operationId) {
+                pendingUndo.set({
+                    operationId: result.operationId,
+                    count: result.updatedCount,
+                    expiresAt: Date.now() + UNDO_WINDOW_MS,
+                });
+            } else {
+                pendingUndo.set(null);
+            }
             const url = new URL($page.url);
             url.searchParams.delete("selected");
             await goto(url, { replaceState: true, noScroll: true, keepFocus: true });

@@ -7,6 +7,7 @@
     import DayNav from "../../_components/nav/DayNav.svelte";
     import TimeEntryFilter from "../../_components/TimeEntryFilter.svelte";
     import BulkEditPanel from "../../_components/BulkEditPanel.svelte";
+    import BulkEditUndoStatus from "../../_components/BulkEditUndoStatus.svelte";
     import TimeEntriesTable from "../../_components/TimeEntriesTable.svelte";
     import Pagination from "../../_components/Pagination.svelte";
 
@@ -121,6 +122,8 @@
 
         <TimeEntryFilter {total} />
     {/if}
+
+    <BulkEditUndoStatus />
 
     <TimeEntriesTable
         {entries}
