@@ -35,7 +35,7 @@ export async function load({ url }) {
     const before = url.searchParams.get("before");
     const after = url.searchParams.get("after");
 
-    const { entries, prevCursor, nextCursor, total, goto } = await getTimeEntriesPageData({
+    const view = {
         from: from ?? null,
         to: toExclusive,
         before,
@@ -47,7 +47,9 @@ export async function load({ url }) {
         prevTo: null,
         nextFrom: null,
         nextTo: null,
-    });
+    };
+
+    const { entries, prevCursor, nextCursor, total, goto } = await getTimeEntriesPageData(view);
     const gotoData = computeGoToData(url, sort, q, goto);
 
     if (!from || !to) {
@@ -71,6 +73,7 @@ export async function load({ url }) {
     return {
         ...navData,
         ...gotoData,
+        view,
         entries,
         total,
         hasFilter: !!q,

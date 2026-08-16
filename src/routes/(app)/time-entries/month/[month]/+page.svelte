@@ -10,20 +10,36 @@
     import Pagination from "../../_components/Pagination.svelte";
 
     let { data } = $props();
-    let entries = $derived(data.entries);
+    let entries = $state(data.entries);
     let periodLabel = $derived(data.periodLabel);
     let prevHref = $derived(data.prevHref);
     let prevLabel = $derived(data.prevLabel);
     let nextHref = $derived(data.nextHref);
     let nextLabel = $derived(data.nextLabel);
     let sort = $derived(data.sort);
-    let total = $derived(data.total);
+    let total = $state(data.total);
     let currentMonth = $derived(data.currentMonth);
     let nearestNonEmptyHref = $derived(data.nearestNonEmptyHref);
     let nearestNonEmptyLabel = $derived(data.nearestNonEmptyLabel);
-    let prevPageHref = $derived(data.prevPageHref);
-    let nextPageHref = $derived(data.nextPageHref);
+    let prevPageHref = $state(data.prevPageHref);
+    let nextPageHref = $state(data.nextPageHref);
     let hasFilter = $derived(data.hasFilter);
+    let view = $derived(data.view);
+
+    $effect(() => {
+        entries = data.entries;
+        total = data.total;
+        prevPageHref = data.prevPageHref;
+        nextPageHref = data.nextPageHref;
+    });
+
+    /** @param {{ entries: any[], total: number, prevPageHref: string | null, nextPageHref: string | null }} result */
+    function onSaved(result) {
+        entries = result.entries;
+        total = result.total;
+        prevPageHref = result.prevPageHref;
+        nextPageHref = result.nextPageHref;
+    }
 
     let goToProps = $derived({
         goToDayHref: data.goToDayHref,
@@ -102,6 +118,8 @@
         {nextPageHref}
         {total}
         {hasFilter}
+        {view}
+        {onSaved}
     />
     <Pagination
         {prevPageHref}

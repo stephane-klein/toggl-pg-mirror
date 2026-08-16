@@ -13,6 +13,7 @@
 
 DROP FUNCTION IF EXISTS get_time_entries_page_data;
 DROP FUNCTION IF EXISTS nearest_day_with_entries;
+DROP FUNCTION IF EXISTS upsert_time_entries;
 
 -- Returns the day (as 'YYYY-MM-DD') closest to _ref that has at least one
 -- non-deleted entry, or NULL when no entry exists on either side of _ref.
@@ -333,4 +334,177 @@ AS $$
             'nearest_month_day', (SELECT * FROM nearest_month_day)
         )
     );
+$$;
+
+-- Upserts time entries (insert new + update changed) and writes the matching
+-- audit trail in a single statement. The field-level diff is computed in SQL
+-- via IS DISTINCT FROM, so each changed field yields one audit row.
+-- _entries is a JSON array; each object mirrors the time_entries columns plus
+-- the API-side updated_at used to guard stale updates.
+--
+-- Matching: an existing row is resolved by the local id when it is provided,
+-- otherwise by toggl_uid (NULL toggl_uid always inserts — e.g. CSV imports and
+-- UI-created entries have no Toggl counterpart). _source = 'manual' freezes the
+-- row against the Toggl sync (manually_edited_at = NOW()); other sources leave
+-- the existing freeze untouched.
+--
+-- Example (fictional): a UI creates one manual entry (no Toggl counterpart).
+--
+--     SELECT upsert_time_entries(
+--         _entries => '[
+--             {
+--                 "toggl_uid": null,
+--                 "started_at": "2026-08-16T09:00:00+02:00",
+--                 "ended_at": "2026-08-16T10:30:00+02:00",
+--                 "tags": ["meeting", "client"],
+--                 "description": "Sprint planning with Acme Corp",
+--                 "project": "Engineering",
+--                 "updated_at": "2026-08-16T08:00:00+02:00"
+--             }
+--         ]'::jsonb,
+--         _source => 'manual',
+--         _import_source => 'api_sync'
+--     );
+--
+--     Returns: {"inserted": 1, "updated": 0, "unchanged": 0}
+--
+--     The same statement also writes the audit row:
+--     (entry_id, source, field_changed, old_value, new_value) =
+--     (…, 'manual', '_created', NULL,
+--      '{"started_at": "2026-08-16T09:00:00+02:00", "ended_at": "2026-08-16T10:30:00+02:00",
+--        "description": "Sprint planning with Acme Corp", "project": "Engineering",
+--        "tags": ["meeting", "client"]}'::jsonb)
+--
+-- Example (fictional): a manual edit of an existing entry (id given, only the
+-- description changes). A single audit row for 'description' is written and the
+-- entry is frozen via manually_edited_at.
+--
+--     SELECT upsert_time_entries(
+--         _entries => '[
+--             {
+--                 "id": 42,
+--                 "toggl_uid": 313131,
+--                 "started_at": "2026-08-16T09:00:00+02:00",
+--                 "ended_at": "2026-08-16T10:30:00+02:00",
+--                 "tags": ["meeting", "client"],
+--                 "description": "Sprint planning with Acme Corp",
+--                 "project": "Engineering",
+--                 "updated_at": "2026-08-16T08:05:00+02:00"
+--             }
+--         ]'::jsonb,
+--         _source => 'manual',
+--         _import_source => 'api_sync'
+--     );
+--
+--     Returns: {"inserted": 0, "updated": 1, "unchanged": 0}
+CREATE FUNCTION upsert_time_entries(
+    _entries       jsonb,           -- [{ id?, toggl_uid, started_at, ended_at, tags, description, project, updated_at }]
+    _source        text,            -- audit source: 'toggl' | 'manual' | 'llm' | 'csv'
+    _import_source varchar(10)
+) RETURNS jsonb                     -- { inserted, updated, unchanged }
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    result jsonb;
+BEGIN
+    WITH
+    input AS (
+        SELECT id, toggl_uid, started_at, ended_at, tags, description, project, updated_at
+        FROM jsonb_to_recordset(_entries) AS t(
+            id bigint, toggl_uid bigint, started_at timestamptz, ended_at timestamptz,
+            tags text[], description text, project text, updated_at timestamptz
+        )
+    ),
+    existing AS (
+        SELECT te.id, te.toggl_uid, te.started_at, te.ended_at, te.tags,
+               te.description, te.project, te.updated_at
+        FROM time_entries te
+        JOIN input i
+          ON (i.id IS NOT NULL AND te.id = i.id)
+          OR (i.id IS NULL AND i.toggl_uid IS NOT NULL AND te.toggl_uid = i.toggl_uid)
+    ),
+    to_update AS (
+        SELECT e.id, e.toggl_uid
+        FROM existing e
+        JOIN input i
+          ON (i.id IS NOT NULL AND e.id = i.id)
+          OR (i.id IS NULL AND i.toggl_uid IS NOT NULL AND e.toggl_uid = i.toggl_uid)
+        WHERE i.updated_at > e.updated_at
+          AND (
+              e.started_at IS DISTINCT FROM i.started_at
+              OR e.ended_at IS DISTINCT FROM i.ended_at
+              OR e.tags IS DISTINCT FROM i.tags
+              OR e.description IS DISTINCT FROM i.description
+              OR e.project IS DISTINCT FROM i.project
+          )
+    ),
+    inserted AS (
+        INSERT INTO time_entries (toggl_uid, started_at, ended_at, tags, description, project, import_source, manually_edited_at)
+        SELECT i.toggl_uid, i.started_at, i.ended_at, COALESCE(i.tags, '{}'),
+               i.description, i.project, _import_source,
+               CASE WHEN _source = 'manual' THEN NOW() END
+        FROM input i
+        LEFT JOIN existing e
+          ON (i.id IS NOT NULL AND e.id = i.id)
+          OR (i.id IS NULL AND i.toggl_uid IS NOT NULL AND e.toggl_uid = i.toggl_uid)
+        WHERE e.id IS NULL
+        RETURNING id, started_at, ended_at, tags, description, project
+    ),
+    audit_created AS (
+        INSERT INTO time_entry_audit_log (entry_id, source, field_changed, old_value, new_value)
+        SELECT ins.id, _source, '_created', NULL,
+               jsonb_build_object(
+                   'started_at', ins.started_at,
+                   'ended_at', ins.ended_at,
+                   'description', ins.description,
+                   'project', ins.project,
+                   'tags', ins.tags
+               )
+        FROM inserted ins
+    ),
+    updated AS (
+        UPDATE time_entries te
+        SET started_at = i.started_at,
+            ended_at = i.ended_at,
+            tags = COALESCE(i.tags, '{}'),
+            description = i.description,
+            project = i.project,
+            updated_at = NOW(),
+            manually_edited_at = CASE WHEN _source = 'manual' THEN NOW() ELSE te.manually_edited_at END
+        FROM input i
+        JOIN to_update u
+          ON (i.id IS NOT NULL AND u.id = i.id)
+          OR (i.id IS NULL AND i.toggl_uid IS NOT NULL AND u.toggl_uid = i.toggl_uid)
+        WHERE te.id = u.id
+        RETURNING te.id
+    ),
+    audit_updated AS (
+        INSERT INTO time_entry_audit_log (entry_id, source, field_changed, old_value, new_value)
+        SELECT u.id, _source, ch.field_changed, ch.old_value, ch.new_value
+        FROM updated u
+        JOIN existing e ON e.id = u.id
+        JOIN input i
+          ON (i.id IS NOT NULL AND e.id = i.id)
+          OR (i.id IS NULL AND i.toggl_uid IS NOT NULL AND e.toggl_uid = i.toggl_uid)
+        CROSS JOIN LATERAL (
+            SELECT 'started_at', to_jsonb(e.started_at), to_jsonb(i.started_at)
+            WHERE e.started_at IS DISTINCT FROM i.started_at
+            UNION ALL SELECT 'ended_at', to_jsonb(e.ended_at), to_jsonb(i.ended_at)
+            WHERE e.ended_at IS DISTINCT FROM i.ended_at
+            UNION ALL SELECT 'tags', to_jsonb(e.tags), to_jsonb(i.tags)
+            WHERE e.tags IS DISTINCT FROM i.tags
+            UNION ALL SELECT 'description', to_jsonb(e.description), to_jsonb(i.description)
+            WHERE e.description IS DISTINCT FROM i.description
+            UNION ALL SELECT 'project', to_jsonb(e.project), to_jsonb(i.project)
+            WHERE e.project IS DISTINCT FROM i.project
+        ) ch(field_changed, old_value, new_value)
+    )
+    SELECT jsonb_build_object(
+        'inserted', (SELECT count(*) FROM inserted),
+        'updated', (SELECT count(*) FROM updated),
+        'unchanged', (SELECT count(*) FROM existing) - (SELECT count(*) FROM updated)
+    ) INTO result;
+
+    RETURN result;
+END;
 $$;

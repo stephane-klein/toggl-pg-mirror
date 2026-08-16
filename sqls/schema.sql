@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS time_entries (
     created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     deleted_at    TIMESTAMPTZ  DEFAULT NULL,
+    manually_edited_at TIMESTAMPTZ DEFAULT NULL,
     CONSTRAINT time_entries_ended_at_check CHECK (ended_at IS NULL OR ended_at >= started_at)
 );
 

@@ -1,6 +1,8 @@
 <script>
     /* eslint-disable svelte/prefer-svelte-reactivity -- new Date() used in ephemeral formatting functions, not reactive state */
 
+    import { saveTimeEntry } from "./timeEntries.remote.js";
+
     let {
         entries = [],
         selectedIds = $bindable(new Set()),
@@ -9,11 +11,28 @@
         nextPageHref = null,
         total = null,
         hasFilter = false,
+        view = null,
+        onSaved = null,
     } = $props();
 
     let leftLabel = $derived(sort === "asc" ? "Older" : "Newer");
     let rightLabel = $derived(sort === "asc" ? "Newer" : "Older");
     let hasTopNav = $derived(!!prevPageHref || !!nextPageHref);
+
+    /** @type {{ id: number, initial: { description: string, tagsTxt: string, startedAtTxt: string, endedAtTxt: string }, values: { description: string, tagsTxt: string, startedAtTxt: string, endedAtTxt: string } } | null} */
+    let editing = $state(null);
+    let saving = $state(false);
+    /** @type {string | null} */
+    let saveError = $state(null);
+    /** @type {number | null} */
+    let movedOutId = $state(null);
+    // Set on mousedown of an editable cell while an edit is open: the ensuing
+    // blur would otherwise cancel that edit before the click opens the new one.
+    let suppressBlurCancel = $state(false);
+    /** @type {ReturnType<typeof setTimeout> | undefined} */
+    let movedOutTimer;
+    /** @type {HTMLInputElement | undefined} */
+    let descriptionInput;
 
     function dayLabel(dateStr) {
         const date = new Date(dateStr);
@@ -68,7 +87,7 @@
             second: "2-digit",
             hour12: false,
         }).formatToParts(d);
-        const get = (type) => parts.find((p) => p.type === type).value;
+        const get = (part) => parts.find((p) => p.type === part).value;
         return `${get("year")}-${get("month")}-${get("day")} ${get("hour")}:${get("minute")}:${get("second")}`;
     }
 
@@ -215,6 +234,99 @@
             return sort === "desc" ? diff : -diff;
         });
     });
+
+    function startEdit(entry) {
+        if (!view) return;
+        const snapshot = {
+            description: entry.description ?? "",
+            tagsTxt: (entry.tags || []).join(", "),
+            startedAtTxt: formatDate(entry.started_at),
+            endedAtTxt: entry.ended_at ? formatDate(entry.ended_at) : "",
+        };
+        editing = { id: entry.id, initial: snapshot, values: { ...snapshot } };
+        saveError = null;
+    }
+
+    function cancelEdit() {
+        editing = null;
+        saveError = null;
+    }
+
+    function handleEditKeydown(event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            save();
+        } else if (event.key === "Escape") {
+            event.preventDefault();
+            cancelEdit();
+        }
+    }
+
+    function handleFocusOut(event) {
+        if (suppressBlurCancel) {
+            suppressBlurCancel = false;
+            return;
+        }
+        if (saving) return;
+        // Losing browser-window focus also emits focusout with no relatedTarget.
+        // Keep the edit panel open until the user explicitly resumes or cancels.
+        if (!document.hasFocus()) return;
+        if (event.currentTarget.contains(event.relatedTarget)) return;
+        cancelEdit();
+    }
+
+    function buildChanges() {
+        const changes = {};
+        if (editing.values.description !== editing.initial.description) {
+            changes.description = editing.values.description;
+        }
+        if (editing.values.tagsTxt !== editing.initial.tagsTxt) {
+            changes.tags = editing.values.tagsTxt
+                .split(",")
+                .map((t) => t.trim())
+                .filter(Boolean);
+        }
+        if (editing.values.startedAtTxt !== editing.initial.startedAtTxt) {
+            changes.started_at = editing.values.startedAtTxt;
+        }
+        if (editing.values.endedAtTxt !== editing.initial.endedAtTxt) {
+            changes.ended_at = editing.values.endedAtTxt === "" ? null : editing.values.endedAtTxt;
+        }
+        return changes;
+    }
+
+    async function save() {
+        const id = editing.id;
+        const changes = buildChanges();
+        if (Object.keys(changes).length === 0) {
+            cancelEdit();
+            return;
+        }
+
+        saving = true;
+        saveError = null;
+        try {
+            const result = await saveTimeEntry({ id, changes, view });
+            const stillVisible = result.entries.some((e) => String(e.id) === String(id));
+            if (!stillVisible) {
+                movedOutId = id;
+                clearTimeout(movedOutTimer);
+                movedOutTimer = setTimeout(() => {
+                    movedOutId = null;
+                }, 2000);
+            }
+            onSaved?.(result);
+            cancelEdit();
+        } catch (err) {
+            saveError = err.message || "Save failed";
+        } finally {
+            saving = false;
+        }
+    }
+
+    $effect(() => {
+        if (editing && !saving) descriptionInput?.focus();
+    });
 </script>
 
 {#if entries.length > 0}
@@ -246,6 +358,9 @@
                         {/if}
                     {/if}
                 </span>
+            {/if}
+            {#if movedOutId !== null}
+                <span class="text-blue-600 italic text-[12px]">Entry #{movedOutId} moved to another period/day</span>
             {/if}
         </div>
         {#if selectedIds.size > 0}
@@ -351,44 +466,160 @@
             </thead>
             <tbody>
                 {#each group.entries as entry (entry.id)}
-                    <tr
-                        class="hover:bg-gray-100"
-                        class:bg-blue-50={selectedIds.has(entry.id)}
-                    >
-                        <td class="w-[48px] px-2 py-[7px] border-b border-gray-300 align-middle">
-                            <input
-                                type="checkbox"
-                                class="w-4 h-4"
-                                checked={selectedIds.has(entry.id)}
-                                onchange={() => toggleEntry(entry.id)}
-                            />
-                        </td>
-                        <td class="px-2 py-[7px] border-b border-gray-300 align-middle">
-                            {#if entry.description}
-                                {entry.description}
-                            {:else}
-                                <span class="text-gray-500 italic">(no description)</span>
-                            {/if}
-                        </td>
-                        <td class="px-2 py-[7px] border-b border-gray-300 align-middle">
-                            {#each entry.tags as tag (tag)}
-                                <span
-                                    class="inline-block text-[11px] text-gray-500 border border-gray-300 rounded px-[5px] mr-[3px] whitespace-nowrap"
-                                    >{tag}</span
-                                >
-                            {/each}
-                        </td>
-                        <td class="px-2 py-[7px] border-b border-gray-300 align-middle text-[13px]">
-                            <div class="flex items-baseline gap-4 justify-end">
-                                <span class="text-gray-500">{formatTimeRange(entry.started_at, entry.ended_at)}</span>
-                                <span
-                                    class="font-mono font-semibold"
-                                    class:text-green-700={!entry.ended_at}
-                                    >{formatDuration(entry.started_at, entry.ended_at)}</span
-                                >
-                            </div>
-                        </td>
-                    </tr>
+                    {#if editing?.id === entry.id}
+                        <tr
+                            class="bg-blue-50 border-y border-blue-300"
+                            onkeydown={handleEditKeydown}
+                            onfocusout={handleFocusOut}
+                        >
+                            <td class="w-[48px] px-2 py-[7px] border-b border-gray-300 align-middle">
+                                <input
+                                    type="checkbox"
+                                    class="w-4 h-4"
+                                    checked={selectedIds.has(entry.id)}
+                                    onchange={() => toggleEntry(entry.id)}
+                                    disabled={saving}
+                                />
+                            </td>
+                            <td
+                                colspan="3"
+                                class="px-2 py-[7px] border-b border-gray-300 align-middle"
+                            >
+                                <div class="flex flex-col gap-[3px]">
+                                    <label class="mt-1 text-[9px] text-gray-400 font-semibold uppercase"
+                                        >Description</label
+                                    >
+                                    <input
+                                        bind:this={descriptionInput}
+                                        type="text"
+                                         class="box-border h-[30px] w-full px-2 text-[12px] border border-gray-300 rounded bg-white"
+                                        bind:value={editing.values.description}
+                                        disabled={saving}
+                                        placeholder="(no description)"
+                                    />
+                                    <div class="flex items-end gap-2">
+                                        <div class="flex-1 flex flex-col">
+                                            <label class="mt-1 text-[9px] text-gray-400 font-semibold uppercase"
+                                                >Tags</label
+                                            >
+                                            <input
+                                                type="text"
+                                                 class="box-border h-[30px] w-full px-2 text-[12px] border border-gray-300 rounded bg-white"
+                                                bind:value={editing.values.tagsTxt}
+                                                disabled={saving}
+                                                placeholder="tag1, tag2, …"
+                                            />
+                                        </div>
+                                        <div class="flex flex-col">
+                                            <label class="mt-1 text-[9px] text-gray-400 font-semibold uppercase"
+                                                >Started</label
+                                            >
+                                            <input
+                                                type="text"
+                                                 class="box-border h-[30px] w-[190px] px-2 text-[12px] font-mono border border-gray-300 rounded bg-white"
+                                                bind:value={editing.values.startedAtTxt}
+                                                disabled={saving}
+                                                title="YYYY-MM-DD HH:MM[:SS] (Europe/Paris)"
+                                            />
+                                        </div>
+                                        <div class="flex flex-col">
+                                            <label class="mt-1 text-[9px] text-gray-400 font-semibold uppercase"
+                                                >Ended</label
+                                            >
+                                            <input
+                                                type="text"
+                                                 class="box-border h-[30px] w-[190px] px-2 text-[12px] font-mono border border-gray-300 rounded bg-white"
+                                                bind:value={editing.values.endedAtTxt}
+                                                disabled={saving}
+                                                placeholder="running"
+                                                title="YYYY-MM-DD HH:MM[:SS] — leave empty for running"
+                                            />
+                                        </div>
+                                        <span class="flex items-center gap-2 pb-[1px] whitespace-nowrap">
+                                            <button
+                                                onclick={save}
+                                                disabled={saving}
+                                                onmousedown={() => (suppressBlurCancel = !!editing)}
+                                                class="text-[12px] text-blue-600 hover:underline disabled:opacity-50 cursor-pointer"
+                                            >
+                                                {saving ? "Saving…" : "save"}
+                                            </button>
+                                            <button
+                                                onclick={cancelEdit}
+                                                disabled={saving}
+                                                onmousedown={() => (suppressBlurCancel = !!editing)}
+                                                class="text-[12px] text-gray-400 hover:text-blue-600 hover:underline disabled:opacity-50 cursor-pointer"
+                                            >
+                                                cancel
+                                            </button>
+                                        </span>
+                                    </div>
+                                    {#if saveError}
+                                        <span class="text-red-600 text-[11px]">{saveError}</span>
+                                    {/if}
+                                </div>
+                            </td>
+                        </tr>
+                    {:else}
+                        <tr
+                            class="group hover:bg-gray-100"
+                            class:bg-blue-50={selectedIds.has(entry.id)}
+                        >
+                            <td class="w-[48px] px-2 py-[7px] border-b border-gray-300 align-middle">
+                                <input
+                                    type="checkbox"
+                                    class="w-4 h-4"
+                                    checked={selectedIds.has(entry.id)}
+                                    onchange={() => toggleEntry(entry.id)}
+                                />
+                            </td>
+                            <td
+                                class="px-2 py-[7px] border-b border-gray-300 align-middle cursor-pointer"
+                                onclick={() => startEdit(entry)}
+                                onmousedown={() => (suppressBlurCancel = !!editing)}
+                            >
+                                <span class="flex items-center gap-2">
+                                    {#if entry.description}
+                                        {entry.description}
+                                    {:else}
+                                        <span class="text-gray-500 italic">(no description)</span>
+                                    {/if}
+                                    <span
+                                        class="text-blue-600 text-[11px] no-underline opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >edit</span
+                                    >
+                                </span>
+                            </td>
+                            <td
+                                class="px-2 py-[7px] border-b border-gray-300 align-middle cursor-pointer"
+                                onclick={() => startEdit(entry)}
+                                onmousedown={() => (suppressBlurCancel = !!editing)}
+                            >
+                                {#each entry.tags as tag (tag)}
+                                    <span
+                                        class="inline-block text-[11px] text-gray-500 border border-gray-300 rounded px-[5px] mr-[3px] whitespace-nowrap"
+                                        onclick={(event) => event.stopPropagation()}>{tag}</span
+                                    >
+                                {/each}
+                            </td>
+                            <td
+                                class="px-2 py-[7px] border-b border-gray-300 align-middle text-[13px] cursor-pointer"
+                                onclick={() => startEdit(entry)}
+                                onmousedown={() => (suppressBlurCancel = !!editing)}
+                            >
+                                <div class="flex items-baseline gap-4 justify-end">
+                                    <span class="text-gray-500"
+                                        >{formatTimeRange(entry.started_at, entry.ended_at)}</span
+                                    >
+                                    <span
+                                        class="font-mono font-semibold"
+                                        class:text-green-700={!entry.ended_at}
+                                        >{formatDuration(entry.started_at, entry.ended_at)}</span
+                                    >
+                                </div>
+                            </td>
+                        </tr>
+                    {/if}
                 {/each}
             </tbody>
         </table>

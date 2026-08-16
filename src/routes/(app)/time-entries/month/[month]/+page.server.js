@@ -48,20 +48,22 @@ export async function load({ params, url }) {
     const [prevMonthY, prevMonthM] = prevMonth.split("-").map(Number);
     const [nextMonthY, nextMonthM] = nextMonth.split("-").map(Number);
 
+    const view = {
+        from,
+        to,
+        before,
+        after,
+        limit,
+        sort,
+        q,
+        prevFrom: firstOfMonth(prevMonthY, prevMonthM),
+        prevTo: firstOfMonth(prevMonthY, prevMonthM + 1),
+        nextFrom: firstOfMonth(nextMonthY, nextMonthM),
+        nextTo: firstOfMonth(nextMonthY, nextMonthM + 1),
+    };
+
     const { entries, prevCursor, nextCursor, total, prevHasEntries, nextHasEntries, nearestPeriodDay, goto } =
-        await getTimeEntriesPageData({
-            from,
-            to,
-            before,
-            after,
-            limit,
-            sort,
-            q,
-            prevFrom: firstOfMonth(prevMonthY, prevMonthM),
-            prevTo: firstOfMonth(prevMonthY, prevMonthM + 1),
-            nextFrom: firstOfMonth(nextMonthY, nextMonthM),
-            nextTo: firstOfMonth(nextMonthY, nextMonthM + 1),
-        });
+        await getTimeEntriesPageData(view);
 
     const prevLabel = `${formatLabel(prevMonth)}${prevHasEntries ? "" : " (empty)"}`;
     const nextLabel = `${formatLabel(nextMonth)}${nextHasEntries ? "" : " (empty)"}`;
@@ -83,6 +85,7 @@ export async function load({ params, url }) {
     return {
         ...navData,
         ...gotoData,
+        view,
         entries,
         total,
         hasFilter: !!q,

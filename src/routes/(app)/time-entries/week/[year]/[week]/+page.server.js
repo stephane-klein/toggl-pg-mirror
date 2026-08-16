@@ -79,20 +79,22 @@ export async function load({ params, url }) {
     const nextWeekTo = new Date(nextMonday);
     nextWeekTo.setDate(nextMonday.getDate() + 7);
 
+    const view = {
+        from,
+        to,
+        before,
+        after,
+        limit,
+        sort,
+        q,
+        prevFrom: formatDate(prevMonday),
+        prevTo: formatDate(prevWeekTo),
+        nextFrom: formatDate(nextMonday),
+        nextTo: formatDate(nextWeekTo),
+    };
+
     const { entries, prevCursor, nextCursor, total, prevHasEntries, nextHasEntries, nearestPeriodDay, goto } =
-        await getTimeEntriesPageData({
-            from,
-            to,
-            before,
-            after,
-            limit,
-            sort,
-            q,
-            prevFrom: formatDate(prevMonday),
-            prevTo: formatDate(prevWeekTo),
-            nextFrom: formatDate(nextMonday),
-            nextTo: formatDate(nextWeekTo),
-        });
+        await getTimeEntriesPageData(view);
 
     const prevLabel = `W ${prevWeek}${prevHasEntries ? "" : " (empty)"}`;
     const nextLabel = `W ${nextWeek}${nextHasEntries ? "" : " (empty)"}`;
@@ -114,6 +116,7 @@ export async function load({ params, url }) {
     return {
         ...navData,
         ...gotoData,
+        view,
         entries,
         total,
         hasFilter: !!q,

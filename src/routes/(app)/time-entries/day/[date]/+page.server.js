@@ -66,20 +66,22 @@ export async function load({ params, url }) {
     const prevPeriodDate = addDays(rawDate, -1);
     const nextPeriodDate = addDays(rawDate, 1);
 
+    const view = {
+        from,
+        to,
+        before,
+        after,
+        limit,
+        sort,
+        q,
+        prevFrom: prevPeriodDate,
+        prevTo: rawDate,
+        nextFrom: nextPeriodDate,
+        nextTo: addDays(nextPeriodDate, 1),
+    };
+
     const { entries, prevCursor, nextCursor, total, prevHasEntries, nextHasEntries, nearestPeriodDay, goto } =
-        await getTimeEntriesPageData({
-            from,
-            to,
-            before,
-            after,
-            limit,
-            sort,
-            q,
-            prevFrom: prevPeriodDate,
-            prevTo: rawDate,
-            nextFrom: nextPeriodDate,
-            nextTo: addDays(nextPeriodDate, 1),
-        });
+        await getTimeEntriesPageData(view);
 
     const prevLabel = `${formatLabel(prevPeriodDate)}${prevHasEntries ? "" : " (empty)"}`;
     const nextLabel = `${formatLabel(nextPeriodDate)}${nextHasEntries ? "" : " (empty)"}`;
@@ -93,6 +95,7 @@ export async function load({ params, url }) {
     return {
         ...navData,
         ...gotoData,
+        view,
         entries,
         total,
         hasFilter: !!q,
