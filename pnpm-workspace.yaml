@@ -5,6 +5,7 @@ minimumReleaseAgeExclude:
   - svelte-codemirror-search-field@0.8.0
   - svelte-codemirror-search-field@0.9.0
   - esrap@2.3.4
+  - svelte-codemirror-search-field@0.10.0
 
 # Pin esrap to 2.3.4: 2.3.3 emits invalid JavaScript for JSDoc-annotated
 # parameters (e.g. `(/** @type {any} */ (reject))`), which breaks the remote

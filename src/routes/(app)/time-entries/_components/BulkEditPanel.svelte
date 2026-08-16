@@ -3,6 +3,9 @@
     import { page } from "$app/stores";
     import * as yaml from "js-yaml";
     import { bulkEditTimeEntries } from "./timeEntries.remote.js";
+    import InputTags from "./input-tags/InputTags.svelte";
+    import { getAllTags } from "./tags.remote.js";
+    import { fuzzyMatch } from "./fuzzyMatch.js";
 
     let { entries = [], selectedIds = $bindable(new Set()), view = null } = $props();
 
@@ -16,12 +19,12 @@
 
     let copiedFormat = $state(null);
     let description = $state("");
-    let addTags = $state("");
-    let removeTags = $state("");
+    let addTags = $state([]);
+    let removeTags = $state([]);
     let saving = $state(false);
     let saveError = $state(null);
 
-    let hasChanges = $derived(description !== "" || addTags.trim() !== "" || removeTags.trim() !== "");
+    let hasChanges = $derived(description !== "" || addTags.length > 0 || removeTags.length > 0);
 
     async function cancel() {
         selectedIds = new Set();
@@ -30,22 +33,18 @@
         await goto(url, { replaceState: true, noScroll: true, keepFocus: true });
     }
 
-    function parseTagInput(value) {
-        return [
-            ...new Set(
-                value
-                    .split(",")
-                    .map((tag) => tag.trim())
-                    .filter(Boolean),
-            ),
-        ];
+    function handleKeydown(event) {
+        if (event.key === "Enter" && !event.defaultPrevented && hasChanges && !saving) {
+            event.preventDefault();
+            applyChanges();
+        }
     }
 
     async function applyChanges() {
         const changes = {};
         if (description !== "") changes.description = description;
-        if (addTags.trim() !== "") changes.addTags = parseTagInput(addTags);
-        if (removeTags.trim() !== "") changes.removeTags = parseTagInput(removeTags);
+        if (addTags.length > 0) changes.addTags = addTags;
+        if (removeTags.length > 0) changes.removeTags = removeTags;
         if (Object.keys(changes).length === 0 || !view) return;
 
         saving = true;
@@ -163,6 +162,7 @@
 <section
     class="fixed inset-x-0 top-0 z-50 w-full border-b border-gray-300 bg-blue-50 px-6 py-3"
     aria-label="Bulk edit selected time entries"
+    onkeydown={handleKeydown}
 >
     <div class="mb-3 border-b border-gray-200 pb-2">
         <strong class="text-sm">Edit description and tags for selected entries</strong>
@@ -192,13 +192,13 @@
             >
                 Add tags
             </label>
-            <input
+            <InputTags
                 id="bulk-add-tags"
-                type="text"
-                class="box-border h-[30px] w-full rounded border border-gray-300 bg-white px-2 text-[12px]"
-                placeholder="tag1, tag2, …"
                 bind:value={addTags}
+                tags={getAllTags}
+                matchTags={fuzzyMatch}
                 disabled={saving}
+                placeholder="#tagname"
             />
         </div>
         <div>
@@ -208,13 +208,13 @@
             >
                 Remove tags
             </label>
-            <input
+            <InputTags
                 id="bulk-remove-tags"
-                type="text"
-                class="box-border h-[30px] w-full rounded border border-gray-300 bg-white px-2 text-[12px]"
-                placeholder="tag1, tag2, …"
                 bind:value={removeTags}
+                tags={getAllTags}
+                matchTags={fuzzyMatch}
                 disabled={saving}
+                placeholder="#tagname"
             />
         </div>
     </div>

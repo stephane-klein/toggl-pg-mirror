@@ -4,6 +4,9 @@
     import { goto } from "$app/navigation";
     import { page } from "$app/stores";
     import { saveTimeEntry } from "./timeEntries.remote.js";
+    import InputTags from "./input-tags/InputTags.svelte";
+    import { getAllTags } from "./tags.remote.js";
+    import { fuzzyMatch } from "./fuzzyMatch.js";
 
     let {
         entries = [],
@@ -21,7 +24,7 @@
     let rightLabel = $derived(sort === "asc" ? "Newer" : "Older");
     let hasTopNav = $derived(!!prevPageHref || !!nextPageHref);
 
-    /** @type {{ id: number, initial: { description: string, tagsTxt: string, startedAtTxt: string, endedAtTxt: string }, values: { description: string, tagsTxt: string, startedAtTxt: string, endedAtTxt: string } } | null} */
+    /** @type {{ id: number, initial: { description: string, tags: string[], startedAtTxt: string, endedAtTxt: string }, values: { description: string, tags: string[], startedAtTxt: string, endedAtTxt: string } } | null} */
     let editing = $state(null);
     let saving = $state(false);
     /** @type {string | null} */
@@ -253,7 +256,7 @@
         if (!view) return;
         const snapshot = {
             description: entry.description ?? "",
-            tagsTxt: (entry.tags || []).join(", "),
+            tags: [...(entry.tags || [])],
             startedAtTxt: formatDate(entry.started_at),
             endedAtTxt: entry.ended_at ? formatDate(entry.ended_at) : "",
         };
@@ -267,7 +270,7 @@
     }
 
     function handleEditKeydown(event) {
-        if (event.key === "Enter") {
+        if (event.key === "Enter" && !event.defaultPrevented) {
             event.preventDefault();
             save();
         } else if (event.key === "Escape") {
@@ -294,11 +297,8 @@
         if (editing.values.description !== editing.initial.description) {
             changes.description = editing.values.description;
         }
-        if (editing.values.tagsTxt !== editing.initial.tagsTxt) {
-            changes.tags = editing.values.tagsTxt
-                .split(",")
-                .map((t) => t.trim())
-                .filter(Boolean);
+        if (JSON.stringify(editing.values.tags) !== JSON.stringify(editing.initial.tags)) {
+            changes.tags = editing.values.tags;
         }
         if (editing.values.startedAtTxt !== editing.initial.startedAtTxt) {
             changes.started_at = editing.values.startedAtTxt;
@@ -605,12 +605,12 @@
                                             <label class="mt-1 text-[9px] text-gray-400 font-semibold uppercase"
                                                 >Tags</label
                                             >
-                                            <input
-                                                type="text"
-                                                class="box-border h-[30px] w-full px-2 text-[12px] border border-gray-300 rounded bg-white"
-                                                bind:value={editing.values.tagsTxt}
+                                            <InputTags
+                                                bind:value={editing.values.tags}
+                                                tags={getAllTags}
+                                                matchTags={fuzzyMatch}
                                                 disabled={saving}
-                                                placeholder="tag1, tag2, …"
+                                                placeholder="#tagname"
                                             />
                                         </div>
                                         <div class="flex flex-col">
