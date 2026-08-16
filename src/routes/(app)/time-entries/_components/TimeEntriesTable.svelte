@@ -64,7 +64,7 @@
         const h = Math.floor(totalSeconds / 3600);
         const m = Math.floor((totalSeconds % 3600) / 60);
         if (h === 0) return `${m}m`;
-        return `${h}h ${m}m`;
+        return `${h}h${m}m`;
     }
 
     function formatTimeRange(startedAt, endedAt) {
@@ -428,39 +428,47 @@
 
 {#each dayGroups as group, i (group.date)}
     <div class:mt-4={i > 0}>
-        <div class="flex items-baseline justify-between py-[7px] px-2 border-b-2 border-gray-300 bg-gray-50 rounded-t">
-            <div class="flex items-center gap-2">
-                <input
-                    type="checkbox"
-                    class="w-4 h-4"
-                    checked={group.entries.every((e) => selectedIds.has(e.id))}
-                    use:isIndeterminate={group.entries.some((e) => selectedIds.has(e.id)) &&
-                        !group.entries.every((e) => selectedIds.has(e.id))}
-                    onchange={() => toggleGroup(group.entries)}
-                />
-                <span class="text-sm font-bold">{dayLabel(group.date)}</span>
-            </div>
-            <span class="text-sm font-mono text-gray-500">{formatPeriodDuration(group.totalSeconds)}</span>
-        </div>
-
-        <table class="w-full table-fixed border-collapse text-[14px]">
+        <table class="w-full table-auto border-collapse text-[14px]">
             <thead>
-                <tr>
-                    <th class="w-[48px] px-2 py-[7px] border-b-2 border-gray-300"></th>
+                <tr class="bg-gray-50">
                     <th
-                        class="w-1/2 px-2 py-[7px] border-b-2 border-gray-300 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider"
+                        colspan="2"
+                        class="px-2 py-[7px] border-b-2 border-gray-300 rounded-tl"
+                    >
+                        <div class="flex items-center gap-2 whitespace-nowrap">
+                            <input
+                                type="checkbox"
+                                class="w-4 h-4"
+                                checked={group.entries.every((e) => selectedIds.has(e.id))}
+                                use:isIndeterminate={group.entries.some((e) => selectedIds.has(e.id)) &&
+                                    !group.entries.every((e) => selectedIds.has(e.id))}
+                                onchange={() => toggleGroup(group.entries)}
+                            />
+                            <span class="text-sm font-bold">{dayLabel(group.date)}</span>
+                        </div>
+                    </th>
+                    <th class="px-2 py-[7px] border-b-2 border-gray-300 text-left">
+                        <span class="text-sm text-gray-500">Total duration</span>
+                        <span class="text-sm font-mono text-gray-500">{formatPeriodDuration(group.totalSeconds)}</span>
+                    </th>
+                    <th class="border-b-2 border-gray-300 rounded-tr"></th>
+                </tr>
+                <tr>
+                    <th class="w-[1px] px-2 py-[7px] border-b-2 border-gray-300"></th>
+                    <th
+                        class="w-[1px] whitespace-normal px-2 py-[7px] border-b-2 border-gray-300 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider"
+                    >
+                        Time / Duration
+                    </th>
+                    <th
+                        class="w-3/5 px-2 py-[7px] border-b-2 border-gray-300 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider"
                     >
                         Description
                     </th>
                     <th
-                        class="w-1/4 px-2 py-[7px] border-b-2 border-gray-300 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider"
+                        class="w-2/5 whitespace-normal px-2 py-[7px] border-b-2 border-gray-300 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider"
                     >
                         Tags
-                    </th>
-                    <th
-                        class="w-1/4 px-2 py-[7px] border-b-2 border-gray-300 text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wider"
-                    >
-                        Time / Duration
                     </th>
                 </tr>
             </thead>
@@ -472,7 +480,7 @@
                             onkeydown={handleEditKeydown}
                             onfocusout={handleFocusOut}
                         >
-                            <td class="w-[48px] px-2 py-[7px] border-b border-gray-300 align-middle">
+                            <td class="w-[1px] px-2 py-[7px] border-b border-gray-300 align-middle">
                                 <input
                                     type="checkbox"
                                     class="w-4 h-4"
@@ -492,7 +500,7 @@
                                     <input
                                         bind:this={descriptionInput}
                                         type="text"
-                                         class="box-border h-[30px] w-full px-2 text-[12px] border border-gray-300 rounded bg-white"
+                                        class="box-border h-[30px] w-full px-2 text-[12px] border border-gray-300 rounded bg-white"
                                         bind:value={editing.values.description}
                                         disabled={saving}
                                         placeholder="(no description)"
@@ -504,7 +512,7 @@
                                             >
                                             <input
                                                 type="text"
-                                                 class="box-border h-[30px] w-full px-2 text-[12px] border border-gray-300 rounded bg-white"
+                                                class="box-border h-[30px] w-full px-2 text-[12px] border border-gray-300 rounded bg-white"
                                                 bind:value={editing.values.tagsTxt}
                                                 disabled={saving}
                                                 placeholder="tag1, tag2, …"
@@ -516,7 +524,7 @@
                                             >
                                             <input
                                                 type="text"
-                                                 class="box-border h-[30px] w-[190px] px-2 text-[12px] font-mono border border-gray-300 rounded bg-white"
+                                                class="box-border h-[30px] w-[190px] px-2 text-[12px] font-mono border border-gray-300 rounded bg-white"
                                                 bind:value={editing.values.startedAtTxt}
                                                 disabled={saving}
                                                 title="YYYY-MM-DD HH:MM[:SS] (Europe/Paris)"
@@ -528,7 +536,7 @@
                                             >
                                             <input
                                                 type="text"
-                                                 class="box-border h-[30px] w-[190px] px-2 text-[12px] font-mono border border-gray-300 rounded bg-white"
+                                                class="box-border h-[30px] w-[190px] px-2 text-[12px] font-mono border border-gray-300 rounded bg-white"
                                                 bind:value={editing.values.endedAtTxt}
                                                 disabled={saving}
                                                 placeholder="running"
@@ -565,7 +573,7 @@
                             class="group hover:bg-gray-100"
                             class:bg-blue-50={selectedIds.has(entry.id)}
                         >
-                            <td class="w-[48px] px-2 py-[7px] border-b border-gray-300 align-middle">
+                            <td class="w-[1px] px-2 py-[7px] border-b border-gray-300 align-middle">
                                 <input
                                     type="checkbox"
                                     class="w-4 h-4"
@@ -574,40 +582,11 @@
                                 />
                             </td>
                             <td
-                                class="px-2 py-[7px] border-b border-gray-300 align-middle cursor-pointer"
+                                class="w-[1px] whitespace-nowrap px-2 py-[7px] border-b border-gray-300 align-middle text-[13px] cursor-pointer"
                                 onclick={() => startEdit(entry)}
                                 onmousedown={() => (suppressBlurCancel = !!editing)}
                             >
-                                <span class="flex items-center gap-2">
-                                    {#if entry.description}
-                                        {entry.description}
-                                    {:else}
-                                        <span class="text-gray-500 italic">(no description)</span>
-                                    {/if}
-                                    <span
-                                        class="text-blue-600 text-[11px] no-underline opacity-0 group-hover:opacity-100 transition-opacity"
-                                        >edit</span
-                                    >
-                                </span>
-                            </td>
-                            <td
-                                class="px-2 py-[7px] border-b border-gray-300 align-middle cursor-pointer"
-                                onclick={() => startEdit(entry)}
-                                onmousedown={() => (suppressBlurCancel = !!editing)}
-                            >
-                                {#each entry.tags as tag (tag)}
-                                    <span
-                                        class="inline-block text-[11px] text-gray-500 border border-gray-300 rounded px-[5px] mr-[3px] whitespace-nowrap"
-                                        onclick={(event) => event.stopPropagation()}>{tag}</span
-                                    >
-                                {/each}
-                            </td>
-                            <td
-                                class="px-2 py-[7px] border-b border-gray-300 align-middle text-[13px] cursor-pointer"
-                                onclick={() => startEdit(entry)}
-                                onmousedown={() => (suppressBlurCancel = !!editing)}
-                            >
-                                <div class="flex items-baseline gap-4 justify-end">
+                                <div class="flex items-baseline gap-2 justify-start whitespace-nowrap">
                                     <span class="text-gray-500"
                                         >{formatTimeRange(entry.started_at, entry.ended_at)}</span
                                     >
@@ -617,6 +596,43 @@
                                         >{formatDuration(entry.started_at, entry.ended_at)}</span
                                     >
                                 </div>
+                            </td>
+                            <td
+                                class="w-3/5 px-2 py-[7px] border-b border-gray-300 align-middle cursor-pointer"
+                                onclick={() => startEdit(entry)}
+                                onmousedown={() => (suppressBlurCancel = !!editing)}
+                            >
+                                <span class="flex items-center justify-between gap-2">
+                                    <span class="min-w-0">
+                                        {#if entry.description}
+                                            {entry.description}
+                                        {:else}
+                                            <span class="text-gray-500 italic">(no description)</span>
+                                        {/if}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        class="shrink-0 text-blue-600 text-[11px] no-underline opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity cursor-pointer"
+                                        aria-label="Edit time entry"
+                                        title="Edit time entry"
+                                        onclick={(event) => {
+                                            event.stopPropagation();
+                                            startEdit(entry);
+                                        }}>edit entry</button
+                                    >
+                                </span>
+                            </td>
+                            <td
+                                class="w-2/5 whitespace-normal px-2 py-[7px] border-b border-gray-300 align-middle cursor-pointer"
+                                onclick={() => startEdit(entry)}
+                                onmousedown={() => (suppressBlurCancel = !!editing)}
+                            >
+                                {#each entry.tags as tag (tag)}
+                                    <span
+                                        class="inline-block text-[11px] text-gray-500 border border-gray-300 rounded px-[5px] mr-[3px] whitespace-nowrap"
+                                        onclick={(event) => event.stopPropagation()}>{tag}</span
+                                    >
+                                {/each}
                             </td>
                         </tr>
                     {/if}
