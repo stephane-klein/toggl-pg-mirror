@@ -242,6 +242,7 @@ export function computeGoToData(url, sort, q, goto) {
             date: null,
             before: null,
             after: null,
+            selected: null,
         };
         if (limitRaw !== null) params.limit = limitRaw;
         return modifyCurrentUrl(url, path, params);

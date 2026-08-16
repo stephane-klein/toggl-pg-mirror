@@ -1,5 +1,7 @@
 import { modifyCurrentUrl } from "$lib/url";
 
+export { parseSelectedIds, selectedIdsForEntries } from "./timeEntriesSelection.js";
+
 function addDays(dateStr, n) {
     const [y, m, d] = dateStr.split("-").map(Number);
     const date = new Date(y, m - 1, d);
@@ -32,7 +34,17 @@ export function hreffy(url, path, extra = {}) {
     const sort = url.searchParams.get("sort") || "";
     const q = url.searchParams.get("q") || "";
     const limitRaw = url.searchParams.get("limit");
-    const drop = { before: null, after: null, from: null, to: null, year: null, week: null, month: null, date: null };
+    const drop = {
+        before: null,
+        after: null,
+        from: null,
+        to: null,
+        year: null,
+        week: null,
+        month: null,
+        date: null,
+        selected: null,
+    };
     const params = { sort, q, ...drop };
     if (limitRaw !== null) params.limit = limitRaw;
     return modifyCurrentUrl(url, path, { ...params, ...extra });
@@ -43,7 +55,7 @@ export function buildPaginationHrefs(url, prevCursor, nextCursor, sort) {
         sort === "asc" ? { prevParam: "before", nextParam: "after" } : { prevParam: "after", nextParam: "before" };
 
     const limitRaw = url.searchParams.get("limit");
-    const base = {};
+    const base = { selected: null };
     if (limitRaw !== null) base.limit = limitRaw;
 
     return {
@@ -76,6 +88,7 @@ export function computeTimeEntriesNav(url, referenceDate) {
         date: null,
         before: null,
         after: null,
+        selected: null,
     };
     if (limitRaw !== null) carryParams.limit = limitRaw;
 

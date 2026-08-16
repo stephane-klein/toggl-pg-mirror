@@ -1,7 +1,12 @@
 import { error } from "@sveltejs/kit";
 
 import { getTimeEntriesPageData, parseLimit, computeGoToData } from "$lib/backend/time-entries.js";
-import { computeTimeEntriesNav, hreffy, buildPaginationHrefs } from "$lib/backend/timeEntriesUrl.js";
+import {
+    computeTimeEntriesNav,
+    hreffy,
+    buildPaginationHrefs,
+    selectedIdsForEntries,
+} from "$lib/backend/timeEntriesUrl.js";
 
 function addDays(dateStr, n) {
     const [y, m, d] = dateStr.split("-").map(Number);
@@ -82,6 +87,7 @@ export async function load({ params, url }) {
 
     const { entries, prevCursor, nextCursor, total, prevHasEntries, nextHasEntries, nearestPeriodDay, goto } =
         await getTimeEntriesPageData(view);
+    const selectedIds = selectedIdsForEntries(url.searchParams.get("selected"), entries);
 
     const prevLabel = `${formatLabel(prevPeriodDate)}${prevHasEntries ? "" : " (empty)"}`;
     const nextLabel = `${formatLabel(nextPeriodDate)}${nextHasEntries ? "" : " (empty)"}`;
@@ -97,6 +103,7 @@ export async function load({ params, url }) {
         ...gotoData,
         view,
         entries,
+        selectedIds,
         total,
         hasFilter: !!q,
         mode: "day",

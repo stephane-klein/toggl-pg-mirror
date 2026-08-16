@@ -1,7 +1,7 @@
 import { error } from "@sveltejs/kit";
 
 import { getTimeEntriesPageData, parseLimit, computeGoToData } from "$lib/backend/time-entries.js";
-import { computeTimeEntriesNav, buildPaginationHrefs } from "$lib/backend/timeEntriesUrl.js";
+import { computeTimeEntriesNav, buildPaginationHrefs, selectedIdsForEntries } from "$lib/backend/timeEntriesUrl.js";
 
 function addDays(dateStr, n) {
     const [y, m, d] = dateStr.split("-").map(Number);
@@ -50,6 +50,7 @@ export async function load({ url }) {
     };
 
     const { entries, prevCursor, nextCursor, total, goto } = await getTimeEntriesPageData(view);
+    const selectedIds = selectedIdsForEntries(url.searchParams.get("selected"), entries);
     const gotoData = computeGoToData(url, sort, q, goto);
 
     if (!from || !to) {
@@ -57,6 +58,7 @@ export async function load({ url }) {
             ...navData,
             ...gotoData,
             entries: [],
+            selectedIds: [],
             total: 0,
             hasFilter: false,
             mode: "range",
@@ -75,6 +77,7 @@ export async function load({ url }) {
         ...gotoData,
         view,
         entries,
+        selectedIds,
         total,
         hasFilter: !!q,
         mode: "range",

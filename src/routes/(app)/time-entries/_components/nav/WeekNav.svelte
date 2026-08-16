@@ -28,7 +28,13 @@
         const w = Number.parseInt(weekInput, 10);
         if (y === currentYear && w === currentWeek) return;
         if (y > 0 && w > 0 && w <= 53) {
-            goto(modifyCurrentUrl($page.url, `/time-entries/week/${y}/${w}`, { before: null, after: null }));
+            goto(
+                modifyCurrentUrl($page.url, `/time-entries/week/${y}/${w}`, {
+                    before: null,
+                    after: null,
+                    selected: null,
+                }),
+            );
         }
     }
 

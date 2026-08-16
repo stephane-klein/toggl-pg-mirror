@@ -24,7 +24,7 @@ Pre-computes all navigation hrefs needed by `GoTo`, `ModeSelector`, `DayNav`, `W
 
 ### `hreffy(url, path, extra)`
 
-Builds a href by carrying `sort`, `q`, `limit` from the current URL, dropping all view-specific params (`before`, `after`, `from`, `to`, `date`, `year`, `week`, `month`), and optionally adding extra params.
+Builds a href by carrying `sort`, `q`, `limit` from the current URL, dropping all view-specific params (`before`, `after`, `from`, `to`, `date`, `year`, `week`, `month`, `selected`), and optionally adding extra params.
 
 ### `buildPaginationHrefs(url, prevCursor, nextCursor, sort)`
 
@@ -106,17 +106,18 @@ export const load = async ({ url, params, locals }) => {
 
 ## Query parameter inventory
 
-| Param          | Scope                 | Pre-computed in                                 |
-| -------------- | --------------------- | ----------------------------------------------- |
-| `sort`         | carried by `hreffy()` | `computeTimeEntriesNav`, `buildPaginationHrefs` |
-| `q`            | carried by `hreffy()` | `computeTimeEntriesNav`                         |
-| `limit`        | carried by `hreffy()` | `computeTimeEntriesNav`                         |
-| `before`       | cursor (per-view)     | `buildPaginationHrefs`                          |
-| `after`        | cursor (per-view)     | `buildPaginationHrefs`                          |
-| `date`         | day view              | route param                                     |
-| `year`, `week` | week view             | route params                                    |
-| `month`        | month view            | route param                                     |
-| `from`, `to`   | range view            | `RangeNav` interactive handler                  |
+| Param          | Scope                  | Pre-computed in                                 |
+| -------------- | ---------------------- | ----------------------------------------------- |
+| `sort`         | carried by `hreffy()`  | `computeTimeEntriesNav`, `buildPaginationHrefs` |
+| `q`            | carried by `hreffy()`  | `computeTimeEntriesNav`                         |
+| `limit`        | carried by `hreffy()`  | `computeTimeEntriesNav`                         |
+| `before`       | cursor (per-view)      | `buildPaginationHrefs`                          |
+| `after`        | cursor (per-view)      | `buildPaginationHrefs`                          |
+| `date`         | day view               | route param                                     |
+| `year`, `week` | week view              | route params                                    |
+| `month`        | month view             | route param                                     |
+| `from`, `to`   | range view             | `RangeNav` interactive handler                  |
+| `selected`     | current view selection | `TimeEntriesTable` URL state                    |
 
 ## The `q` filter DSL
 

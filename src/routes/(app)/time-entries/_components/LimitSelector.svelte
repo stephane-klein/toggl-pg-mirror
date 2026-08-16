@@ -16,7 +16,7 @@
     let autoTitle = $derived(`Auto: shows all entries for the current view (up to ${AUTO_LIMITS[mode]} for ${mode})`);
 
     function handleLimitChange(event) {
-        goto(modifyCurrentUrl($page.url, null, { limit: event.target.value }));
+        goto(modifyCurrentUrl($page.url, null, { limit: event.target.value, selected: null }));
     }
 </script>
 

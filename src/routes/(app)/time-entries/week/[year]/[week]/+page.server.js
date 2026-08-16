@@ -1,7 +1,12 @@
 import { error } from "@sveltejs/kit";
 
 import { getTimeEntriesPageData, parseLimit, computeGoToData } from "$lib/backend/time-entries.js";
-import { computeTimeEntriesNav, hreffy, buildPaginationHrefs } from "$lib/backend/timeEntriesUrl.js";
+import {
+    computeTimeEntriesNav,
+    hreffy,
+    buildPaginationHrefs,
+    selectedIdsForEntries,
+} from "$lib/backend/timeEntriesUrl.js";
 
 function getMonday(year, week) {
     const jan4 = new Date(year, 0, 4);
@@ -95,6 +100,7 @@ export async function load({ params, url }) {
 
     const { entries, prevCursor, nextCursor, total, prevHasEntries, nextHasEntries, nearestPeriodDay, goto } =
         await getTimeEntriesPageData(view);
+    const selectedIds = selectedIdsForEntries(url.searchParams.get("selected"), entries);
 
     const prevLabel = `W ${prevWeek}${prevHasEntries ? "" : " (empty)"}`;
     const nextLabel = `W ${nextWeek}${nextHasEntries ? "" : " (empty)"}`;
@@ -118,6 +124,7 @@ export async function load({ params, url }) {
         ...gotoData,
         view,
         entries,
+        selectedIds,
         total,
         hasFilter: !!q,
         mode: "week",

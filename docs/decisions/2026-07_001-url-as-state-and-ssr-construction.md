@@ -50,6 +50,18 @@ The same `modifyCurrentUrl()` is now called in two contexts:
 
 This shift maximizes SSR content generation, reduces client-side JavaScript, and centralises URL construction logic on the server without adding a new abstraction — `modifyCurrentUrl()` remains the single tool, just called earlier in the request lifecycle. Detailed component-by-component breakdown lives in `docs/agents/time-entries.md`.
 
+### Bulk selection state
+
+Bulk editing extends the same rule to the current table selection. Selected entry IDs
+are stored in the view-scoped `selected` query parameter as a comma-separated list.
+The server validates the IDs against the current result page and returns the valid
+selection in the SSR payload. The bulk-edit panel is derived from that selection;
+its unsaved form values remain local until submission.
+
+Navigation, pagination, filtering, and sorting drop `selected` because a selection
+must not silently cross a changed result set. Clearing or applying the bulk edit
+removes `selected` with a replace-state navigation.
+
 ## Pros and Cons of the Options
 
 ### A. `modifyCurrentUrl()` utility function

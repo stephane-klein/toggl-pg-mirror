@@ -1,6 +1,8 @@
 <script>
     /* eslint-disable svelte/prefer-svelte-reactivity -- new Date() used in ephemeral formatting functions, not reactive state */
 
+    import { goto } from "$app/navigation";
+    import { page } from "$app/stores";
     import { saveTimeEntry } from "./timeEntries.remote.js";
 
     let {
@@ -100,18 +102,30 @@
         };
     }
 
+    function setSelectedIds(next) {
+        selectedIds = next;
+        const url = new URL($page.url);
+        if (next.size > 0) {
+            url.searchParams.set("selected", [...next].join(","));
+        } else {
+            url.searchParams.delete("selected");
+        }
+        goto(url, { replaceState: true, noScroll: true, keepFocus: true });
+    }
+
     function toggleEntry(id) {
+        id = Number(id);
         const next = new Set(selectedIds);
         if (next.has(id)) {
             next.delete(id);
         } else {
             next.add(id);
         }
-        selectedIds = next;
+        setSelectedIds(next);
     }
 
     function toggleGroup(groupEntries) {
-        const ids = groupEntries.map((e) => e.id);
+        const ids = groupEntries.map((e) => Number(e.id));
         const allSelected = ids.every((id) => selectedIds.has(id));
         const next = new Set(selectedIds);
         if (allSelected) {
@@ -119,11 +133,11 @@
         } else {
             ids.forEach((id) => next.add(id));
         }
-        selectedIds = next;
+        setSelectedIds(next);
     }
 
     function toggleAll() {
-        const allIds = entries.map((e) => e.id);
+        const allIds = entries.map((e) => Number(e.id));
         const allSelected = allIds.length > 0 && allIds.every((id) => selectedIds.has(id));
         const next = new Set(selectedIds);
         if (allSelected) {
@@ -131,7 +145,7 @@
         } else {
             allIds.forEach((id) => next.add(id));
         }
-        selectedIds = next;
+        setSelectedIds(next);
     }
 
     import * as yaml from "js-yaml";
@@ -208,7 +222,7 @@
     }
 
     function copySelected(format) {
-        const selected = entries.filter((e) => selectedIds.has(e.id));
+        const selected = entries.filter((e) => selectedIds.has(Number(e.id)));
         navigator.clipboard.writeText(generateText(selected, format));
         copiedFormat = format;
         setTimeout(() => {
@@ -217,7 +231,7 @@
     }
 
     let someSelected = $derived(selectedIds.size > 0);
-    let allSelected = $derived(entries.length > 0 && entries.every((e) => selectedIds.has(e.id)));
+    let allSelected = $derived(entries.length > 0 && entries.every((e) => selectedIds.has(Number(e.id))));
     let globalIndeterminate = $derived(someSelected && !allSelected);
 
     let dayGroups = $derived.by(() => {
@@ -363,7 +377,88 @@
                 <span class="text-blue-600 italic text-[12px]">Entry #{movedOutId} moved to another period/day</span>
             {/if}
         </div>
-        {#if selectedIds.size > 0}
+        {#if false}
+            <div class="absolute inset-x-0 top-full z-10 border-b border-gray-300 bg-white px-3 py-3 text-sm">
+                <div class="flex flex-wrap items-start gap-x-6 gap-y-3">
+                    <div class="min-w-[220px] flex-1">
+                        <label
+                            for="bulk-description"
+                            class="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500"
+                        >
+                            Description
+                        </label>
+                        <input
+                            id="bulk-description"
+                            type="text"
+                            class="box-border h-[30px] w-full rounded border border-gray-300 bg-white px-2 text-[12px]"
+                            placeholder="Replace description for all selected entries"
+                            disabled
+                        />
+                    </div>
+                    <div class="min-w-[180px] flex-1">
+                        <label
+                            for="bulk-add-tags"
+                            class="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500"
+                        >
+                            Add tags
+                        </label>
+                        <input
+                            id="bulk-add-tags"
+                            type="text"
+                            class="box-border h-[30px] w-full rounded border border-gray-300 bg-white px-2 text-[12px]"
+                            placeholder="tag1, tag2, …"
+                            disabled
+                        />
+                    </div>
+                    <div class="min-w-[180px] flex-1">
+                        <label
+                            for="bulk-remove-tags"
+                            class="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500"
+                        >
+                            Remove tags
+                        </label>
+                        <input
+                            id="bulk-remove-tags"
+                            type="text"
+                            class="box-border h-[30px] w-full rounded border border-gray-300 bg-white px-2 text-[12px]"
+                            placeholder="tag1, tag2, …"
+                            disabled
+                        />
+                    </div>
+                    <div class="flex items-end gap-2 pb-[1px]">
+                        <button
+                            type="button"
+                            class="h-[30px] rounded border border-gray-300 px-3 text-[12px] text-gray-400"
+                            disabled
+                        >
+                            Apply changes
+                        </button>
+                        <button
+                            type="button"
+                            class="h-[30px] px-1 text-[12px] text-gray-400"
+                            disabled
+                        >
+                            cancel
+                        </button>
+                    </div>
+                </div>
+                <div class="mt-3 flex flex-wrap items-center gap-1 border-t border-gray-200 pt-2">
+                    <span class="text-gray-500 select-none">Copy selected as</span>
+                    {#if copiedFormat}
+                        <span class="text-green-600">{formatLabels[copiedFormat]} copied!</span>
+                    {:else}
+                        {#each Object.entries(formatLabels) as [format, label], i (format)}
+                            {#if i > 0}<span class="text-gray-300">|</span>{/if}
+                            <button
+                                onclick={() => copySelected(format)}
+                                class="text-indigo-600 underline underline-offset-2 hover:text-indigo-800 cursor-pointer"
+                                >{label}</button
+                            >
+                        {/each}
+                    {/if}
+                </div>
+            </div>
+        {:else if selectedIds.size === 1}
             <div class="absolute left-1/2 -translate-x-1/2 flex items-center gap-1 text-sm">
                 {#if copiedFormat}
                     <span class="text-green-600">{formatLabels[copiedFormat]} copied!</span>
@@ -439,9 +534,9 @@
                             <input
                                 type="checkbox"
                                 class="w-4 h-4"
-                                checked={group.entries.every((e) => selectedIds.has(e.id))}
-                                use:isIndeterminate={group.entries.some((e) => selectedIds.has(e.id)) &&
-                                    !group.entries.every((e) => selectedIds.has(e.id))}
+                                checked={group.entries.every((e) => selectedIds.has(Number(e.id)))}
+                                use:isIndeterminate={group.entries.some((e) => selectedIds.has(Number(e.id))) &&
+                                    !group.entries.every((e) => selectedIds.has(Number(e.id)))}
                                 onchange={() => toggleGroup(group.entries)}
                             />
                             <span class="text-sm font-bold">{dayLabel(group.date)}</span>
@@ -484,7 +579,7 @@
                                 <input
                                     type="checkbox"
                                     class="w-4 h-4"
-                                    checked={selectedIds.has(entry.id)}
+                                    checked={selectedIds.has(Number(entry.id))}
                                     onchange={() => toggleEntry(entry.id)}
                                     disabled={saving}
                                 />
@@ -571,13 +666,13 @@
                     {:else}
                         <tr
                             class="group hover:bg-gray-100"
-                            class:bg-blue-50={selectedIds.has(entry.id)}
+                            class:bg-blue-50={selectedIds.has(Number(entry.id))}
                         >
                             <td class="w-[1px] px-2 py-[7px] border-b border-gray-300 align-middle">
                                 <input
                                     type="checkbox"
                                     class="w-4 h-4"
-                                    checked={selectedIds.has(entry.id)}
+                                    checked={selectedIds.has(Number(entry.id))}
                                     onchange={() => toggleEntry(entry.id)}
                                 />
                             </td>

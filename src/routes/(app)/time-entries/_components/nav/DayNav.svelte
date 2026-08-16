@@ -16,7 +16,13 @@
 
     function handleConfirm(newDate) {
         if (newDate !== currentDate) {
-            goto(modifyCurrentUrl($page.url, `/time-entries/day/${newDate}`, { before: null, after: null }));
+            goto(
+                modifyCurrentUrl($page.url, `/time-entries/day/${newDate}`, {
+                    before: null,
+                    after: null,
+                    selected: null,
+                }),
+            );
         }
     }
 

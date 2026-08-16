@@ -5,6 +5,7 @@
     import LimitSelector from "../_components/LimitSelector.svelte";
     import RangeNav from "../_components/nav/RangeNav.svelte";
     import TimeEntryFilter from "../_components/TimeEntryFilter.svelte";
+    import BulkEditPanel from "../_components/BulkEditPanel.svelte";
     import TimeEntriesTable from "../_components/TimeEntriesTable.svelte";
     import Pagination from "../_components/Pagination.svelte";
 
@@ -19,9 +20,11 @@
     let nextPageHref = $state(data.nextPageHref);
     let hasFilter = $derived(data.hasFilter);
     let view = $derived(data.view);
+    let selectedIds = $state(new Set(data.selectedIds));
 
     $effect(() => {
         entries = data.entries;
+        selectedIds = new Set(data.selectedIds);
         total = data.total;
         prevPageHref = data.prevPageHref;
         nextPageHref = data.nextPageHref;
@@ -68,27 +71,36 @@
 </svelte:head>
 
 <main class="page px-5 pt-2 pb-12">
-    <div class="flex items-baseline justify-between mb-2 flex-wrap gap-y-1">
-        <GoTo {...goToProps} />
-        <div class="flex items-baseline gap-2">
-            <ModeSelector {...modeProps} />
-            <span class="text-gray-300">|</span>
-            <LimitSelector mode="range" />
-            <span class="text-gray-300">|</span>
-            <SortToggle {sort} />
+    {#if selectedIds.size >= 2}
+        <BulkEditPanel
+            {entries}
+            {view}
+            bind:selectedIds
+        />
+    {:else}
+        <div class="flex items-baseline justify-between mb-2 flex-wrap gap-y-1">
+            <GoTo {...goToProps} />
+            <div class="flex items-baseline gap-2">
+                <ModeSelector {...modeProps} />
+                <span class="text-gray-300">|</span>
+                <LimitSelector mode="range" />
+                <span class="text-gray-300">|</span>
+                <SortToggle {sort} />
+            </div>
         </div>
-    </div>
 
-    <RangeNav
-        {currentFrom}
-        {currentTo}
-    />
+        <RangeNav
+            {currentFrom}
+            {currentTo}
+        />
 
-    <TimeEntryFilter {total} />
+        <TimeEntryFilter {total} />
+    {/if}
 
     {#if periodLabel}
         <TimeEntriesTable
             {entries}
+            bind:selectedIds
             {sort}
             {prevPageHref}
             {nextPageHref}

@@ -33,7 +33,13 @@
         if (/^\d{4}-\d{2}$/.test(target)) {
             const monthNum = Number.parseInt(m, 10);
             if (monthNum >= 1 && monthNum <= 12) {
-                goto(modifyCurrentUrl($page.url, `/time-entries/month/${target}`, { before: null, after: null }));
+                goto(
+                    modifyCurrentUrl($page.url, `/time-entries/month/${target}`, {
+                        before: null,
+                        after: null,
+                        selected: null,
+                    }),
+                );
             }
         }
     }

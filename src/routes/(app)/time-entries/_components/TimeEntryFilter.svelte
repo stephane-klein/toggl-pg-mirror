@@ -60,6 +60,7 @@
         } else {
             url.searchParams.delete("q");
         }
+        url.searchParams.delete("selected");
         goto(url, { replaceState: true, noScroll: true, keepFocus: true });
     }
 

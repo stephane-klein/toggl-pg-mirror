@@ -5,7 +5,7 @@
     let { sort = "asc" } = $props();
 
     function sortUrl(newSort) {
-        return modifyCurrentUrl($page.url, null, { sort: newSort });
+        return modifyCurrentUrl($page.url, null, { sort: newSort, selected: null });
     }
 </script>
 
