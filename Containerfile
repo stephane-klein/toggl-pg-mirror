@@ -41,6 +41,17 @@ COPY src/ src/
 COPY sqls/ ./sqls/
 COPY entrypoint.sh /entrypoint.sh
 
+ARG GIT_HASH=unknown
+ARG GIT_BRANCH=unknown
+ARG GIT_DATE=unknown
+ARG BUILD_STAMP=unknown
+
+ENV PUBLIC_GIT_HASH=$GIT_HASH \
+    PUBLIC_GIT_BRANCH=$GIT_BRANCH \
+    PUBLIC_GIT_DATE=$GIT_DATE \
+    PUBLIC_BUILD_STAMP=$BUILD_STAMP \
+    PUBLIC_REPO_URL=https://github.com/stephane-klein/toggl-pg-mirror/
+
 HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=3 \
   CMD curl -f http://localhost:${PORT:-3000}/ready || exit 1
 
