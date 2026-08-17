@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
+import { createApiToken, generateId, hashPassword } from "./lib/backend/auth.js";
 import { importCsv } from "./lib/backend/csv-importer.js";
 import { parseDate } from "./lib/backend/date-parser.js";
 import { importTimeEntries } from "./lib/backend/importer.js";
 import { logger } from "./lib/backend/logger.js";
+import { sql, waitForDb } from "./lib/backend/pg.js";
 import { ping, togglIsConfigured } from "./lib/backend/toggl-client.js";
 
 function formatDuration(seconds) {
@@ -123,6 +125,125 @@ yargs(hideBin(process.argv))
             }
         },
     )
+    .command(
+        "add-user",
+        "Create a user account",
+        (yargs) =>
+            yargs
+                .option("email", {
+                    type: "string",
+                    demandOption: true,
+                    description: "User email address",
+                })
+                .option("password", {
+                    type: "string",
+                    description: "User password (mutually exclusive with --password-stdin)",
+                    conflicts: "password-stdin",
+                })
+                .option("password-stdin", {
+                    type: "boolean",
+                    description: "Read password from stdin (mutually exclusive with --password)",
+                    conflicts: "password",
+                })
+                .option("display-name", {
+                    type: "string",
+                    description: "Display name (defaults to email)",
+                })
+                .option("oidc-issuer", {
+                    type: "string",
+                    description: "OIDC issuer URL (reserved for future use)",
+                })
+                .option("oidc-subject", {
+                    type: "string",
+                    description: "OIDC subject identifier (reserved for future use)",
+                })
+                .check((argv) => {
+                    const hasPassword = Boolean(argv.password) || argv["password-stdin"];
+                    const hasOidc = Boolean(argv["oidc-issuer"]) || Boolean(argv["oidc-subject"]);
+
+                    if (!hasPassword && !hasOidc) {
+                        throw new Error("Provide either --password/--password-stdin or --oidc-issuer + --oidc-subject");
+                    }
+
+                    if (argv["oidc-issuer"] && !argv["oidc-subject"]) {
+                        throw new Error("--oidc-subject is required when --oidc-issuer is provided");
+                    }
+
+                    if (argv["oidc-subject"] && !argv["oidc-issuer"]) {
+                        throw new Error("--oidc-issuer is required when --oidc-subject is provided");
+                    }
+
+                    return true;
+                }),
+        async (argv) => {
+            await waitForDb();
+
+            let passwordHash = null;
+
+            if (argv.password) {
+                logger.info("Hashing password...");
+                passwordHash = await hashPassword(argv.password);
+            } else if (argv["password-stdin"]) {
+                logger.info("Reading password from stdin...");
+                const chunks = [];
+                for await (const chunk of process.stdin) {
+                    chunks.push(chunk);
+                }
+                const password = Buffer.concat(chunks).toString("utf8").trim();
+                if (!password) {
+                    logger.error("No password provided via stdin");
+                    process.exit(1);
+                }
+                passwordHash = await hashPassword(password);
+            }
+
+            const id = generateId();
+            const displayName = argv["display-name"] || argv.email;
+
+            logger.info({ email: argv.email, displayName }, "Creating user...");
+
+            await sql`INSERT INTO users (id, email, display_name, password_hash, oidc_issuer, oidc_subject)
+                      VALUES (${id}, ${argv.email}, ${displayName}, ${passwordHash}, ${(argv["oidc-issuer"] || "").replace(/\/$/, "") || null}, ${argv["oidc-subject"] || null})`;
+
+            logger.info({ id, email: argv.email }, "User created");
+
+            await sql.end();
+        },
+    )
+    .command(
+        "create-api-token",
+        "Create an API token for a user",
+        (yargs) =>
+            yargs
+                .option("email", {
+                    type: "string",
+                    demandOption: true,
+                    description: "User email address",
+                })
+                .option("name", {
+                    type: "string",
+                    demandOption: true,
+                    description: "Token name (e.g. 'CI/CD deploy')",
+                }),
+        async (argv) => {
+            await waitForDb();
+
+            const [user] = await sql`SELECT id, email FROM users WHERE email = ${argv.email}`;
+
+            if (!user) {
+                logger.error({ email: argv.email }, "User not found");
+                process.exit(1);
+            }
+
+            const token = await createApiToken(user.id, argv.name);
+
+            logger.info({ name: argv.name }, "API token created");
+            console.log("\nRaw token (shown once — store it safely):");
+            console.log(token.raw);
+
+            await sql.end();
+        },
+    )
     .demandCommand(1, "Use one of the available commands")
     .epilogue(
         `
@@ -131,6 +252,7 @@ Environment variables:
   TOGGL_PG_MIRROR_POSTGRES_SCHEMA           PostgreSQL schema name (default: public)
   TOGGL_PG_MIRROR_TOGGL_API_TOKEN           Toggl API token
   TOGGL_PG_MIRROR_POLL_INTERVAL_SECONDS     Sync daemon polling interval in seconds (default: 600)
+  TOGGL_PG_MIRROR_ADMIN_TOKEN               Admin token for the admin API (at least 32 characters)
 `,
     )
     .parse();

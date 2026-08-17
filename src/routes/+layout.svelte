@@ -11,7 +11,7 @@
         {@render children()}
     </div>
 
-    {#if !$page.route.id?.startsWith("/(app)/time-entries")}
+    {#if !$page.route.id?.startsWith("/(private)/time-entries")}
         <footer class="border-t border-gray-300">
             <div class="page px-5 py-3 text-xs text-gray-500 flex items-center justify-between">
                 <a

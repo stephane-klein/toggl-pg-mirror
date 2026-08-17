@@ -1,3 +1,7 @@
+<script>
+    let { data } = $props();
+</script>
+
 <svelte:head>
     <title>toggl-pg-mirror</title>
 </svelte:head>
@@ -8,6 +12,41 @@
             href="/"
             class="font-bold text-base no-underline text-inherit">toggl-pg-mirror</a
         >
+        {#if data.user}
+            <nav class="text-sm text-gray-500">
+                <a
+                    href="/time-entries"
+                    class="text-gray-500 no-underline hover:text-blue-600 hover:underline">Time entries</a
+                >
+                ·
+                <a
+                    href="/import-csv"
+                    class="text-gray-500 no-underline hover:text-blue-600 hover:underline">Import CSV</a
+                >
+                ·
+                <a
+                    href="/my/profile"
+                    class="text-gray-500 no-underline hover:text-blue-600 hover:underline">Profile</a
+                >
+                ·
+                <a
+                    href="/my/tokens"
+                    class="text-gray-500 no-underline hover:text-blue-600 hover:underline">Tokens</a
+                >
+                ·
+                <a
+                    href="/logout"
+                    class="text-gray-500 no-underline hover:text-blue-600 hover:underline">Sign out</a
+                >
+            </nav>
+        {:else}
+            <nav class="text-sm text-gray-500">
+                <a
+                    href="/login"
+                    class="text-gray-500 no-underline hover:text-blue-600 hover:underline">Sign in</a
+                >
+            </nav>
+        {/if}
     </div>
 </header>
 

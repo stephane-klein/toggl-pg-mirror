@@ -39,6 +39,23 @@ toggl:
     name: toggl-api-token
     key: token
 
+# Admin token — Bearer authentication for /api/v1/admin/* endpoints.
+# Must be at least 32 characters long.
+adminToken: ""
+
+# SMTP configuration for outgoing emails (e.g. the send-test-mail admin endpoint).
+smtp:
+  host: ""
+  port: 587
+  secure: false
+  user: ""
+  # SMTP password — passed directly as env var.
+  # In production, consider creating a Secret and referencing it via envFrom.
+  pass: ""
+  from: noreply@example.com
+  # Default recipient for the send-test-mail admin endpoint
+  testTo: ""
+
 # HTTP server (SvelteKit adapter-node)
 port: 3000
 

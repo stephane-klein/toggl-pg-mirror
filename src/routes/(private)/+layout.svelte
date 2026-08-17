@@ -18,6 +18,21 @@
                 href="/import-csv"
                 class="text-gray-500 no-underline hover:text-blue-600 hover:underline">Import CSV</a
             >
+            ·
+            <a
+                href="/my/profile"
+                class="text-gray-500 no-underline hover:text-blue-600 hover:underline">Profile</a
+            >
+            ·
+            <a
+                href="/my/tokens"
+                class="text-gray-500 no-underline hover:text-blue-600 hover:underline">Tokens</a
+            >
+            ·
+            <a
+                href="/logout"
+                class="text-gray-500 no-underline hover:text-blue-600 hover:underline">Sign out</a
+            >
         </nav>
     </div>
 </header>

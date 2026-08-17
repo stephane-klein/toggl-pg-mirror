@@ -39,6 +39,36 @@ $ helmfile apply
 
 See [`values.yaml`](./values.yaml).
 
+### Admin token
+
+The admin API (`/api/v1/admin/*`, e.g. user management and the
+`send-test-mail` endpoint) is protected by a bearer token. Set `adminToken`
+to a value of **at least 32 characters**:
+
+```bash
+$ helm upgrade --install toggl-pg-mirror oci://ghcr.io/stephane-klein/charts/toggl-pg-mirror \
+    --namespace toggl-pg-mirror \
+    --set adminToken="$(openssl rand -hex 32)"
+```
+
+### SMTP / outgoing email
+
+Configure SMTP to enable sending emails (e.g. the test email endpoint):
+
+```bash
+$ helm upgrade --install toggl-pg-mirror oci://ghcr.io/stephane-klein/charts/toggl-pg-mirror \
+    --namespace toggl-pg-mirror \
+    --set smtp.host=smtp.example.com \
+    --set smtp.port=587 \
+    --set smtp.user=app@example.com \
+    --set smtp.pass=... \
+    --set smtp.from=app@example.com \
+    --set smtp.testTo=operator@example.com
+```
+
+`SMTP_PASS` is passed directly as an environment variable — in production,
+consider creating a Kubernetes Secret and referencing it via `envFrom`.
+
 ## How it works
 
 ### PostgreSQL connection

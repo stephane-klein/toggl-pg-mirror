@@ -54,6 +54,28 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.toggl.existingSecret.name }}
                   key: {{ .Values.toggl.existingSecret.key }}
+            {{- if .Values.adminToken }}
+            - name: TOGGL_PG_MIRROR_ADMIN_TOKEN
+              value: {{ .Values.adminToken }}
+            {{- end }}
+            {{- if .Values.smtp.host }}
+            - name: SMTP_HOST
+              value: {{ .Values.smtp.host }}
+            - name: SMTP_PORT
+              value: {{ .Values.smtp.port | quote }}
+            - name: SMTP_SECURE
+              value: {{ .Values.smtp.secure | quote }}
+            - name: SMTP_USER
+              value: {{ .Values.smtp.user }}
+            - name: SMTP_PASS
+              value: {{ .Values.smtp.pass }}
+            - name: EMAIL_FROM
+              value: {{ .Values.smtp.from }}
+            {{- end }}
+            {{- if .Values.smtp.testTo }}
+            - name: TEST_EMAIL_TO
+              value: {{ .Values.smtp.testTo }}
+            {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.port }}

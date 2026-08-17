@@ -52,9 +52,13 @@ Components shared across multiple unrelated route groups stay in
 ### SvelteKit Routes
 
 - `src/routes/` — page and API routes (`+page.svelte`, `+server.js`)
+- `src/routes/(public)/` — pages reachable without authentication (`/login`, `/reset-password`, `/change-password`, `/magic-link/sent`, `/magic-login/callback`)
+- `src/routes/(private)/` — authenticated pages (time-entries, import-csv, my/profile, my/password, my/tokens); guarded by `+layout.server.js`
+- `src/routes/(api)/` — HTTP API endpoints (`/api/v1/admin/users`, `/api/v1/admin/send-test-mail`, `/api/v1/openapi.json`, `/api/reference`)
 - `src/routes/(infra)/-/healthy/+server.js` — `/-/healthy` endpoint
 - `src/routes/(infra)/-/ready/+server.js` — `/-/ready` endpoint (DB check, sync status)
-- `src/hooks.server.js` — server hooks (sync daemon initialization, graceful shutdown)
+- `src/routes/(infra)/-/version.json/+server.js` — `/-/version.json` endpoint
+- `src/hooks.server.js` — server hooks (auth, sync daemon initialization, graceful shutdown)
 - `src/app.html` — HTML shell
 
 ### Backend Modules
@@ -128,6 +132,14 @@ The complete schema (consolidated) is written by hand in `sqls/schema.sql`.
 
 - Tacit programming / point-free style: always explicitly name function arguments.
   Prefer `[1,2,3].map(n => add1(n))` to `[1,2,3].map(add1)`.
+
+## OpenAPI Spec Sync
+
+The OpenAPI specification is dynamically generated in
+`src/routes/(api)/api/v1/openapi.json/+server.js`.
+
+**Any change to request/response schemas in route handlers must be reflected
+here too.** The Scalar API reference UI at `/api/reference` consumes this spec.
 
 ## Agent skills
 

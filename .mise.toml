@@ -166,6 +166,15 @@ helm package helm/toggl-pg-mirror -d /tmp && \
 helm push /tmp/toggl-pg-mirror-*.tgz oci://ghcr.io/stephane-klein/charts
 """
 
+[tasks.send-test-mail]
+description = "Send a test email via POST /api/v1/admin/send-test-mail (uses TEST_EMAIL_TO)"
+run = """
+curl -s -X POST http://localhost:5173/api/v1/admin/send-test-mail \
+  -H "Authorization: Bearer ${TOGGL_PG_MIRROR_ADMIN_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{}' | jq
+"""
+
 [tasks.setup-secret]
 description = "Generate .secret from scripts/generate-secret.sh via gopass"
 run = "bash scripts/generate-secret.sh > .secret"

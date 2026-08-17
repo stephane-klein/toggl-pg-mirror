@@ -1,0 +1,9 @@
+en:
+  subject: "Sign in to toggl-pg-mirror"
+  text: |
+    Click the link below to sign in.
+
+    {{ link }}
+
+    This link expires in 15 minutes.
+    If you didn't request this, you can ignore this email.
