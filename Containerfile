@@ -1,10 +1,10 @@
 FROM node:24-slim AS build
 
-RUN npm install -g pnpm@11.2.2
+RUN npm install -g pnpm@11.22.0
 
 WORKDIR /app/
 
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
 ARG GIT_HASH=unknown
@@ -24,7 +24,7 @@ FROM node:24-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
-RUN npm install -g pnpm@11.2.2
+RUN npm install -g pnpm@11.22.0
 
 WORKDIR /app/
 
@@ -33,7 +33,7 @@ ENV NODE_ENV=production
 ENV TOGGL_PG_MIRROR_POSTGRES_URL=postgres://postgres:postgres@postgres:5432/postgres
 ENV BODY_SIZE_LIMIT=50M
 
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile --prod
 
 COPY --from=build /app/build/ ./build/
