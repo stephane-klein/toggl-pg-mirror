@@ -227,6 +227,33 @@ export async function getTimeEntriesPageData({
     };
 }
 
+// Returns every time entry matching the current view filter (same predicate as
+// the 'total' count in getTimeEntriesPageData), unpaginated. Serves the
+// 'select all matching' selection: the bulk edit derives the ids from it and
+// the copy/export reads the full rows.
+export async function getMatchingTimeEntries({ from, to, q = "" }) {
+    let description;
+    let tags;
+    try {
+        ({ description, tags } = splitFilter(q));
+    } catch (e) {
+        if (e instanceof TagFilterError) error(400, e.message);
+        throw e;
+    }
+
+    const [row] = await sql.unsafe(
+        `SELECT get_matching_time_entries(
+            _from => $1::date,
+            _to => $2::date,
+            _q => $3::text,
+            _tags => $4::jsonb
+        ) AS data`,
+        [from, to, description, tags],
+        { prepare: false },
+    );
+    return row.data;
+}
+
 export function computeGoToData(url, sort, q, goto) {
     const limitRaw = url.searchParams.get("limit");
 

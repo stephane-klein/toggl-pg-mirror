@@ -2,13 +2,18 @@
     import { goto } from "$app/navigation";
     import { page } from "$app/stores";
     import * as yaml from "js-yaml";
-    import { bulkEditTimeEntries } from "./timeEntries.remote.js";
+    import { bulkEditTimeEntries, getMatchingTimeEntries } from "./timeEntries.remote.js";
     import { pendingUndo, UNDO_WINDOW_MS } from "./undoStore.js";
     import InputTags from "./input-tags/InputTags.svelte";
     import { getAllTags } from "./tags.remote.js";
     import { fuzzyMatch } from "./fuzzyMatch.js";
 
-    let { entries = [], selectedIds = $bindable(new Set()), view = null } = $props();
+    let {
+        entries = [],
+        selectedIds = $bindable(new Set()),
+        selectAllMatching = $bindable(false),
+        view = null,
+    } = $props();
 
     const formatLabels = {
         json: "JSON",
@@ -29,6 +34,7 @@
 
     async function cancel() {
         selectedIds = new Set();
+        selectAllMatching = false;
         const url = new URL($page.url);
         url.searchParams.delete("selected");
         await goto(url, { replaceState: true, noScroll: true, keepFocus: true });
@@ -51,7 +57,7 @@
         saving = true;
         saveError = null;
         try {
-            const result = await bulkEditTimeEntries({ ids: [...selectedIds], changes, view });
+            const result = await bulkEditTimeEntries({ ids: [...selectedIds], selectAllMatching, changes, view });
             if (result.operationId) {
                 pendingUndo.set({
                     operationId: result.operationId,
@@ -61,6 +67,8 @@
             } else {
                 pendingUndo.set(null);
             }
+            selectedIds = new Set();
+            selectAllMatching = false;
             const url = new URL($page.url);
             url.searchParams.delete("selected");
             await goto(url, { replaceState: true, noScroll: true, keepFocus: true });
@@ -154,8 +162,10 @@
         }
     }
 
-    function copySelected(format) {
-        const selected = entries.filter((entry) => selectedIds.has(Number(entry.id)));
+    async function copySelected(format) {
+        const selected = selectAllMatching
+            ? await getMatchingTimeEntries({ view })
+            : entries.filter((entry) => selectedIds.has(Number(entry.id)));
         navigator.clipboard.writeText(generateText(selected, format));
         copiedFormat = format;
         setTimeout(() => {

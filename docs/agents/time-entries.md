@@ -119,6 +119,40 @@ export const load = async ({ url, params, locals }) => {
 | `from`, `to`   | range view             | `RangeNav` interactive handler                  |
 | `selected`     | current view selection | `TimeEntriesTable` URL state                    |
 
+## Selection states
+
+Selection is persisted in the `selected` query param and survives pagination
+(`buildPaginationHrefs` carries it, `hreffy()` drops it when changing period or
+view). Two mutually exclusive states:
+
+- **Explicit page selection** — `selected=id1,id2,…`. Only the entries displayed
+  on the current page (as before; `parseSelectionState` prunes to the page).
+- **All matching selection** — `selected=all` (the sentinel). Selects every entry
+  matching the current view filter, across all pages. The ids are **not** listed
+  in the URL: they are resolved server-side at action time by the stored
+  function `get_matching_time_entries()` (same predicate as the `total` CTE of
+  `get_time_entries_page_data`). The scope follows the current URL filter — if
+  the user changes the filter while the sentinel is active, the selection
+  re-scopes (the header label always shows the live count).
+
+`parseSelectionState(raw, entries)` (`$lib/backend/timeEntriesSelection.js`)
+returns `{ selectedIds, selectAllMatching }` for both forms; each view's
+`+page.server.js` exposes `selectAllMatching` in `data`.
+
+UI transitions (`TimeEntriesTable` header):
+
+| State                    | Header                                   | Action                                                     |
+| ------------------------ | ---------------------------------------- | ---------------------------------------------------------- |
+| Nothing selected         | `[□] Select all · 50 shown · 358 match…` | —                                                          |
+| 50 on this page selected | `[☑] 50 selected on this page`           | link `Select all 358 matching entries` when `total > page` |
+| All matching selected    | `[☑] All 358 matching entries selected`  | link `Select only the 50 on this page`                     |
+
+In "all matching" mode the bulk edit (`bulkEditTimeEntries` with
+`selectAllMatching`) resolves the target ids via `get_matching_time_entries()`
+and the copy/export actions fetch the full matching rows through the
+`getMatchingTimeEntries` command. Clicking an individual row checkbox leaves
+"all matching" and switches to an explicit page selection that excludes that row.
+
 ## The `q` filter DSL
 
 `q` mixes **description words/phrases** and **tag filters** (`#tag`). It is parsed

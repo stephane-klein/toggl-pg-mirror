@@ -11,6 +11,7 @@
     let {
         entries = [],
         selectedIds = $bindable(new Set()),
+        selectAllMatching = $bindable(false),
         sort = "asc",
         prevPageHref = null,
         nextPageHref = null,
@@ -105,10 +106,13 @@
         };
     }
 
-    function setSelectedIds(next) {
+    function setSelection(next, allMatching = false) {
         selectedIds = next;
+        selectAllMatching = allMatching;
         const url = new URL($page.url);
-        if (next.size > 0) {
+        if (allMatching) {
+            url.searchParams.set("selected", "all");
+        } else if (next.size > 0) {
             url.searchParams.set("selected", [...next].join(","));
         } else {
             url.searchParams.delete("selected");
@@ -116,19 +120,43 @@
         goto(url, { replaceState: true, noScroll: true, keepFocus: true });
     }
 
+    // Switches the whole selection to "every entry matching the current filter".
+    function selectAllMatchingEntries() {
+        setSelection(new Set(), true);
+    }
+
+    // Leaves "all matching" mode and keeps only the entries displayed on this page.
+    function selectOnlyThisPage() {
+        setSelection(new Set(entries.map((e) => Number(e.id))));
+    }
+
     function toggleEntry(id) {
         id = Number(id);
+        if (selectAllMatching) {
+            // Refinement: leave "all matching" and deselect just this row.
+            const next = new Set(entries.map((e) => Number(e.id)));
+            next.delete(id);
+            setSelection(next);
+            return;
+        }
         const next = new Set(selectedIds);
         if (next.has(id)) {
             next.delete(id);
         } else {
             next.add(id);
         }
-        setSelectedIds(next);
+        setSelection(next);
     }
 
     function toggleGroup(groupEntries) {
         const ids = groupEntries.map((e) => Number(e.id));
+        if (selectAllMatching) {
+            // Refinement: leave "all matching" and deselect this whole group.
+            const next = new Set(entries.map((e) => Number(e.id)));
+            ids.forEach((id) => next.delete(id));
+            setSelection(next);
+            return;
+        }
         const allSelected = ids.every((id) => selectedIds.has(id));
         const next = new Set(selectedIds);
         if (allSelected) {
@@ -136,10 +164,15 @@
         } else {
             ids.forEach((id) => next.add(id));
         }
-        setSelectedIds(next);
+        setSelection(next);
     }
 
     function toggleAll() {
+        if (selectAllMatching) {
+            // Clicking the checked header checkbox clears the whole selection.
+            setSelection(new Set());
+            return;
+        }
         const allIds = entries.map((e) => Number(e.id));
         const allSelected = allIds.length > 0 && allIds.every((id) => selectedIds.has(id));
         const next = new Set(selectedIds);
@@ -148,7 +181,7 @@
         } else {
             allIds.forEach((id) => next.add(id));
         }
-        setSelectedIds(next);
+        setSelection(next);
     }
 
     import * as yaml from "js-yaml";
@@ -233,8 +266,14 @@
         }, 2000);
     }
 
-    let someSelected = $derived(selectedIds.size > 0);
-    let allSelected = $derived(entries.length > 0 && entries.every((e) => selectedIds.has(Number(e.id))));
+    // Number of entries matching the current filter (the `total` from the SQL
+    // payload); falls back to the page size when the server did not provide it.
+    let matchingCount = $derived(total !== null ? Number(total) : entries.length);
+    let matchingLabel = $derived(hasFilter ? "matching entries" : "entries");
+    let someSelected = $derived(selectedIds.size > 0 || selectAllMatching);
+    let allSelected = $derived(
+        selectAllMatching || (entries.length > 0 && entries.every((e) => selectedIds.has(Number(e.id)))),
+    );
     let globalIndeterminate = $derived(someSelected && !allSelected);
 
     let dayGroups = $derived.by(() => {
@@ -354,7 +393,13 @@
                 onchange={toggleAll}
             />
             <span class="text-sm text-gray-600">
-                {selectedIds.size > 0 ? `${selectedIds.size} selected` : "Select all"}
+                {#if selectAllMatching}
+                    All {matchingCount.toLocaleString("en")} {matchingLabel} selected
+                {:else if selectedIds.size > 0}
+                    {selectedIds.size} selected on this page
+                {:else}
+                    Select all
+                {/if}
             </span>
             {#if total !== null}
                 <span class="text-[12px] text-gray-400">
@@ -375,6 +420,22 @@
             {/if}
             {#if movedOutId !== null}
                 <span class="text-blue-600 italic text-[12px]">Entry #{movedOutId} moved to another period/day</span>
+            {/if}
+            {#if selectAllMatching}
+                <button
+                    onclick={selectOnlyThisPage}
+                    class="text-[12px] text-indigo-600 underline underline-offset-2 hover:text-indigo-800 cursor-pointer"
+                >
+                    Select only the {entries.length} on this page
+                </button>
+            {:else if selectedIds.size > 0 && matchingCount > entries.length}
+                <button
+                    onclick={selectAllMatchingEntries}
+                    class="text-[12px] text-indigo-600 underline underline-offset-2 hover:text-indigo-800 cursor-pointer"
+                >
+                    Select all {matchingCount.toLocaleString("en")}
+                    {matchingLabel}
+                </button>
             {/if}
         </div>
         {#if false}
@@ -534,8 +595,9 @@
                             <input
                                 type="checkbox"
                                 class="w-4 h-4"
-                                checked={group.entries.every((e) => selectedIds.has(Number(e.id)))}
-                                use:isIndeterminate={group.entries.some((e) => selectedIds.has(Number(e.id))) &&
+                                checked={selectAllMatching || group.entries.every((e) => selectedIds.has(Number(e.id)))}
+                                use:isIndeterminate={!selectAllMatching &&
+                                    group.entries.some((e) => selectedIds.has(Number(e.id))) &&
                                     !group.entries.every((e) => selectedIds.has(Number(e.id)))}
                                 onchange={() => toggleGroup(group.entries)}
                             />
@@ -579,7 +641,7 @@
                                 <input
                                     type="checkbox"
                                     class="w-4 h-4"
-                                    checked={selectedIds.has(Number(entry.id))}
+                                    checked={selectAllMatching || selectedIds.has(Number(entry.id))}
                                     onchange={() => toggleEntry(entry.id)}
                                     disabled={saving}
                                 />
@@ -666,13 +728,13 @@
                     {:else}
                         <tr
                             class="group hover:bg-gray-100"
-                            class:bg-blue-50={selectedIds.has(Number(entry.id))}
+                            class:bg-blue-50={selectAllMatching || selectedIds.has(Number(entry.id))}
                         >
                             <td class="w-[1px] px-2 py-[7px] border-b border-gray-300 align-middle">
                                 <input
                                     type="checkbox"
                                     class="w-4 h-4"
-                                    checked={selectedIds.has(Number(entry.id))}
+                                    checked={selectAllMatching || selectedIds.has(Number(entry.id))}
                                     onchange={() => toggleEntry(entry.id)}
                                 />
                             </td>

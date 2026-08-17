@@ -28,10 +28,12 @@
     let hasFilter = $derived(data.hasFilter);
     let view = $derived(data.view);
     let selectedIds = $state(new Set(data.selectedIds));
+    let selectAllMatching = $state(data.selectAllMatching);
 
     $effect(() => {
         entries = data.entries;
         selectedIds = new Set(data.selectedIds);
+        selectAllMatching = data.selectAllMatching;
         total = data.total;
         prevPageHref = data.prevPageHref;
         nextPageHref = data.nextPageHref;
@@ -92,11 +94,12 @@
 </svelte:head>
 
 <main class="page px-5 pt-2 pb-12">
-    {#if selectedIds.size >= 2}
+    {#if selectedIds.size >= 2 || (selectAllMatching && total > 0)}
         <BulkEditPanel
             {entries}
             {view}
             bind:selectedIds
+            bind:selectAllMatching
         />
     {:else}
         <div class="flex items-baseline justify-between mb-2 flex-wrap gap-y-1">
@@ -128,6 +131,7 @@
     <TimeEntriesTable
         {entries}
         bind:selectedIds
+        bind:selectAllMatching
         {sort}
         {prevPageHref}
         {nextPageHref}

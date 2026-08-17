@@ -5,7 +5,7 @@ import {
     computeTimeEntriesNav,
     hreffy,
     buildPaginationHrefs,
-    selectedIdsForEntries,
+    parseSelectionState,
 } from "$lib/backend/timeEntriesUrl.js";
 
 function getMonday(year, week) {
@@ -100,7 +100,7 @@ export async function load({ params, url }) {
 
     const { entries, prevCursor, nextCursor, total, prevHasEntries, nextHasEntries, nearestPeriodDay, goto } =
         await getTimeEntriesPageData(view);
-    const selectedIds = selectedIdsForEntries(url.searchParams.get("selected"), entries);
+    const { selectedIds, selectAllMatching } = parseSelectionState(url.searchParams.get("selected"), entries);
 
     const prevLabel = `W ${prevWeek}${prevHasEntries ? "" : " (empty)"}`;
     const nextLabel = `W ${nextWeek}${nextHasEntries ? "" : " (empty)"}`;
@@ -125,6 +125,7 @@ export async function load({ params, url }) {
         view,
         entries,
         selectedIds,
+        selectAllMatching,
         total,
         hasFilter: !!q,
         mode: "week",

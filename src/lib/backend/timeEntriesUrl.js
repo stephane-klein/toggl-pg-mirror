@@ -1,6 +1,6 @@
 import { modifyCurrentUrl } from "$lib/url";
 
-export { parseSelectedIds, selectedIdsForEntries } from "./timeEntriesSelection.js";
+export { parseSelectedIds, selectedIdsForEntries, parseSelectionState } from "./timeEntriesSelection.js";
 
 function addDays(dateStr, n) {
     const [y, m, d] = dateStr.split("-").map(Number);
@@ -55,8 +55,12 @@ export function buildPaginationHrefs(url, prevCursor, nextCursor, sort) {
         sort === "asc" ? { prevParam: "before", nextParam: "after" } : { prevParam: "after", nextParam: "before" };
 
     const limitRaw = url.searchParams.get("limit");
-    const base = { selected: null };
+    const selectedRaw = url.searchParams.get("selected");
+    // Carry `limit` and the selection through pagination: the selection must
+    // survive page changes (both the explicit ids and the `all` sentinel).
+    const base = {};
     if (limitRaw !== null) base.limit = limitRaw;
+    if (selectedRaw !== null) base.selected = selectedRaw;
 
     return {
         prevPageHref: prevCursor ? modifyCurrentUrl(url, null, { ...base, [dir.prevParam]: prevCursor }) : null,

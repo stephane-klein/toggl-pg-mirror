@@ -1,6 +1,9 @@
 import { command, getRequestEvent } from "$app/server";
 
-import { getTimeEntriesPageData } from "$lib/backend/time-entries.js";
+import {
+    getTimeEntriesPageData,
+    getMatchingTimeEntries as loadMatchingTimeEntries,
+} from "$lib/backend/time-entries.js";
 import { buildPaginationHrefs } from "$lib/backend/timeEntriesUrl.js";
 import { updateTimeEntry, updateTimeEntriesBulk, undoTimeEntryOperation } from "$lib/backend/updateTimeEntry.js";
 
@@ -30,8 +33,14 @@ export const saveTimeEntry = command("unchecked", async ({ id, changes, view }) 
     };
 });
 
-export const bulkEditTimeEntries = command("unchecked", async ({ ids, changes, view }) => {
-    const result = await updateTimeEntriesBulk({ ids, changes });
+export const bulkEditTimeEntries = command("unchecked", async ({ ids, selectAllMatching = false, changes, view }) => {
+    // `selectAllMatching` resolves the target ids server-side against the
+    // current view filter, so a bulk edit can span every matching entry even
+    // when only one page is displayed.
+    const resolvedIds = selectAllMatching
+        ? (await loadMatchingTimeEntries(view)).map((entry) => Number(entry.id))
+        : ids;
+    const result = await updateTimeEntriesBulk({ ids: resolvedIds, changes });
     const data = await getTimeEntriesPageData(view);
 
     const { prevPageHref, nextPageHref } = buildPaginationHrefs(
@@ -49,6 +58,12 @@ export const bulkEditTimeEntries = command("unchecked", async ({ ids, changes, v
         nextPageHref,
         hasFilter: !!view.q,
     };
+});
+
+// Returns every entry matching the current view filter (unpaginated), used by
+// the copy/export actions while the 'select all matching' selection is active.
+export const getMatchingTimeEntries = command("unchecked", async ({ view }) => {
+    return loadMatchingTimeEntries(view);
 });
 
 // Undoes the last bulk edit operation: the server restores every touched entry

@@ -16,6 +16,7 @@ DROP FUNCTION IF EXISTS nearest_day_with_entries;
 DROP FUNCTION IF EXISTS upsert_time_entries;
 DROP FUNCTION IF EXISTS record_time_entry_edit_operation;
 DROP FUNCTION IF EXISTS undo_time_entry_edit_operation;
+DROP FUNCTION IF EXISTS get_matching_time_entries;
 
 -- Returns the day (as 'YYYY-MM-DD') closest to _ref that has at least one
 -- non-deleted entry, or NULL when no entry exists on either side of _ref.
@@ -335,6 +336,74 @@ AS $$
             'month_has_entries', (SELECT * FROM goto_month_has),
             'nearest_month_day', (SELECT * FROM nearest_month_day)
         )
+    );
+$$;
+
+-- Returns every non-deleted entry matching the given period + filter — the
+-- same predicate as the 'total' CTE of get_time_entries_page_data — ordered
+-- by (started_at, id). No pagination: this serves the 'select all matching'
+-- selection, where the bulk edit resolves the ids and the copy/export reads
+-- the full rows, each in a single round-trip.
+CREATE FUNCTION get_matching_time_entries(
+    _from date,   -- period start (inclusive)
+    _to date,     -- period end (exclusive)
+    _q text,      -- description filter, same DSL as get_time_entries_page_data
+    _tags jsonb   -- tag filter as DNF: [{ and: [...], not: [...] }, ...] OR NULL
+) RETURNS jsonb
+LANGUAGE sql STABLE PARALLEL SAFE
+AS $$
+    SELECT COALESCE(
+        (
+            SELECT jsonb_agg(x)
+            FROM (
+                SELECT id::text AS id, description, tags, started_at, ended_at, started_at::text AS started_at_txt
+                FROM time_entries
+                WHERE deleted_at IS NULL
+                  AND started_at >= _from::timestamptz
+                  AND started_at < _to::timestamptz
+                  AND (
+                      _q IS NULL
+                      OR _q = ''
+                      OR (_q = '/null' AND description IS NULL)
+                      OR (
+                          left(_q, 1) = '"'
+                          AND right(_q, 1) = '"'
+                          AND (
+                              substring(_q, 2, length(_q) - 2) = ''
+                              OR description ILIKE immutable_unaccent(substring(_q, 2, length(_q) - 2))
+                          )
+                      )
+                      OR (
+                          _q <> '/null'
+                          AND NOT (left(_q, 1) = '"' AND right(_q, 1) = '"')
+                          AND NOT EXISTS (
+                              SELECT 1
+                              FROM unnest(string_to_array(_q, ' ')) w
+                              WHERE immutable_unaccent(description) NOT ILIKE immutable_unaccent('%' || w || '%')
+                          )
+                      )
+                  )
+                  AND (
+                      _tags IS NULL
+                      OR EXISTS (
+                          SELECT 1
+                          FROM jsonb_array_elements(_tags) AS conj(j)
+                          WHERE immutable_lower(tags) @> ARRAY(
+                                    SELECT immutable_lower(v)
+                                    FROM jsonb_array_elements_text(conj.j -> 'and') AS v
+                                )
+                            AND NOT (
+                                immutable_lower(tags) && ARRAY(
+                                    SELECT immutable_lower(v)
+                                    FROM jsonb_array_elements_text(conj.j -> 'not') AS v
+                                )
+                            )
+                      )
+                  )
+                ORDER BY started_at ASC, id ASC
+            ) x
+        ),
+        '[]'::jsonb
     );
 $$;
 
