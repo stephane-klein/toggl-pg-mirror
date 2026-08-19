@@ -25,11 +25,13 @@ The container image is published on
 ## Quick start
 
 ```bash
-# 1. Create the namespace and Toggl API token
+# 1. Create the namespace and the application secret
 $ kubectl create namespace toggl-pg-mirror
-$ kubectl create secret generic toggl-api-token \
+$ kubectl create secret generic toggl-pg-mirror \
   -n toggl-pg-mirror \
-  --from-literal=token=YOUR_TOGGL_API_TOKEN
+  --from-literal=toggl-token=YOUR_TOGGL_API_TOKEN \
+  --from-literal=admin-token=$(openssl rand -hex 32) \
+  --from-literal=smtp-password=YOUR_SMTP_PASSWORD
 
 # 2. Install or upgrade (via helmfile)
 $ helmfile apply
@@ -39,21 +41,23 @@ $ helmfile apply
 
 See [`values.yaml`](./values.yaml).
 
+All application secrets live in a single Kubernetes Secret (default name
+`toggl-pg-mirror`) referenced by `existingSecret`. The secret holds three keys,
+configurable via `existingSecret.togglTokenKey`, `existingSecret.adminTokenKey`
+and `existingSecret.smtpPassKey` (defaults: `toggl-token`, `admin-token`,
+`smtp-password`).
+
 ### Admin token
 
 The admin API (`/api/v1/admin/*`, e.g. user management and the
-`send-test-mail` endpoint) is protected by a bearer token. Set `adminToken`
-to a value of **at least 32 characters**:
-
-```bash
-$ helm upgrade --install toggl-pg-mirror oci://ghcr.io/stephane-klein/charts/toggl-pg-mirror \
-    --namespace toggl-pg-mirror \
-    --set adminToken="$(openssl rand -hex 32)"
-```
+`send-test-mail` endpoint) is protected by a bearer token, read from the
+`admin-token` key of the application secret. It must be **at least 32
+characters** long.
 
 ### SMTP / outgoing email
 
-Configure SMTP to enable sending emails (e.g. the test email endpoint):
+Configure SMTP to enable sending emails (e.g. the test email endpoint). The
+password is read from the `smtp-password` key of the application secret:
 
 ```bash
 $ helm upgrade --install toggl-pg-mirror oci://ghcr.io/stephane-klein/charts/toggl-pg-mirror \
@@ -61,13 +65,9 @@ $ helm upgrade --install toggl-pg-mirror oci://ghcr.io/stephane-klein/charts/tog
     --set smtp.host=smtp.example.com \
     --set smtp.port=587 \
     --set smtp.user=app@example.com \
-    --set smtp.pass=... \
     --set smtp.from=app@example.com \
     --set smtp.testTo=operator@example.com
 ```
-
-`SMTP_PASS` is passed directly as an environment variable — in production,
-consider creating a Kubernetes Secret and referencing it via `envFrom`.
 
 ## How it works
 

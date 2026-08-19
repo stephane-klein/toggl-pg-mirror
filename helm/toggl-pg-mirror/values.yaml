@@ -30,28 +30,26 @@ cnpg:
   # Name of the copied secret in the target namespace (populated by ESO or manually).
   copySecretName: memex-app
 
-# Toggl API token — must be created manually in the target namespace:
-#   kubectl create secret generic toggl-api-token \
+# Single Kubernetes Secret holding all application secrets (Toggl API token,
+# admin token, SMTP password). Create it manually in the target namespace:
+#   kubectl create secret generic toggl-pg-mirror \
 #     -n toggl-pg-mirror \
-#     --from-literal=token=YOUR_TOGGL_API_TOKEN
-toggl:
-  existingSecret:
-    name: toggl-api-token
-    key: token
-
-# Admin token — Bearer authentication for /api/v1/admin/* endpoints.
-# Must be at least 32 characters long.
-adminToken: ""
+#     --from-literal=toggl-token=YOUR_TOGGL_API_TOKEN \
+#     --from-literal=admin-token=YOUR_ADMIN_TOKEN_AT_LEAST_32_CHARS \
+#     --from-literal=smtp-password=YOUR_SMTP_PASSWORD
+existingSecret:
+  name: toggl-pg-mirror
+  togglTokenKey: toggl-token
+  adminTokenKey: admin-token
+  smtpPassKey: smtp-password
 
 # SMTP configuration for outgoing emails (e.g. the send-test-mail admin endpoint).
+# The password is read from the existingSecret (smtpPassKey).
 smtp:
   host: ""
   port: 587
   secure: false
   user: ""
-  # SMTP password — passed directly as env var.
-  # In production, consider creating a Secret and referencing it via envFrom.
-  pass: ""
   from: noreply@example.com
   # Default recipient for the send-test-mail admin endpoint
   testTo: ""

@@ -52,12 +52,13 @@ spec:
             - name: TOGGL_PG_MIRROR_TOGGL_API_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.toggl.existingSecret.name }}
-                  key: {{ .Values.toggl.existingSecret.key }}
-            {{- if .Values.adminToken }}
+                  name: {{ .Values.existingSecret.name }}
+                  key: {{ .Values.existingSecret.togglTokenKey }}
             - name: TOGGL_PG_MIRROR_ADMIN_TOKEN
-              value: {{ .Values.adminToken }}
-            {{- end }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.existingSecret.name }}
+                  key: {{ .Values.existingSecret.adminTokenKey }}
             {{- if .Values.smtp.host }}
             - name: SMTP_HOST
               value: {{ .Values.smtp.host }}
@@ -68,7 +69,10 @@ spec:
             - name: SMTP_USER
               value: {{ .Values.smtp.user }}
             - name: SMTP_PASS
-              value: {{ .Values.smtp.pass }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.existingSecret.name }}
+                  key: {{ .Values.existingSecret.smtpPassKey }}
             - name: EMAIL_FROM
               value: {{ .Values.smtp.from }}
             {{- end }}
