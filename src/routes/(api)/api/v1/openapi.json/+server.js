@@ -89,6 +89,41 @@ export function GET() {
                         500: { $ref: "#/components/responses/InternalError" },
                     },
                 },
+                put: {
+                    summary: "Upsert a user (admin, idempotent)",
+                    description:
+                        "Creates the user if no user with this email exists, otherwise fully replaces it. The email is the natural key.",
+                    security: [{ adminBearer: [] }],
+                    requestBody: {
+                        required: true,
+                        content: {
+                            "application/json": {
+                                schema: { $ref: "#/components/schemas/AdminUserUpsert" },
+                            },
+                        },
+                    },
+                    responses: {
+                        200: {
+                            description: "User created or updated",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            data: { $ref: "#/components/schemas/AdminUser" },
+                                            _links: { $ref: "#/components/schemas/Links" },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                        400: { $ref: "#/components/responses/BadRequest" },
+                        401: { $ref: "#/components/responses/Unauthorized" },
+                        409: { $ref: "#/components/responses/Conflict" },
+                        422: { $ref: "#/components/responses/Unprocessable" },
+                        500: { $ref: "#/components/responses/InternalError" },
+                    },
+                },
             },
             "/api/v1/admin/users/{id}": {
                 get: {
@@ -168,6 +203,65 @@ export function GET() {
                         204: { description: "Deleted (no content)" },
                         401: { $ref: "#/components/responses/Unauthorized" },
                         404: { $ref: "#/components/responses/NotFound" },
+                        500: { $ref: "#/components/responses/InternalError" },
+                    },
+                },
+            },
+            "/api/v1/admin/users/sync": {
+                put: {
+                    summary: "Bulk sync users (admin, idempotent)",
+                    description:
+                        "Upserts the listed users (create or fully replace by email) and deletes the listed emails, all in a single atomic transaction. Deleting a non-existent email is a no-op.",
+                    security: [{ adminBearer: [] }],
+                    requestBody: {
+                        required: true,
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    type: "object",
+                                    properties: {
+                                        upsert: {
+                                            type: "array",
+                                            items: { $ref: "#/components/schemas/AdminUserUpsert" },
+                                        },
+                                        delete: {
+                                            type: "array",
+                                            items: {
+                                                type: "object",
+                                                required: ["email"],
+                                                properties: {
+                                                    email: {
+                                                        type: "string",
+                                                        format: "email",
+                                                        example: "old@example.com",
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    responses: {
+                        200: {
+                            description: "Users synchronized",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            data: { $ref: "#/components/schemas/AdminUserSyncResult" },
+                                            _links: { $ref: "#/components/schemas/Links" },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                        400: { $ref: "#/components/responses/BadRequest" },
+                        401: { $ref: "#/components/responses/Unauthorized" },
+                        409: { $ref: "#/components/responses/Conflict" },
+                        422: { $ref: "#/components/responses/Unprocessable" },
                         500: { $ref: "#/components/responses/InternalError" },
                     },
                 },
@@ -255,6 +349,34 @@ export function GET() {
                         is_active: { type: "boolean", example: true },
                         created_at: { type: "string", format: "date-time", example: "2026-07-11T09:00:00+02:00" },
                         updated_at: { type: "string", format: "date-time", example: "2026-07-11T09:00:00+02:00" },
+                    },
+                },
+                AdminUserUpsert: {
+                    type: "object",
+                    required: ["email", "display_name"],
+                    properties: {
+                        email: { type: "string", format: "email", example: "user@example.com" },
+                        display_name: { type: "string", example: "John Doe" },
+                        password: {
+                            type: "string",
+                            format: "password",
+                            minLength: 12,
+                            example: "s3cur3!",
+                        },
+                        oidc_issuer: { type: "string", example: "https://auth.example.com" },
+                        oidc_subject: { type: "string", example: "johndoe" },
+                    },
+                },
+                AdminUserSyncResult: {
+                    type: "object",
+                    properties: {
+                        created: { type: "integer", example: 1 },
+                        updated: { type: "integer", example: 0 },
+                        deleted: { type: "integer", example: 0 },
+                        users: {
+                            type: "array",
+                            items: { $ref: "#/components/schemas/AdminUser" },
+                        },
                     },
                 },
                 ProblemDetail: {

@@ -115,3 +115,81 @@ export async function POST(event) {
         },
     );
 }
+
+export async function PUT(event) {
+    const authError = requireAdminToken(event);
+    if (authError) return authError;
+
+    const body = await event.request.json();
+    const email = body.email?.trim();
+    const display_name = body.display_name;
+    const password = body.password;
+    const oidc_issuer = body.oidc_issuer?.replace(/\/$/, "");
+    const oidc_subject = body.oidc_subject;
+
+    if (!email || typeof email !== "string" || !email.trim()) {
+        return problem(400, "email is required", event.request.url);
+    }
+    if (typeof display_name !== "string" || !display_name.trim()) {
+        return problem(400, "display_name is required", event.request.url);
+    }
+
+    const hasOidc = oidc_issuer !== undefined || oidc_subject !== undefined;
+    if ((oidc_issuer === undefined) !== (oidc_subject === undefined)) {
+        return problem(422, "Both oidc_issuer and oidc_subject must be provided together", event.request.url);
+    }
+    if (password !== undefined && (typeof password !== "string" || password.length < 12)) {
+        return problem(422, "password must be at least 12 characters", event.request.url);
+    }
+
+    const [existing] = await sql`SELECT id, password_hash FROM users WHERE email = ${email}`;
+
+    if (hasOidc) {
+        const conflict = await sql`
+            SELECT id FROM users
+            WHERE oidc_issuer = ${oidc_issuer.trim()} AND oidc_subject = ${oidc_subject.trim()}
+            AND email != ${email}
+        `;
+        if (conflict.length > 0) {
+            return problem(409, "A user with this OIDC pair already exists", event.request.url);
+        }
+    }
+
+    const displayName = display_name.trim();
+    const passwordHash = password ? await hashPassword(password) : null;
+    const now = new Date();
+
+    let user;
+    if (!existing) {
+        if (!password && !hasOidc) {
+            return problem(422, "password or oidc pair is required", event.request.url);
+        }
+
+        const id = generateId();
+        [user] = await sql`
+            INSERT INTO users (id, email, display_name, password_hash, oidc_issuer, oidc_subject)
+            VALUES (${id}, ${email}, ${displayName}, ${passwordHash},
+                    ${oidc_issuer?.trim() || null}, ${oidc_subject?.trim() || null})
+            RETURNING id, email, display_name, oidc_issuer, oidc_subject, is_active, created_at, updated_at
+        `;
+    } else {
+        [user] = await sql`
+            UPDATE users
+            SET display_name  = ${displayName},
+                password_hash = ${password ? passwordHash : existing.password_hash},
+                oidc_issuer   = ${oidc_issuer?.trim() || null},
+                oidc_subject  = ${oidc_subject?.trim() || null},
+                updated_at    = ${now}
+            WHERE email = ${email}
+            RETURNING id, email, display_name, oidc_issuer, oidc_subject, is_active, created_at, updated_at
+        `;
+    }
+
+    return json({
+        data: user,
+        _links: {
+            self: { href: `/api/v1/admin/users/${user.id}` },
+            collection: { href: "/api/v1/admin/users" },
+        },
+    });
+}

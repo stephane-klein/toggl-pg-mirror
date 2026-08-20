@@ -1,0 +1,20 @@
+{
+  "upsert": [
+    {
+      "email": "alice@example.com",
+      "display_name": "Alice Admin",
+      "password": "password123"
+    },
+    {
+      "email": "bob@example.com",
+      "display_name": "Bob",
+      "oidc_issuer": "https://127.0.0.1:9091",
+      "oidc_subject": "bob"
+    }
+  ],
+  "delete": [
+    {
+      "email": "old-user@example.com"
+    }
+  ]
+}

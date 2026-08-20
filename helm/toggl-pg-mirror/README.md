@@ -54,6 +54,29 @@ The admin API (`/api/v1/admin/*`, e.g. user management and the
 `admin-token` key of the application secret. It must be **at least 32
 characters** long.
 
+### Managing users (idempotent GitOps)
+
+After deploying the chart, provision or reconcile the set of users idempotently
+through the admin API. This is the GitOps pattern: a configuration file declares
+the desired users, and a runner applies it — create/update/delete in one atomic
+`PUT /api/v1/admin/users/sync`, re-applicable without error and with a stable
+final state.
+
+Sync users against the deployed application:
+
+```bash
+$ curl -s -X PUT -H "Authorization: Bearer ${TOGGL_PG_MIRROR_ADMIN_TOKEN}" \
+    -H "Content-Type: application/json" \
+    --data @api-payloads-examples/users-sync.json \
+    https://toggl-pg-mirror.example.com/api/v1/admin/users/sync | jq
+```
+
+A ready-to-use payload lives in
+[`api-payloads-examples/users-sync.json`](../../api-payloads-examples/users-sync.json)
+at the repository root — see the [root README section](../../README.md) for the
+idempotency details and the single-user `PUT /api/v1/admin/users` variant.
+
+
 ### SMTP / outgoing email
 
 Configure SMTP to enable sending emails (e.g. the test email endpoint). The

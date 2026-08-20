@@ -120,6 +120,48 @@ An interactive API reference is available at `/api/reference`, powered by
 [Scalar](https://scalar.com/). It reads the OpenAPI 3.0 spec served at
 `/api/v1/openapi.json`.
 
+### Provisioning users idempotently (DevOps / GitOps)
+
+The admin API exposes two idempotent operations that let a DevOps / GitOps
+workflow reconcile the set of users with a declared desired state:
+
+- `PUT /api/v1/admin/users` — upsert a single user by `email` (create if absent,
+  fully replace otherwise, `200` either way).
+- `PUT /api/v1/admin/users/sync` — create/update/delete several users in one
+  atomic transaction. Body: `{ "upsert": [...], "delete": [{ "email" }] }`.
+  Deleting a non-existent email is a no-op. Response: `{ created, updated,
+deleted, users }`.
+
+The workflow is declarative: a configuration file (your GitOps source of truth)
+declares the desired users, and a runner applies it to the instance. Because the
+operations are idempotent, re-applying the same payload leaves the final state
+stable and returns no error — so it is safe to run repeatedly, in any order, and
+from a CI/CD pipeline or a reconciliation loop, not just interactively.
+
+A ready-to-use example payload lives in
+[`api-payloads-examples/users-sync.json`](./api-payloads-examples/users-sync.json):
+
+```bash
+$ curl -s -X PUT -H "Authorization: Bearer ${TOGGL_PG_MIRROR_ADMIN_TOKEN}" \
+    -H "Content-Type: application/json" \
+    --data @api-payloads-examples/users-sync.json \
+    http://localhost:5173/api/v1/admin/users/sync | jq
+```
+
+The first apply reports `created: 2`; editing `display_name` in the file and
+re-applying reports `updated: 2`; moving an existing email into `delete` reports
+`deleted: 1`. Re-applying the same payload is idempotent — the resulting state
+is stable.
+
+Single-user upsert, e.g. create or update `john.doe@example.com`:
+
+```bash
+$ curl -s -X PUT -H "Authorization: Bearer ${TOGGL_PG_MIRROR_ADMIN_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -d '{"email":"john.doe@example.com","display_name":"John Doe","password":"password123"}' \
+    http://localhost:5173/api/v1/admin/users | jq
+```
+
 ### API tokens
 
 Generate tokens from the web UI at `/my/tokens` or via CLI:
