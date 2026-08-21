@@ -1,5 +1,5 @@
 <script>
-    let { form } = $props();
+    let { data, form } = $props();
 </script>
 
 <svelte:head>
@@ -21,20 +21,26 @@
         method="POST"
         class="max-w-sm"
     >
-        <div class="mb-3">
-            <label
-                for="current-password"
-                class="block text-sm font-semibold mb-1">Current password</label
-            >
-            <input
-                type="password"
-                id="current-password"
-                name="current-password"
-                autocomplete="current-password"
-                required
-                class="w-full px-2 py-1.5 border border-gray-300 rounded-sm text-sm text-gray-900 bg-white focus:outline-2 focus:outline-blue-600 focus:border-blue-600"
-            />
-        </div>
+        {#if data.hasPassword}
+            <div class="mb-3">
+                <label
+                    for="current-password"
+                    class="block text-sm font-semibold mb-1">Current password</label
+                >
+                <input
+                    type="password"
+                    id="current-password"
+                    name="current-password"
+                    autocomplete="current-password"
+                    required
+                    class="w-full px-2 py-1.5 border border-gray-300 rounded-sm text-sm text-gray-900 bg-white focus:outline-2 focus:outline-blue-600 focus:border-blue-600"
+                />
+            </div>
+        {:else}
+            <p class="text-sm text-gray-700 bg-gray-100 border border-gray-300 rounded-sm px-3 py-2 mb-3">
+                You don't currently have a password. Just choose a new one below.
+            </p>
+        {/if}
 
         <div class="mb-3">
             <label
