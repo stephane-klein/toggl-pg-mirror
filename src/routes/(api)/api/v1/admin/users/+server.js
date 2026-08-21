@@ -69,7 +69,7 @@ export async function POST(event) {
         if (!display_name || typeof display_name !== "string" || !display_name.trim()) {
             return problem(400, "display_name is required", event.request.url);
         }
-        if (!password || typeof password !== "string" || password.length < 12) {
+        if (password !== undefined && (typeof password !== "string" || password.length < 12)) {
             return problem(422, "password must be at least 12 characters", event.request.url);
         }
     }
@@ -161,10 +161,6 @@ export async function PUT(event) {
 
     let user;
     if (!existing) {
-        if (!password && !hasOidc) {
-            return problem(422, "password or oidc pair is required", event.request.url);
-        }
-
         const id = generateId();
         [user] = await sql`
             INSERT INTO users (id, email, display_name, password_hash, oidc_issuer, oidc_subject)

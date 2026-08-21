@@ -137,7 +137,8 @@ yargs(hideBin(process.argv))
                 })
                 .option("password", {
                     type: "string",
-                    description: "User password (mutually exclusive with --password-stdin)",
+                    description:
+                        "User password (optional; users without one sign in via magic link or reset their password)",
                     conflicts: "password-stdin",
                 })
                 .option("password-stdin", {
@@ -158,13 +159,6 @@ yargs(hideBin(process.argv))
                     description: "OIDC subject identifier (reserved for future use)",
                 })
                 .check((argv) => {
-                    const hasPassword = Boolean(argv.password) || argv["password-stdin"];
-                    const hasOidc = Boolean(argv["oidc-issuer"]) || Boolean(argv["oidc-subject"]);
-
-                    if (!hasPassword && !hasOidc) {
-                        throw new Error("Provide either --password/--password-stdin or --oidc-issuer + --oidc-subject");
-                    }
-
                     if (argv["oidc-issuer"] && !argv["oidc-subject"]) {
                         throw new Error("--oidc-subject is required when --oidc-issuer is provided");
                     }

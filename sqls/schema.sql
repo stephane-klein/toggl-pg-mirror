@@ -132,11 +132,7 @@ CREATE TABLE IF NOT EXISTS users (
     locale        TEXT,
     is_active     BOOLEAN                  NOT NULL DEFAULT TRUE,
     created_at    TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    updated_at    TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-
-    CONSTRAINT at_least_one_auth CHECK (
-        password_hash IS NOT NULL OR (oidc_issuer IS NOT NULL AND oidc_subject IS NOT NULL)
-    )
+    updated_at    TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_oidc ON users (oidc_issuer, oidc_subject)

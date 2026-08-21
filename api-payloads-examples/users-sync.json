@@ -10,6 +10,10 @@
       "display_name": "Bob",
       "oidc_issuer": "https://127.0.0.1:9091",
       "oidc_subject": "bob"
+    },
+    {
+      "email": "jean@example.com",
+      "display_name": "Jean Dupond"
     }
   ],
   "delete": [
