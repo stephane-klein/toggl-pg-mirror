@@ -142,7 +142,7 @@ A ready-to-use example payload lives in
 [`api-payloads-examples/users-sync.json`](./api-payloads-examples/users-sync.json):
 
 ```bash
-$ curl -s -X PUT -H "Authorization: Bearer ${TOGGL_PG_MIRROR_ADMIN_TOKEN}" \
+$ curl -fsS -X PUT -H "Authorization: Bearer ${TOGGL_PG_MIRROR_ADMIN_TOKEN}" \
     -H "Content-Type: application/json" \
     --data @api-payloads-examples/users-sync.json \
     http://localhost:5173/api/v1/admin/users/sync | jq
