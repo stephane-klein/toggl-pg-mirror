@@ -1,4 +1,5 @@
 import { json } from "@sveltejs/kit";
+import { email, pipe, safeParse, string } from "valibot";
 import { requireAdminToken, problem } from "../_helpers.js";
 import { sendMail } from "$lib/backend/mailer.js";
 import { logger } from "$lib/backend/logger.js";
@@ -14,7 +15,7 @@ export async function POST(event) {
     const body = await event.request.json().catch(() => ({}));
     const to = body.to || TEST_EMAIL_TO;
 
-    if (!to || typeof to !== "string" || !to.includes("@")) {
+    if (!safeParse(pipe(string(), email()), to).success) {
         return problem(
             400,
             "A valid 'to' email address is required — set TEST_EMAIL_TO env or provide 'to' in the request body",

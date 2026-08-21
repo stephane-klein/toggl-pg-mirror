@@ -1,6 +1,8 @@
 import { json } from "@sveltejs/kit";
+import { safeParse } from "valibot";
 import { generateId, hashPassword } from "$lib/backend/auth.js";
 import { sql } from "$lib/backend/pg.js";
+import { userFieldsSchema } from "$lib/schemas/user.js";
 import { problem, requireAdminToken } from "../../_helpers.js";
 
 const MAX_BATCH_SIZE = 1000;
@@ -14,33 +16,30 @@ class SyncError extends Error {
 }
 
 function validateUpsertItem(item) {
-    const email = item.email?.trim();
-    const display_name = item.display_name;
-    const password = item.password;
-    const oidc_issuer = item.oidc_issuer?.replace(/\/$/, "");
-    const oidc_subject = item.oidc_subject;
-
-    if (!email || typeof email !== "string" || !email.trim()) {
-        throw new SyncError(400, "each upsert item must have a non-empty email");
+    const fields = safeParse(userFieldsSchema, item);
+    if (!fields.success) {
+        throw new SyncError(400, fields.issues[0].message);
     }
-    if (typeof display_name !== "string" || !display_name.trim()) {
-        throw new SyncError(400, "each upsert item must have a non-empty display_name");
-    }
+    const { email: rawEmail, display_name, password, oidc_issuer, oidc_subject } = fields.output;
+    const email = rawEmail?.trim();
+    const displayName = display_name?.trim();
+    const oidcIssuer = oidc_issuer?.replace(/\/$/, "").trim();
+    const oidcSubject = oidc_subject?.trim();
 
-    const hasOidc = oidc_issuer !== undefined || oidc_subject !== undefined;
-    if ((oidc_issuer === undefined) !== (oidc_subject === undefined)) {
+    if (!email) throw new SyncError(400, "each upsert item must have a non-empty email");
+    if (!displayName) throw new SyncError(400, "each upsert item must have a non-empty display_name");
+
+    const hasOidc = oidcIssuer !== undefined || oidcSubject !== undefined;
+    if ((oidcIssuer === undefined) !== (oidcSubject === undefined)) {
         throw new SyncError(422, "Both oidc_issuer and oidc_subject must be provided together");
-    }
-    if (password !== undefined && (typeof password !== "string" || password.length < 12)) {
-        throw new SyncError(422, "password must be at least 12 characters");
     }
 
     return {
         email,
-        displayName: display_name.trim(),
+        displayName,
         password,
-        oidcIssuer: oidc_issuer?.trim() || null,
-        oidcSubject: oidc_subject?.trim() || null,
+        oidcIssuer: oidcIssuer || null,
+        oidcSubject: oidcSubject || null,
         hasOidc,
     };
 }

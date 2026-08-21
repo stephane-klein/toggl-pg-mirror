@@ -1,6 +1,8 @@
 import { json } from "@sveltejs/kit";
+import { safeParse } from "valibot";
 import { generateId, hashPassword } from "$lib/backend/auth.js";
 import { sql } from "$lib/backend/pg.js";
+import { userFieldsSchema } from "$lib/schemas/user.js";
 import { generateCursor, problem, requireAdminToken } from "../_helpers.js";
 
 export async function GET(event) {
@@ -42,40 +44,30 @@ export async function POST(event) {
     if (authError) return authError;
 
     const body = await event.request.json();
-    const { email, display_name, password } = body;
-    const oidc_issuer = body.oidc_issuer?.replace(/\/$/, "");
-    const oidc_subject = body.oidc_subject;
 
-    const hasOidc = oidc_issuer !== undefined || oidc_subject !== undefined;
+    const parsed = safeParse(userFieldsSchema, body);
+    if (!parsed.success) {
+        return problem(400, parsed.issues[0].message, event.request.url);
+    }
+    const { email, display_name, password, oidc_issuer, oidc_subject } = parsed.output;
+    const emailTrim = email?.trim();
+    const displayNameTrim = display_name?.trim();
+    const oidcIssuer = oidc_issuer?.replace(/\/$/, "").trim();
+    const oidcSubject = oidc_subject?.trim();
 
-    if ((oidc_issuer === undefined) !== (oidc_subject === undefined)) {
+    const hasOidc = oidcIssuer !== undefined || oidcSubject !== undefined;
+
+    if ((oidcIssuer === undefined) !== (oidcSubject === undefined)) {
         return problem(422, "Both oidc_issuer and oidc_subject must be provided together", event.request.url);
     }
 
-    if (hasOidc) {
-        if (email !== undefined && (typeof email !== "string" || !email.trim())) {
-            return problem(400, "email must be a non-empty string", event.request.url);
-        }
-        if (display_name !== undefined && (typeof display_name !== "string" || !display_name.trim())) {
-            return problem(400, "display_name must be a non-empty string", event.request.url);
-        }
-        if (password !== undefined && (typeof password !== "string" || password.length < 12)) {
-            return problem(422, "password must be at least 12 characters", event.request.url);
-        }
-    } else {
-        if (!email || typeof email !== "string" || !email.trim()) {
-            return problem(400, "email is required", event.request.url);
-        }
-        if (!display_name || typeof display_name !== "string" || !display_name.trim()) {
-            return problem(400, "display_name is required", event.request.url);
-        }
-        if (password !== undefined && (typeof password !== "string" || password.length < 12)) {
-            return problem(422, "password must be at least 12 characters", event.request.url);
-        }
+    if (!hasOidc) {
+        if (!emailTrim) return problem(400, "email is required", event.request.url);
+        if (!displayNameTrim) return problem(400, "display_name is required", event.request.url);
     }
 
-    if (email?.trim()) {
-        const existing = await sql`SELECT id FROM users WHERE email = ${email.trim()}`;
+    if (emailTrim) {
+        const existing = await sql`SELECT id FROM users WHERE email = ${emailTrim}`;
         if (existing.length > 0) {
             return problem(409, "A user with this email already exists", event.request.url);
         }
@@ -83,7 +75,7 @@ export async function POST(event) {
 
     if (hasOidc) {
         const existing = await sql`
-            SELECT id FROM users WHERE oidc_issuer = ${oidc_issuer.trim()} AND oidc_subject = ${oidc_subject.trim()}
+            SELECT id FROM users WHERE oidc_issuer = ${oidcIssuer} AND oidc_subject = ${oidcSubject}
         `;
         if (existing.length > 0) {
             return problem(409, "A user with this OIDC pair already exists", event.request.url);
@@ -92,12 +84,12 @@ export async function POST(event) {
 
     const id = generateId();
     const passwordHash = password ? await hashPassword(password) : null;
-    const displayName = display_name?.trim() || null;
+    const displayName = displayNameTrim || null;
 
     const [user] = await sql`
         INSERT INTO users (id, email, display_name, password_hash, oidc_issuer, oidc_subject)
-        VALUES (${id}, ${email?.trim() || null}, ${displayName}, ${passwordHash},
-                ${oidc_issuer?.trim() || null}, ${oidc_subject?.trim() || null})
+        VALUES (${id}, ${emailTrim || null}, ${displayName}, ${passwordHash},
+                ${oidcIssuer || null}, ${oidcSubject || null})
         RETURNING id, email, display_name, oidc_issuer, oidc_subject, is_active, created_at, updated_at
     `;
 
@@ -121,25 +113,23 @@ export async function PUT(event) {
     if (authError) return authError;
 
     const body = await event.request.json();
-    const email = body.email?.trim();
-    const display_name = body.display_name;
-    const password = body.password;
-    const oidc_issuer = body.oidc_issuer?.replace(/\/$/, "");
-    const oidc_subject = body.oidc_subject;
 
-    if (!email || typeof email !== "string" || !email.trim()) {
-        return problem(400, "email is required", event.request.url);
+    const parsed = safeParse(userFieldsSchema, body);
+    if (!parsed.success) {
+        return problem(400, parsed.issues[0].message, event.request.url);
     }
-    if (typeof display_name !== "string" || !display_name.trim()) {
-        return problem(400, "display_name is required", event.request.url);
-    }
+    const { email: rawEmail, display_name, password, oidc_issuer, oidc_subject } = parsed.output;
+    const email = rawEmail?.trim();
+    const displayName = display_name?.trim();
+    const oidcIssuer = oidc_issuer?.replace(/\/$/, "").trim();
+    const oidcSubject = oidc_subject?.trim();
 
-    const hasOidc = oidc_issuer !== undefined || oidc_subject !== undefined;
-    if ((oidc_issuer === undefined) !== (oidc_subject === undefined)) {
+    if (!email) return problem(400, "email is required", event.request.url);
+    if (!displayName) return problem(400, "display_name is required", event.request.url);
+
+    const hasOidc = oidcIssuer !== undefined || oidcSubject !== undefined;
+    if ((oidcIssuer === undefined) !== (oidcSubject === undefined)) {
         return problem(422, "Both oidc_issuer and oidc_subject must be provided together", event.request.url);
-    }
-    if (password !== undefined && (typeof password !== "string" || password.length < 12)) {
-        return problem(422, "password must be at least 12 characters", event.request.url);
     }
 
     const [existing] = await sql`SELECT id, password_hash FROM users WHERE email = ${email}`;
@@ -147,7 +137,7 @@ export async function PUT(event) {
     if (hasOidc) {
         const conflict = await sql`
             SELECT id FROM users
-            WHERE oidc_issuer = ${oidc_issuer.trim()} AND oidc_subject = ${oidc_subject.trim()}
+            WHERE oidc_issuer = ${oidcIssuer} AND oidc_subject = ${oidcSubject}
             AND email != ${email}
         `;
         if (conflict.length > 0) {
@@ -155,7 +145,6 @@ export async function PUT(event) {
         }
     }
 
-    const displayName = display_name.trim();
     const passwordHash = password ? await hashPassword(password) : null;
     const now = new Date();
 
@@ -165,7 +154,7 @@ export async function PUT(event) {
         [user] = await sql`
             INSERT INTO users (id, email, display_name, password_hash, oidc_issuer, oidc_subject)
             VALUES (${id}, ${email}, ${displayName}, ${passwordHash},
-                    ${oidc_issuer?.trim() || null}, ${oidc_subject?.trim() || null})
+                    ${oidcIssuer || null}, ${oidcSubject || null})
             RETURNING id, email, display_name, oidc_issuer, oidc_subject, is_active, created_at, updated_at
         `;
     } else {
@@ -173,8 +162,8 @@ export async function PUT(event) {
             UPDATE users
             SET display_name  = ${displayName},
                 password_hash = ${password ? passwordHash : existing.password_hash},
-                oidc_issuer   = ${oidc_issuer?.trim() || null},
-                oidc_subject  = ${oidc_subject?.trim() || null},
+                oidc_issuer   = ${oidcIssuer || null},
+                oidc_subject  = ${oidcSubject || null},
                 updated_at    = ${now}
             WHERE email = ${email}
             RETURNING id, email, display_name, oidc_issuer, oidc_subject, is_active, created_at, updated_at

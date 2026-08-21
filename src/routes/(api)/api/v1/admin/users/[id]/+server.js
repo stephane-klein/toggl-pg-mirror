@@ -1,6 +1,8 @@
 import { json } from "@sveltejs/kit";
+import { safeParse } from "valibot";
 import { hashPassword } from "$lib/backend/auth.js";
 import { sql } from "$lib/backend/pg.js";
+import { userPatchSchema } from "$lib/schemas/user.js";
 import { problem, requireAdminToken } from "../../_helpers.js";
 
 function userLinks(id) {
@@ -36,39 +38,31 @@ export async function PATCH(event) {
 
     const body = await event.request.json();
 
-    if (body.email !== undefined) {
-        if (typeof body.email !== "string" || !body.email.trim()) {
-            return problem(422, "email must be a non-empty string", event.request.url);
-        }
+    const parsed = safeParse(userPatchSchema, body);
+    if (!parsed.success) {
+        return problem(422, parsed.issues[0].message, event.request.url);
+    }
+    const { email, display_name, password, oidc_issuer, oidc_subject, is_active } = parsed.output;
+    const emailTrim = email?.trim();
+    const displayNameTrim = display_name?.trim();
+    const oidcIssuer = oidc_issuer?.replace(/\/$/, "").trim();
+    const oidcSubject = oidc_subject?.trim();
 
-        const conflict =
-            await sql`SELECT id FROM users WHERE email = ${body.email.trim()} AND id != ${event.params.id}`;
+    if (emailTrim !== undefined) {
+        const conflict = await sql`SELECT id FROM users WHERE email = ${emailTrim} AND id != ${event.params.id}`;
         if (conflict.length > 0) {
             return problem(409, "A user with this email already exists", event.request.url);
         }
     }
 
-    if (body.display_name !== undefined && (typeof body.display_name !== "string" || !body.display_name.trim())) {
-        return problem(422, "display_name must be a non-empty string", event.request.url);
-    }
-
-    if (body.password !== undefined && (typeof body.password !== "string" || body.password.length < 12)) {
-        return problem(422, "password must be at least 12 characters", event.request.url);
-    }
-
-    if (body.is_active !== undefined && typeof body.is_active !== "boolean") {
-        return problem(422, "is_active must be a boolean", event.request.url);
-    }
-
-    if (body.oidc_issuer !== undefined || body.oidc_subject !== undefined) {
-        if (body.oidc_issuer === undefined || body.oidc_subject === undefined) {
+    if (oidcIssuer !== undefined || oidcSubject !== undefined) {
+        if (oidcIssuer === undefined || oidcSubject === undefined) {
             return problem(422, "Both oidc_issuer and oidc_subject must be provided together", event.request.url);
         }
 
-        const oidcIssuer = body.oidc_issuer.replace(/\/$/, "");
         const conflict = await sql`
             SELECT id FROM users
-            WHERE oidc_issuer = ${oidcIssuer.trim()} AND oidc_subject = ${body.oidc_subject.trim()}
+            WHERE oidc_issuer = ${oidcIssuer} AND oidc_subject = ${oidcSubject}
             AND id != ${event.params.id}
         `;
         if (conflict.length > 0) {
@@ -83,19 +77,19 @@ export async function PATCH(event) {
     const now = new Date();
 
     let passwordHash = null;
-    if (body.password) {
-        passwordHash = await hashPassword(body.password);
+    if (password) {
+        passwordHash = await hashPassword(password);
     }
 
     const [user] = await sql`
         UPDATE users
         SET
-            email         = COALESCE(${body.email?.trim() || null}, email),
-            display_name  = COALESCE(${body.display_name?.trim() || null}, display_name),
-            password_hash = CASE WHEN ${!!body.password} THEN ${passwordHash} ELSE password_hash END,
-            oidc_issuer   = COALESCE(${body.oidc_issuer?.replace(/\/$/, "").trim() || null}, oidc_issuer),
-            oidc_subject  = COALESCE(${body.oidc_subject?.trim() || null}, oidc_subject),
-            is_active     = COALESCE(${body.is_active !== undefined ? body.is_active : null}, is_active),
+            email         = COALESCE(${emailTrim || null}, email),
+            display_name  = COALESCE(${displayNameTrim || null}, display_name),
+            password_hash = CASE WHEN ${!!password} THEN ${passwordHash} ELSE password_hash END,
+            oidc_issuer   = COALESCE(${oidcIssuer || null}, oidc_issuer),
+            oidc_subject  = COALESCE(${oidcSubject || null}, oidc_subject),
+            is_active     = COALESCE(${is_active !== undefined ? is_active : null}, is_active),
             updated_at    = ${now}
         WHERE id = ${event.params.id}
         RETURNING id, email, display_name, oidc_issuer, oidc_subject, is_active, created_at, updated_at

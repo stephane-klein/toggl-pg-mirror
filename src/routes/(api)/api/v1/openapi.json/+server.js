@@ -1,4 +1,51 @@
 import { json } from "@sveltejs/kit";
+import { toJsonSchema } from "@valibot/to-json-schema";
+import { userFieldsSchema, userPatchSchema } from "$lib/schemas/user.js";
+
+// Request-body schemas are derived from the valibot schemas that actually
+// validate the handlers, so the OpenAPI contract can never drift from the code.
+// `$schema` is JSON-Schema-only metadata and must not appear in an OpenAPI 3.0
+// component. `annotate` overlays examples/descriptions (which toJsonSchema does
+// not emit) and the accurate `required` arrays on top of the derived structure.
+const stripSchemaMeta = ({ $schema: _schema, ...rest }) => rest;
+
+const annotate = (base, { required, props }) => ({
+    ...base,
+    required,
+    properties: Object.fromEntries(
+        Object.entries(base.properties).map(([name, schema]) => [
+            name,
+            props[name] ? { ...schema, ...props[name] } : schema,
+        ]),
+    ),
+});
+
+const upsertAnnotations = {
+    email: { description: "User email address", example: "user@example.com" },
+    display_name: { description: "Display name", example: "John Doe" },
+    password: {
+        description: "Optional. Users without a password sign in via magic link or reset their password",
+        format: "password",
+        example: "s3cur3!",
+    },
+    oidc_issuer: { description: "OIDC issuer URL", example: "https://auth.example.com" },
+    oidc_subject: { description: "OIDC subject identifier", example: "johndoe" },
+};
+
+// The upsert paths (PUT and sync) unconditionally require email + display_name;
+// the POST body also uses this schema but omits `required` because the OIDC
+// branch makes those fields conditionally optional.
+const userUpsertJson = annotate(stripSchemaMeta(toJsonSchema(userFieldsSchema)), {
+    required: ["email", "display_name"],
+    props: upsertAnnotations,
+});
+// POST shares the same fields as the upsert but must not mark fields required,
+// because the OIDC branch accepts a user with only an OIDC pair.
+const userCreateJson = { ...userUpsertJson, required: [] };
+const userPatchJson = annotate(stripSchemaMeta(toJsonSchema(userPatchSchema)), {
+    required: [],
+    props: { ...upsertAnnotations, is_active: { description: "Whether the account is active" } },
+});
 
 export function GET() {
     return json({
@@ -50,22 +97,7 @@ export function GET() {
                         required: true,
                         content: {
                             "application/json": {
-                                schema: {
-                                    type: "object",
-                                    properties: {
-                                        email: { type: "string", format: "email", example: "user@example.com" },
-                                        display_name: { type: "string", example: "John Doe" },
-                                        password: {
-                                            type: "string",
-                                            format: "password",
-                                            minLength: 12,
-                                            description:
-                                                "Optional. Users without a password sign in via magic link or reset their password",
-                                        },
-                                        oidc_issuer: { type: "string", example: "https://auth.example.com" },
-                                        oidc_subject: { type: "string", example: "johndoe" },
-                                    },
-                                },
+                                schema: userCreateJson,
                             },
                         },
                     },
@@ -160,17 +192,7 @@ export function GET() {
                         required: true,
                         content: {
                             "application/json": {
-                                schema: {
-                                    type: "object",
-                                    properties: {
-                                        email: { type: "string", format: "email", example: "newemail@example.com" },
-                                        display_name: { type: "string", example: "New Name" },
-                                        password: { type: "string", format: "password", minLength: 12 },
-                                        oidc_issuer: { type: "string", example: "https://auth.example.com" },
-                                        oidc_subject: { type: "string", example: "johndoe" },
-                                        is_active: { type: "boolean" },
-                                    },
-                                },
+                                schema: userPatchJson,
                             },
                         },
                     },
@@ -354,20 +376,10 @@ export function GET() {
                     },
                 },
                 AdminUserUpsert: {
-                    type: "object",
-                    required: ["email", "display_name"],
-                    properties: {
-                        email: { type: "string", format: "email", example: "user@example.com" },
-                        display_name: { type: "string", example: "John Doe" },
-                        password: {
-                            type: "string",
-                            format: "password",
-                            minLength: 12,
-                            example: "s3cur3!",
-                        },
-                        oidc_issuer: { type: "string", example: "https://auth.example.com" },
-                        oidc_subject: { type: "string", example: "johndoe" },
-                    },
+                    ...userUpsertJson,
+                },
+                UserPatch: {
+                    ...userPatchJson,
                 },
                 AdminUserSyncResult: {
                     type: "object",
