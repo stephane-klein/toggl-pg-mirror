@@ -153,6 +153,22 @@ description = "Login to GitHub Container Registry using gh CLI"
 run = "podman push ghcr.io/stephane-klein/toggl-pg-mirror:latest"
 description = "Push the container image to GitHub Container Registry"
 
+[tasks.ci-build-push-image]
+description = "Trigger the build & push image GitHub Action workflow via gh CLI (manual CI)"
+run = """
+gh workflow run build-push-image.yml --ref "main"
+"""
+
+[tasks.setup-ghcr-actions]
+description = "Configure GHCR_USERNAME variable and GHCR_PAT secret for the GitHub Actions build-push-image workflow"
+run = """
+REPO="stephane-klein/toggl-pg-mirror"
+gh variable set GHCR_USERNAME --body "stephane-klein" --repo "$REPO"
+gh secret set GHCR_PAT --body "$(gopass show -o github-cli/token)" --repo "$REPO"
+gh variable list --repo "$REPO"
+gh secret list --repo "$REPO"
+"""
+
 [tasks.login-ghcr-helm]
 description = "Authenticate Helm with GitHub Container Registry using gh CLI"
 run = """

@@ -265,6 +265,24 @@ $ mise run login-ghcr
 $ mise run push-image
 ```
 
+Alternatively, build and push via a GitHub Action workflow (manual trigger) instead of a local Podman build:
+
+```bash
+$ mise run ci-build-push-image            # on the current branch
+$ mise run ci-build-push-image main       # on a specific ref
+```
+
+This runs the `build-push-image.yml` workflow through `gh workflow run`. The workflow
+requires a `GHCR_PAT` secret (a PAT with `write:packages`) and a `GHCR_USERNAME`
+variable to be set in the repository settings.
+
+To configure these repository settings (variable `GHCR_USERNAME` and secret `GHCR_PAT`,
+the latter read from `gopass show -o github-cli/token`):
+
+```bash
+$ mise run setup-ghcr-actions
+```
+
 ## Publish Helm chart
 
 ```bash
