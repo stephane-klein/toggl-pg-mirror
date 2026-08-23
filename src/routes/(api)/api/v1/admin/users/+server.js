@@ -3,7 +3,8 @@ import { safeParse } from "valibot";
 import { generateId, hashPassword } from "$lib/backend/auth.js";
 import { sql } from "$lib/backend/pg.js";
 import { userFieldsSchema } from "$lib/schemas/user.js";
-import { generateCursor, problem, requireAdminToken } from "../_helpers.js";
+import { generateCursor, requireAdminToken } from "../_helpers.js";
+import { problem } from "../../_problem.js";
 
 export async function GET(event) {
     const authError = requireAdminToken(event);

@@ -346,6 +346,51 @@ export function GET() {
                     },
                 },
             },
+            "/api/v1/time-entries/import-csv": {
+                post: {
+                    summary: "Import time entries from a Toggl CSV export",
+                    description:
+                        "Uploads a Toggl CSV export (multipart/form-data, field 'file'). Authenticated either by a logged-in user (session cookie or user API token) or by the admin token.",
+                    security: [{ userBearer: [] }, { adminBearer: [] }],
+                    requestBody: {
+                        required: true,
+                        content: {
+                            "multipart/form-data": {
+                                schema: {
+                                    type: "object",
+                                    required: ["file"],
+                                    properties: {
+                                        file: {
+                                            type: "string",
+                                            format: "binary",
+                                            description: "Toggl CSV export file (.csv)",
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    responses: {
+                        200: {
+                            description: "CSV import result",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            data: { $ref: "#/components/schemas/CsvImportResult" },
+                                            _links: { $ref: "#/components/schemas/Links" },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                        400: { $ref: "#/components/responses/BadRequest" },
+                        401: { $ref: "#/components/responses/Unauthorized" },
+                        500: { $ref: "#/components/responses/InternalError" },
+                    },
+                },
+            },
         },
         components: {
             schemas: {
@@ -390,6 +435,20 @@ export function GET() {
                         users: {
                             type: "array",
                             items: { $ref: "#/components/schemas/AdminUser" },
+                        },
+                    },
+                },
+                CsvImportResult: {
+                    type: "object",
+                    properties: {
+                        deleted: { type: "integer", example: 0 },
+                        inserted: { type: "integer", example: 19583 },
+                        dateRange: {
+                            type: "object",
+                            properties: {
+                                min: { type: "string", format: "date-time", example: "2025-01-01T00:01:53.000Z" },
+                                max: { type: "string", format: "date-time", example: "2025-12-31T20:03:28.000Z" },
+                            },
                         },
                     },
                 },
@@ -459,6 +518,12 @@ export function GET() {
                     type: "http",
                     scheme: "bearer",
                     description: "Admin token set via TOGGL_PG_MIRROR_ADMIN_TOKEN environment variable",
+                },
+                userBearer: {
+                    type: "http",
+                    scheme: "bearer",
+                    description:
+                        "User API token created via the create-api-token command (or a browser session cookie)",
                 },
             },
         },

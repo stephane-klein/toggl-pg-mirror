@@ -25,23 +25,23 @@
 
 ## Attack surface map
 
-| Path / handler                                                                        | Type            | Auth                             | Data access                       | Status    |
-| ------------------------------------------------------------------------------------- | --------------- | -------------------------------- | --------------------------------- | --------- |
-| `/time-entries/day/[date]`, `/month/[month]`, `/week/[year]/[week]`, `/range`         | page            | `(private)` layout guard         | read (`getTimeEntriesPageData`)   | Protected |
-| RPC `saveTimeEntry`                                                                   | `command()`     | `requireUser(getRequestEvent())` | write + audit                     | Protected |
-| RPC `bulkEditTimeEntries`                                                             | `command()`     | `requireUser(getRequestEvent())` | write + audit                     | Protected |
-| RPC `getMatchingTimeEntries`                                                          | `command()`     | `requireUser(getRequestEvent())` | read                              | Protected |
-| RPC `undoTimeEntryEditOperation`                                                      | `command()`     | `requireUser(getRequestEvent())` | write + audit                     | Protected |
-| RPC `getAllTags`                                                                      | `query()`       | `requireUser(getRequestEvent())` | read (tags)                       | Protected |
-| `/import-csv/upload`                                                                  | `POST` endpoint | `requireUser(event)`             | write + audit                     | Protected |
-| `/api/v1/admin/users*`, `/send-test-mail`                                             | API endpoint    | admin token                      | users only                        | Protected |
-| `/-/healthy`, `/-/ready`, `/-/version.json`, `/api/reference`, `/api/v1/openapi.json` | API endpoint    | none                             | **no access** to sensitive tables | N/A (OK)  |
+| Path / handler                                                                        | Type            | Auth                                      | Data access                       | Status    |
+| ------------------------------------------------------------------------------------- | --------------- | ----------------------------------------- | --------------------------------- | --------- |
+| `/time-entries/day/[date]`, `/month/[month]`, `/week/[year]/[week]`, `/range`         | page            | `(private)` layout guard                  | read (`getTimeEntriesPageData`)   | Protected |
+| RPC `saveTimeEntry`                                                                   | `command()`     | `requireUser(getRequestEvent())`          | write + audit                     | Protected |
+| RPC `bulkEditTimeEntries`                                                             | `command()`     | `requireUser(getRequestEvent())`          | write + audit                     | Protected |
+| RPC `getMatchingTimeEntries`                                                          | `command()`     | `requireUser(getRequestEvent())`          | read                              | Protected |
+| RPC `undoTimeEntryEditOperation`                                                      | `command()`     | `requireUser(getRequestEvent())`          | write + audit                     | Protected |
+| RPC `getAllTags`                                                                      | `query()`       | `requireUser(getRequestEvent())`          | read (tags)                       | Protected |
+| `/api/v1/time-entries/import-csv`                                                     | `POST` endpoint | user (`event.locals.user`) or admin token | write + audit                     | Protected |
+| `/api/v1/admin/users*`, `/send-test-mail`                                             | API endpoint    | admin token                               | users only                        | Protected |
+| `/-/healthy`, `/-/ready`, `/-/version.json`, `/api/reference`, `/api/v1/openapi.json` | API endpoint    | none                                      | **no access** to sensitive tables | N/A (OK)  |
 
 ## Verifications performed
 
 - Reviewed every exposed `+server.js` endpoint and every remote function (`command()` / `query()`) that reads or writes the sensitive tables and confirmed each is behind `requireUser`, a layout guard, or `requireAdminToken`.
 - Searched `src/` for references to the sensitive tables (`time_entries`, `time_entry_audit_log`, `time_entry_edit_operations`, and the SQL functions `get_time_entries_page_data`, `get_matching_time_entries`). Every HTTP entry point among these references is authenticated; the remaining references live in pure backend modules (`updateTimeEntry.js`, `time-entries.js`, `importer.js`, `csv-importer.js`) reached only from authenticated handlers or the sync daemon.
-- Confirmed the unauthenticated paths previously reported are now closed: the four `command()` handlers in `timeEntries.remote.js`, the `getAllTags` query in `tags.remote.js`, and the `/import-csv/upload` endpoint.
+- Confirmed the unauthenticated paths previously reported are now closed: the four `command()` handlers in `timeEntries.remote.js`, the `getAllTags` query in `tags.remote.js`, and the `/api/v1/time-entries/import-csv` endpoint.
 - Reviewed the login and session security in `auth.js`, `rate-limit.js`, `hooks.server.js`, `login/+page.server.js`: API tokens are checked for `is_active` and `expires_at`, login attempts are throttled per IP and per email, sign-in responses are equalized to prevent account enumeration, a global `Referrer-Policy: no-referrer` limits magic-link token leakage, and the session cookie is re-issued in sync with the server-side rolling renewal.
 - Method: static code review. **Limitation:** no dynamic/e2e exploitation test was run.
 

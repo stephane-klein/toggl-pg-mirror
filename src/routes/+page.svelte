@@ -20,7 +20,7 @@
                 >
                 ·
                 <a
-                    href="/import-csv"
+                    href="/docs"
                     class="text-gray-500 no-underline hover:text-blue-600 hover:underline">Import CSV</a
                 >
                 ·
@@ -113,8 +113,8 @@
                 <tr>
                     <td class="py-1.5 pr-4 font-mono text-xs">
                         <a
-                            href="/import-csv"
-                            class="text-blue-600 no-underline hover:underline">/import-csv</a
+                            href="/docs"
+                            class="text-blue-600 no-underline hover:underline">/docs</a
                         >
                     </td>
                     <td class="py-1.5 text-gray-500"> Import time entries from a Toggl CSV export </td>

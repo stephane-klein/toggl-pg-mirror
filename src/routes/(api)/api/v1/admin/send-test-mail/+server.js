@@ -1,6 +1,7 @@
 import { json } from "@sveltejs/kit";
 import { email, pipe, safeParse, string } from "valibot";
-import { requireAdminToken, problem } from "../_helpers.js";
+import { requireAdminToken } from "../_helpers.js";
+import { problem } from "../../_problem.js";
 import { sendMail } from "$lib/backend/mailer.js";
 import { logger } from "$lib/backend/logger.js";
 

@@ -15,7 +15,7 @@
             >
             ·
             <a
-                href="/import-csv"
+                href="/docs"
                 class="text-gray-500 no-underline hover:text-blue-600 hover:underline">Import CSV</a
             >
             ·

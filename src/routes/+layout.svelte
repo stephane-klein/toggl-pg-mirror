@@ -14,14 +14,22 @@
     {#if !$page.route.id?.startsWith("/(private)/time-entries")}
         <footer class="border-t border-gray-300">
             <div class="page px-5 py-3 text-xs text-gray-500 flex items-center justify-between">
-                <a
-                    href="https://github.com/stephane-klein/toggl-pg-mirror"
-                    class="text-gray-500 no-underline hover:underline">GitHub</a
-                >
-                <a
-                    href="/-/version.json"
-                    class="text-gray-500 no-underline hover:underline">Version</a
-                >
+                <nav class="flex items-center gap-1">
+                    <a
+                        href="/docs"
+                        class="text-gray-500 no-underline hover:underline">Docs</a
+                    >
+                    |
+                    <a
+                        href="https://github.com/stephane-klein/toggl-pg-mirror"
+                        class="text-gray-500 no-underline hover:underline">GitHub</a
+                    >
+                    |
+                    <a
+                        href="/-/version.json"
+                        class="text-gray-500 no-underline hover:underline">Version</a
+                    >
+                </nav>
             </div>
         </footer>
     {/if}

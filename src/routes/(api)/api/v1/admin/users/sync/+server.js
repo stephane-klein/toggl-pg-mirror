@@ -3,7 +3,8 @@ import { safeParse } from "valibot";
 import { generateId, hashPassword } from "$lib/backend/auth.js";
 import { sql } from "$lib/backend/pg.js";
 import { userFieldsSchema } from "$lib/schemas/user.js";
-import { problem, requireAdminToken } from "../../_helpers.js";
+import { requireAdminToken } from "../../_helpers.js";
+import { problem } from "../../../_problem.js";
 
 const MAX_BATCH_SIZE = 1000;
 

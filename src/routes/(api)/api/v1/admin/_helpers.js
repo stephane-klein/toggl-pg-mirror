@@ -1,4 +1,5 @@
 import { json } from "@sveltejs/kit";
+import { problem } from "../_problem.js";
 
 const ADMIN_TOKEN = process.env.TOGGL_PG_MIRROR_ADMIN_TOKEN;
 
@@ -23,28 +24,6 @@ export function requireAdminToken(event) {
     }
 
     return null;
-}
-
-export function problem(status, detail, instance) {
-    const titles = {
-        400: "Bad Request",
-        401: "Unauthorized",
-        403: "Forbidden",
-        404: "Not Found",
-        409: "Conflict",
-        422: "Unprocessable Entity",
-    };
-
-    return json(
-        {
-            type: "about:blank",
-            title: titles[status] || "Error",
-            status,
-            detail,
-            instance,
-        },
-        { status },
-    );
 }
 
 export function generateCursor(user) {

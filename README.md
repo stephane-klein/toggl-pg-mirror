@@ -208,9 +208,10 @@ $ mise run send-test-mail
 ## Import CSV via HTTP
 
 The service exposes a POST endpoint for CSV import, useful for browser-based
-or scripted uploads. The endpoint sits under the authenticated `(private)` route
-group, so requests must authenticate with an [API token](#api-tokens) via the
-`Authorization: Bearer` header (or a session cookie from the browser):
+or scripted uploads. The endpoint sits under the `/api/v1` API, and requests
+must authenticate either with a user [API token](#api-tokens) (or a session
+cookie from the browser) via the `Authorization: Bearer` header, **or** with the
+Toggl admin token:
 
 ```bash
 $ pnpm dev   # start the dev server
@@ -219,14 +220,22 @@ $ pnpm dev   # start the dev server
 $ export TOGGL_PG_MIRROR_API_TOKEN=$(toggl-pg-mirror create-api-token --email=user@example.com --name="CSV import")
 
 # Basic curl upload
-$ curl -X POST http://localhost:5173/import-csv/upload/ \
+$ curl -X POST http://localhost:5173/api/v1/time-entries/import-csv \
     -H "Authorization: Bearer ${TOGGL_PG_MIRROR_API_TOKEN}" \
     -F "file=@toggl-export-data/Toggl_time_entries_2025-01-01_to_2025-12-31.csv"
-{"deleted":0,"inserted":19583,"dateRange":{"min":"2025-01-01T00:01:53.000Z","max":"2025-12-31T20:03:28.000Z"}}
+{"data":{"deleted":0,"inserted":19583,"dateRange":{"min":"2025-01-01T00:01:53.000Z","max":"2025-12-31T20:03:28.000Z"}},"_links":{"self":{"href":"/api/v1/time-entries/import-csv"}}}
 
 # With xh and fzf for interactive file selection
-$ xh -b --form POST http://localhost:5173/import-csv/upload/ file@$(fzf) \
+$ xh -b --form POST http://localhost:5173/api/v1/time-entries/import-csv file@$(fzf) \
     Authorization:"Bearer ${TOGGL_PG_MIRROR_API_TOKEN}"
+```
+
+The same endpoint accepts the admin token instead of a user token:
+
+```bash
+$ curl -X POST http://localhost:5173/api/v1/time-entries/import-csv \
+    -H "Authorization: Bearer ${TOGGL_PG_MIRROR_ADMIN_TOKEN}" \
+    -F "file=@toggl-export-data/Toggl_time_entries_2025-01-01_to_2025-12-31.csv"
 ```
 
 ## Help

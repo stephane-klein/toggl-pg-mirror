@@ -52,6 +52,33 @@ postgres=# select count(*) from memex.time_entries;
 (1 row)
 ```
 
+## Import CSV via HTTP
+
+The app exposes `POST /api/v1/time-entries/import-csv` (multipart upload). The
+endpoint accepts either a user [API token](../README.md#api-tokens) or the admin
+token, via the `Authorization: Bearer` header.
+
+```bash
+$ export PORT=$(podman compose port app 3000 2>/dev/null | sed 's/.*://')
+```
+
+Upload with a user token:
+
+```bash
+$ curl -X POST http://localhost:${PORT}/api/v1/time-entries/import-csv \
+    -H "Authorization: Bearer ${TOGGL_PG_MIRROR_API_TOKEN}" \
+    -F "file=@toggl-export-data/Toggl_time_entries_2025-01-01_to_2025-12-31.csv"
+{"data":{"deleted":0,"inserted":19583,"dateRange":{"min":"2025-01-01T00:01:53.000Z","max":"2025-12-31T20:03:28.000Z"}},"_links":{"self":{"href":"/api/v1/time-entries/import-csv"}}}
+```
+
+The same endpoint accepts the admin token instead:
+
+```bash
+$ curl -X POST http://localhost:${PORT}/api/v1/time-entries/import-csv \
+    -H "Authorization: Bearer ${TOGGL_PG_MIRROR_ADMIN_TOKEN}" \
+    -F "file=@toggl-export-data/Toggl_time_entries_2025-01-01_to_2025-12-31.csv"
+```
+
 ## Tear down
 
 ```bash
