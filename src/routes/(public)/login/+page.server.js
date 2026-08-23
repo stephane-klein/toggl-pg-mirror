@@ -8,6 +8,12 @@ import { clearLoginAttempts, isLoginThrottled, registerLoginAttempt } from "$lib
 
 const THROTTLE_MESSAGE = "Too many sign-in attempts. Please try again later.";
 
+// Pre-computed argon2id hash of a random throwaway password. Used to equalize
+// the sign-in response time for unknown or deactivated accounts, so an attacker
+// cannot tell them apart from a wrong-password attempt via timing.
+const DUMMY_PASSWORD_HASH =
+    "$argon2id$v=19$m=19456,t=2,p=1$sENEdrILccNy8aqBBjVPJw$kS58d2BzFhnRKMWzNCOEYGNWgHzj5eiUU6glyw58hdg";
+
 export const actions = {
     signIn: async ({ request, cookies, getClientAddress }) => {
         const data = await request.formData();
@@ -28,19 +34,30 @@ export const actions = {
             SELECT id, email, display_name, password_hash, is_active FROM users WHERE email = ${email}
         `;
 
+        // A single generic message for every failure path so attackers cannot
+        // enumerate valid accounts by distinguishing the responses.
+        const GENERIC_ERROR = "Invalid email or password or account deactivated.";
+
         if (!user || !user.password_hash) {
-            return fail(400, { error: "Invalid email or password." });
+            // Equalize response time: run a real argon2 verification against a
+            // dummy hash so unknown accounts are indistinguishable from a
+            // wrong-password attempt on an existing account.
+            await verifyPassword(DUMMY_PASSWORD_HASH, password);
+            await registerLoginAttempt({ ip, email, action: "password", success: false });
+            return fail(400, { error: GENERIC_ERROR });
         }
 
         if (!user.is_active) {
-            return fail(400, { error: "This account is deactivated." });
+            await verifyPassword(DUMMY_PASSWORD_HASH, password);
+            await registerLoginAttempt({ ip, email, action: "password", success: false });
+            return fail(400, { error: GENERIC_ERROR });
         }
 
         const valid = await verifyPassword(user.password_hash, password);
 
         if (!valid) {
             await registerLoginAttempt({ ip, email, action: "password", success: false });
-            return fail(400, { error: "Invalid email or password." });
+            return fail(400, { error: GENERIC_ERROR });
         }
 
         await clearLoginAttempts({ ip, email });
