@@ -33,6 +33,16 @@ async function authHandle({ event, resolve }) {
         const session = await validateSession(sessionId);
 
         if (session) {
+            if (session.renewed) {
+                event.cookies.set(SESSION_COOKIE_NAME, session.id, {
+                    path: "/",
+                    httpOnly: true,
+                    sameSite: "lax",
+                    secure: process.env.NODE_ENV === "production",
+                    maxAge: 30 * 24 * 60 * 60,
+                });
+            }
+
             const [user] = await sql`SELECT id, email, display_name FROM users WHERE id = ${session.user_id}`;
 
             if (user) {

@@ -61,6 +61,7 @@ export async function validateSession(sessionId) {
         const newExpiresAt = new Date(nowMs + SESSION_EXPIRES_IN_MS);
         await sql`UPDATE sessions SET expires_at = ${newExpiresAt} WHERE id = ${session.id}`;
         session.expiresAt = newExpiresAt;
+        session.renewed = true;
     }
 
     return session;
