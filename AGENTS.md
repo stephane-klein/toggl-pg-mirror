@@ -47,6 +47,18 @@ directory for routing.
 Components shared across multiple unrelated route groups stay in
 `src/lib/components/`.
 
+### Remote functions and authentication
+
+Remote functions (`command()`, `query()`, `form()` exported from `*.remote.js`
+files, e.g. `src/routes/.../_components/*.remote.js`) are exposed as independent
+HTTP endpoints. They are **NOT** protected by `+layout.server.js` guards —
+SvelteKit only runs those `load()` guards for pages, not for remote-function
+calls. The `authHandle` hook still populates `event.locals.user`, so each remote
+function must check it explicitly via `getRequestEvent().locals.user` (prefer a
+shared `requireUser(event)` helper from `src/lib/server/require-user.js`) and
+throw `error(401, ...)` otherwise. Never rely on the `(private)` route group or
+a layout guard to protect a remote function.
+
 ## Project Structure
 
 ### SvelteKit Routes

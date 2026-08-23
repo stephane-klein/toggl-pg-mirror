@@ -2,10 +2,14 @@ import { Readable } from "node:stream";
 import { json } from "@sveltejs/kit";
 import { importCsvFromStream } from "$lib/backend/csv-importer.js";
 import { logger } from "$lib/backend/logger.js";
+import { requireUser } from "$lib/server/require-user.js";
 
 export const trailingSlash = "always";
 
-export async function POST({ request }) {
+export async function POST(event) {
+    requireUser(event);
+
+    const request = event.request;
     const contentType = request.headers.get("content-type") ?? "";
 
     if (!contentType.includes("multipart/form-data")) {

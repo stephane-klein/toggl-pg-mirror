@@ -1,5 +1,7 @@
 import { command, getRequestEvent } from "$app/server";
 
+import { requireUser } from "$lib/server/require-user.js";
+
 import {
     getTimeEntriesPageData,
     getMatchingTimeEntries as loadMatchingTimeEntries,
@@ -19,6 +21,8 @@ import {
 // Standard Schema (valibot) before the handler runs; the `view` object is
 // treated loosely since it only mirrors the client's current state.
 export const saveTimeEntry = command(saveTimeEntryCommandSchema, async ({ id, changes, view }) => {
+    requireUser(getRequestEvent());
+
     await updateTimeEntry({ id, changes });
 
     const data = await getTimeEntriesPageData(view);
@@ -45,6 +49,8 @@ export const bulkEditTimeEntries = command(
         // `selectAllMatching` resolves the target ids server-side against the
         // current view filter, so a bulk edit can span every matching entry even
         // when only one page is displayed.
+        requireUser(getRequestEvent());
+
         const resolvedIds = selectAllMatching
             ? (await loadMatchingTimeEntries(view)).map((entry) => Number(entry.id))
             : ids;
@@ -72,6 +78,8 @@ export const bulkEditTimeEntries = command(
 // Returns every entry matching the current view filter (unpaginated), used by
 // the copy/export actions while the 'select all matching' selection is active.
 export const getMatchingTimeEntries = command(getMatchingTimeEntriesCommandSchema, async ({ view }) => {
+    requireUser(getRequestEvent());
+
     return loadMatchingTimeEntries(view);
 });
 
@@ -80,5 +88,7 @@ export const getMatchingTimeEntries = command(getMatchingTimeEntriesCommandSchem
 // DB result { undone }. The client then reloads the current view via
 // invalidateAll().
 export const undoTimeEntryEditOperation = command(undoTimeEntryEditOperationCommandSchema, async ({ operationId }) => {
+    requireUser(getRequestEvent());
+
     return undoTimeEntryOperation({ operationId });
 });
