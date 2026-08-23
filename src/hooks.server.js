@@ -92,7 +92,13 @@ async function metricsHandle({ event, resolve }) {
 
 /** @type {import('@sveltejs/kit').Handle} */
 async function requestHandler({ event, resolve }) {
-    return resolve(event);
+    const response = await resolve(event);
+
+    // Prevent the one-time magic-login token (carried in the callback URL) from
+    // leaking to third-party sites via the Referer header of subsequent requests.
+    response.headers.set("Referrer-Policy", "no-referrer");
+
+    return response;
 }
 
 export const handle = sequence(authHandle, metricsHandle, requestHandler);
