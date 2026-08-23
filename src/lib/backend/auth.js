@@ -82,12 +82,25 @@ async function hashToken(token) {
     return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-export async function createApiToken(userId, name) {
+export async function createApiToken(userId, name, expiresInDays = null) {
     const id = generateId();
     const raw = nanoid(48);
-    const tokenHash = await hashToken(raw);
 
-    await sql`INSERT INTO api_tokens (id, user_id, name, token_hash) VALUES (${id}, ${userId}, ${name}, ${tokenHash})`;
+    // prettier-ignore
+    await sql`
+        INSERT INTO api_tokens (id, user_id, name, token_hash, expires_at)
+        VALUES (
+            ${id},                   -- id
+            ${userId},               -- user_id
+            ${name},                 -- name
+            ${await hashToken(raw)}, -- token_hash
+            ${
+                expiresInDays
+                    ? new Date(now().getTime() + expiresInDays * 24 * 3600 * 1000)
+                    : null
+            }                        -- expires_at
+        )
+    `;
 
     return { id, name, raw };
 }
@@ -96,7 +109,7 @@ export async function validateApiToken(raw) {
     const tokenHash = await hashToken(raw);
 
     const [token] = await sql`
-        SELECT t.id, t.user_id, u.is_active
+        SELECT t.id, t.user_id, t.expires_at, u.is_active
         FROM api_tokens t
         INNER JOIN users u ON u.id = t.user_id
         WHERE t.token_hash = ${tokenHash}
@@ -104,6 +117,7 @@ export async function validateApiToken(raw) {
 
     if (!token) return null;
     if (!token.is_active) return null;
+    if (token.expires_at && now().getTime() >= token.expires_at.getTime()) return { expired: true };
 
     await sql`UPDATE api_tokens SET last_used = ${now()} WHERE id = ${token.id}`;
 
@@ -115,7 +129,7 @@ export async function deleteApiToken(tokenId) {
 }
 
 export async function listUserApiTokens(userId) {
-    return await sql`SELECT id, name, last_used, created_at FROM api_tokens WHERE user_id = ${userId}`;
+    return await sql`SELECT id, name, last_used, created_at, expires_at FROM api_tokens WHERE user_id = ${userId}`;
 }
 
 export async function createPasswordResetToken(email) {

@@ -50,7 +50,9 @@ async function authHandle({ event, resolve }) {
             const raw = authHeader.slice(7);
             const token = await validateApiToken(raw);
 
-            if (token) {
+            if (token?.expired) {
+                event.locals.authFailure = "expired";
+            } else if (token) {
                 const [user] = await sql`SELECT id, email, display_name FROM users WHERE id = ${token.user_id}`;
 
                 if (user) {

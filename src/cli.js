@@ -218,6 +218,10 @@ yargs(hideBin(process.argv))
                     type: "string",
                     demandOption: true,
                     description: "Token name (e.g. 'CI/CD deploy')",
+                })
+                .option("expires-in-days", {
+                    type: "number",
+                    description: "Number of days before the token expires (omit for no expiration)",
                 }),
         async (argv) => {
             await waitForDb();
@@ -229,7 +233,7 @@ yargs(hideBin(process.argv))
                 process.exit(1);
             }
 
-            const token = await createApiToken(user.id, argv.name);
+            const token = await createApiToken(user.id, argv.name, argv["expires-in-days"] || null);
 
             logger.info({ name: argv.name }, "API token created");
             console.log("\nRaw token (shown once — store it safely):");

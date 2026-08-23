@@ -1,5 +1,9 @@
 <script>
     let { data, form } = $props();
+
+    function isExpired(token) {
+        return token.expires_at && new Date(token.expires_at).getTime() <= Date.now();
+    }
 </script>
 
 <svelte:head>
@@ -30,15 +34,35 @@
         action="?/create"
         class="max-w-sm mb-8"
     >
-        <div class="flex gap-2">
+        <div class="mb-3">
+            <label
+                for="name"
+                class="block text-sm font-semibold mb-1">Token name</label
+            >
             <input
                 type="text"
                 id="name"
                 name="name"
                 placeholder="Token name (e.g. CI/CD deploy)"
                 required
-                class="flex-1 px-2 py-1.5 border border-gray-300 rounded-sm text-sm text-gray-900 bg-white focus:outline-2 focus:outline-blue-600 focus:border-blue-600"
+                class="w-full px-2 py-1.5 border border-gray-300 rounded-sm text-sm text-gray-900 bg-white focus:outline-2 focus:outline-blue-600 focus:border-blue-600"
             />
+        </div>
+        <div class="mb-3">
+            <label
+                for="expiresInDays"
+                class="block text-sm font-semibold mb-1">Expiration (days)</label
+            >
+            <input
+                type="number"
+                id="expiresInDays"
+                name="expiresInDays"
+                min="1"
+                placeholder="Leave empty for no expiration"
+                class="w-full px-2 py-1.5 border border-gray-300 rounded-sm text-sm text-gray-900 bg-white focus:outline-2 focus:outline-blue-600 focus:border-blue-600"
+            />
+        </div>
+        <div class="mt-4">
             <button
                 type="submit"
                 class="px-4 py-1.5 bg-blue-600 text-white border border-blue-600 rounded-sm text-sm font-semibold cursor-pointer hover:bg-blue-700 hover:border-blue-700"
@@ -59,10 +83,16 @@
             {#each data.tokens as token (token.id)}
                 <tr class="border-b border-gray-200">
                     <td class="py-2 pr-4">
-                        <span class="font-semibold">{token.name}</span>
-                        <span class="block text-xs text-gray-500">
+                        <span class="font-semibold {isExpired(token) ? 'text-gray-400' : ''}">{token.name}</span>
+                        <span class="block text-xs {isExpired(token) ? 'text-red-500' : 'text-gray-500'}">
                             Created {new Date(token.created_at).toLocaleDateString()}
                             {#if token.last_used}· Last used {new Date(token.last_used).toLocaleDateString()}{/if}
+                            · {token.expires_at
+                                ? `Expires ${new Date(token.expires_at).toLocaleDateString()}`
+                                : "Never expires"}
+                            {#if isExpired(token)}
+                                · <span class="font-semibold">Expired</span>
+                            {/if}
                         </span>
                     </td>
                     <td class="py-2 text-right">
