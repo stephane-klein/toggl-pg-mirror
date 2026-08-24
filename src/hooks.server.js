@@ -13,7 +13,7 @@ if (togglIsConfigured) {
     logger.info({ pollIntervalSeconds }, "Starting sync daemon");
     startSyncDaemon(pollIntervalSeconds);
 } else {
-    logger.warn("Sync daemon not started — TOGGL_PG_MIRROR_TOGGL_API_TOKEN not set");
+    logger.warn("Sync daemon not started — TOGGL_PG_MIRROR_TOGGL_API_TOKEN not set, Toggl API features disabled");
 }
 
 verifySmtpConnection();

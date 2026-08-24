@@ -4,10 +4,6 @@ const TOGGL_API_TOKEN = process.env.TOGGL_PG_MIRROR_TOGGL_API_TOKEN;
 
 export const togglIsConfigured = !!TOGGL_API_TOKEN;
 
-if (!TOGGL_API_TOKEN) {
-    logger.warn("TOGGL_PG_MIRROR_TOGGL_API_TOKEN not set — Toggl API features disabled");
-}
-
 function buildAuthHeader(token) {
     const credentials = Buffer.from(`${token}:api_token`).toString("base64");
     return `Basic ${credentials}`;
