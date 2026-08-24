@@ -15,6 +15,11 @@
             >
             ·
             <a
+                href="/charts"
+                class="text-gray-500 no-underline hover:text-blue-600 hover:underline">Charts</a
+            >
+            ·
+            <a
                 href="/docs"
                 class="text-gray-500 no-underline hover:text-blue-600 hover:underline">Import CSV</a
             >

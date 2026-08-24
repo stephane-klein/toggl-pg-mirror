@@ -2,11 +2,11 @@
 
 ## Overview
 
-The time-entries UI is split into 5 routes (day, week, month, range, and the default list view) that share a common set of components under `_components/`. All navigation hrefs are pre-computed on the server via `computeTimeEntriesNav()` and `buildPaginationHrefs()` in `$lib/backend/timeEntriesUrl.js`. The client-side utility `modifyCurrentUrl()` is used only for interactive handlers (GoTo DateInput, RangeNav, LimitSelector, SortToggle).
+The time-entries UI is split into 5 routes (day, week, month, range, and the default list view) that share a common set of components under `_components/`. The header nav (`GoTo`, `ModeSelector`, and the `DayNav`/`WeekNav`/`MonthNav`/`RangeNav` period navs) is shared with the `/charts` section and lives in `src/lib/components/` (`$lib/components/`); each view passes its own `basePath` (`/time-entries` here, `/charts` there). All navigation hrefs are pre-computed on the server via `computeTimeEntriesNav(basePath, url, referenceDate)` and `buildPaginationHrefs()` in `$lib/backend/timeEntriesUrl.js`, plus `computeGoToData(basePath, url, sort, q, goto)` in `$lib/backend/time-entries.js`. The client-side utility `modifyCurrentUrl()` is used only for interactive handlers (GoTo DateInput, RangeNav, LimitSelector, SortToggle).
 
 ## Server-side URL construction — `$lib/backend/timeEntriesUrl.js`
 
-### `computeTimeEntriesNav(url, referenceDate)`
+### `computeTimeEntriesNav(basePath, url, referenceDate)`
 
 Pre-computes all navigation hrefs needed by `GoTo`, `ModeSelector`, `DayNav`, `WeekNav`, and `MonthNav`. Returns an object with:
 
@@ -30,7 +30,7 @@ Builds a href by carrying `sort`, `q`, `limit` from the current URL, dropping al
 
 Returns `{ prevPageHref, nextPageHref }` — full hrefs with cursor params, respecting sort direction (asc = prev = older with `before`, desc = prev = newer with `after`).
 
-### `computeGoToData(url, sort, q, goto)` — in `$lib/backend/time-entries.js`
+### `computeGoToData(basePath, url, sort, q, goto)` — in `$lib/backend/time-entries.js`
 
 Returns `firstNonEmpty*Href` and `todayHasEntries`/`*HasEntries` booleans. The presence flags and nearest-day values come from the single SQL payload (`goto`), produced by `getTimeEntriesPageData()`. Uses `modifyCurrentUrl` to build hrefs that carry `sort`, `q` and target the correct period.
 
@@ -69,6 +69,10 @@ Used in interactive handlers:
 ## Components and their props
 
 All navigation hrefs are pre-computed on the server. Components receive them directly:
+The shared header nav (`GoTo`, `ModeSelector`, `DayNav`, `WeekNav`, `MonthNav`,
+`RangeNav`) lives in `src/lib/components/` (`$lib/components/`); the rest stay
+under `time-entries/_components/`. Each period nav takes a required `basePath`
+prop (`/time-entries` or `/charts`).
 
 | Component          | Props                                                                                                          | Notes                                                                                            |
 | ------------------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
@@ -85,11 +89,11 @@ All navigation hrefs are pre-computed on the server. Components receive them dir
 
 ## Server — `+page.server.js` responsibility
 
-Each view's `+page.server.js` calls `computeTimeEntriesNav(url, referenceDate)` and `buildPaginationHrefs(url, prevCursor, nextCursor, sort)` to produce all hrefs, then passes them in `data`:
+Each view's `+page.server.js` calls `computeTimeEntriesNav(basePath, url, referenceDate)` (with `basePath` set to `"/time-entries"` for this section, `"/charts"` for the charts mirror) and `buildPaginationHrefs(url, prevCursor, nextCursor, sort)` to produce all hrefs, then passes them in `data`:
 
 ```js
 export const load = async ({ url, params, locals }) => {
-  const navData = computeTimeEntriesNav(url, referenceDate);
+  const navData = computeTimeEntriesNav("/time-entries", url, referenceDate);
   const { entries, prevCursor, nextCursor, total } = await loadEntries(/* ... */);
   const { prevPageHref, nextPageHref } = buildPaginationHrefs(url, prevCursor, nextCursor, sort);
 

@@ -3,8 +3,15 @@
 ## Overview
 
 5 routes (day, week, month, range, list) sharing components under `_components/`.
-All nav hrefs pre-computed on the server via `computeTimeEntriesNav()` and
-`buildPaginationHrefs()` in `$lib/backend/timeEntriesUrl.js`.
+The header nav (`GoTo`, `ModeSelector`, and the `DayNav`/`WeekNav`/`MonthNav`/
+`RangeNav` period navs) is shared with the `/charts` section and lives in
+`src/lib/components/` (`$lib/components/`); each view passes its own
+`basePath` (`/time-entries` here, `/charts` there).
+
+All nav hrefs pre-computed on the server via `computeTimeEntriesNav(basePath,
+url, referenceDate)` and `buildPaginationHrefs()` in
+`$lib/backend/timeEntriesUrl.js`, plus `computeGoToData(basePath, url, sort, q,
+goto)` in `$lib/backend/time-entries.js`.
 `modifyCurrentUrl()` in `$lib/url.js` used only for interactive handlers
 (DateInput, RangeNav, LimitSelector, SortToggle).
 
