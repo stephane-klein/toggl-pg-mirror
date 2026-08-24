@@ -60,7 +60,7 @@ port: 3000
 # Ingress — expose the HTTP service externally
 ingress:
   enabled: false
-  host: ""
+  host: []
   path: /
   className: ""
   annotations: {}
