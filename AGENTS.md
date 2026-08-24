@@ -167,10 +167,6 @@ Uses the default canonical labels: `needs-triage`, `needs-info`, `ready-for-agen
 
 Global overview of all issues at `.scratch/BACKLOG.md` — status, dependencies, and next actionable items. See `.scratch/BACKLOG.md`.
 
-### Domain docs
-
-Multi-context layout — `CONTEXT-MAP.md` at root pointing to per-context `CONTEXT.md` files. See `docs/agents/domain.md`.
-
 ## Supplementary Documentation
 
 - [`docs/agents/`](docs/agents/) — operational snapshots of subsystems (loaded on demand by the agent)
