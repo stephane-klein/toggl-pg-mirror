@@ -41,24 +41,21 @@
         <span class="text-gray-300">|</span>
         <a
             href={firstNonEmptyDayHref}
-            class="text-gray-500 no-underline hover:text-blue-600 hover:underline"
-            >{firstNonEmptyDayLabel}</a
+            class="text-gray-500 no-underline hover:text-blue-600 hover:underline">{firstNonEmptyDayLabel}</a
         >
     {/if}
     {#if !thisWeekHasEntries && firstNonEmptyWeekHref}
         <span class="text-gray-300">|</span>
         <a
             href={firstNonEmptyWeekHref}
-            class="text-gray-500 no-underline hover:text-blue-600 hover:underline"
-            >{firstNonEmptyWeekLabel}</a
+            class="text-gray-500 no-underline hover:text-blue-600 hover:underline">{firstNonEmptyWeekLabel}</a
         >
     {/if}
     {#if !thisMonthHasEntries && firstNonEmptyMonthHref}
         <span class="text-gray-300">|</span>
         <a
             href={firstNonEmptyMonthHref}
-            class="text-gray-500 no-underline hover:text-blue-600 hover:underline"
-            >{firstNonEmptyMonthLabel}</a
+            class="text-gray-500 no-underline hover:text-blue-600 hover:underline">{firstNonEmptyMonthLabel}</a
         >
     {/if}
 </nav>

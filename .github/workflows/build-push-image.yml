@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: 'Git ref (branch, tag, or SHA) to build'
+        description: "Git ref (branch, tag, or SHA) to build"
         required: false
-        default: 'main'
+        default: "main"
 
 env:
   IMAGE: ghcr.io/stephane-klein/toggl-pg-mirror

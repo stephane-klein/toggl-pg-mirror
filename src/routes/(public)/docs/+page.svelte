@@ -46,8 +46,16 @@ $ curl -X POST {data.origin}/api/v1/time-entries/import-csv \
     -F "file=@Toggl_time_entries_2025-01-01_to_2025-12-31.csv"
 </pre>
 
-    Or with <a class="text-blue-600 hover:underline" href="https://github.com/ducaale/xh">xh</a> and <a  class="text-blue-600 hover:underline" href="https://github.m/junegunn/fzf">fzf</a> to
-    select the file:
+    Or with<a
+        class="text-blue-600 hover:underline"
+        href="https://github.com/ducaale/xh">xh</a
+    >
+    and
+    <a
+        class="text-blue-600 hover:underline"
+        href="https://github.m/junegunn/fzf">fzf</a
+    >
+    to select the file:
 
     <pre class="bg-gray-100 p-4 rounded-md overflow-x-auto text-xs font-mono">
 $ xh -b --form POST {data.origin}/api/v1/time-entries/import-csv \
