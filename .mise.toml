@@ -195,6 +195,7 @@ helm registry login ghcr.io -u stephane-klein --password-stdin <<< "$(gh auth to
 [tasks.publish-chart]
 description = "Package and push Helm chart to OCI registry (ghcr.io)"
 run = """
+rm -f /tmp/toggl-pg-mirror-*.tgz
 helm package helm/toggl-pg-mirror -d /tmp && \
 helm push /tmp/toggl-pg-mirror-*.tgz oci://ghcr.io/stephane-klein/charts
 """
