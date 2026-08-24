@@ -1,9 +1,9 @@
 <script>
-    import ModeSelector from "../_components/ModeSelector.svelte";
-    import GoTo from "../_components/GoTo.svelte";
+    import ModeSelector from "$lib/components/ModeSelector.svelte";
+    import GoTo from "$lib/components/GoTo.svelte";
     import SortToggle from "../_components/SortToggle.svelte";
     import LimitSelector from "../_components/LimitSelector.svelte";
-    import RangeNav from "../_components/nav/RangeNav.svelte";
+    import RangeNav from "$lib/components/nav/RangeNav.svelte";
     import TimeEntryFilter from "../_components/TimeEntryFilter.svelte";
     import BulkEditPanel from "../_components/BulkEditPanel.svelte";
     import BulkEditUndoStatus from "../_components/BulkEditUndoStatus.svelte";

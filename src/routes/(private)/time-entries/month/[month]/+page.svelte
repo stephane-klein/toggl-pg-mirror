@@ -1,10 +1,10 @@
 <script>
     import { goto } from "$app/navigation";
-    import ModeSelector from "../../_components/ModeSelector.svelte";
-    import GoTo from "../../_components/GoTo.svelte";
+    import ModeSelector from "$lib/components/ModeSelector.svelte";
+    import GoTo from "$lib/components/GoTo.svelte";
     import SortToggle from "../../_components/SortToggle.svelte";
     import LimitSelector from "../../_components/LimitSelector.svelte";
-    import MonthNav from "../../_components/nav/MonthNav.svelte";
+    import MonthNav from "$lib/components/nav/MonthNav.svelte";
     import TimeEntryFilter from "../../_components/TimeEntryFilter.svelte";
     import BulkEditPanel from "../../_components/BulkEditPanel.svelte";
     import BulkEditUndoStatus from "../../_components/BulkEditUndoStatus.svelte";
