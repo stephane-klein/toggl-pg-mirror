@@ -17,6 +17,7 @@ A Node.js service that mirrors Toggl time-tracking data into a self-controlled P
 - HTTP server: SvelteKit 2 with adapter-node (SSR)
 - Build tool: Vite
 - Search field: [svelte-codemirror-search-field](https://github.com/stephane-klein/svelte-codemirror-search-field) — CodeMirror 6-based field with tag autocomplete
+- Chart axes: [d3-scale](https://github.com/d3/d3-scale) — scale utilities (linear, band) for the sleep activity chart
 - SvelteKit [remote functions](https://svelte.dev/docs/kit/remote-functions) (`$app/server`) — experimental RPC for tag autocomplete
 - Containers: Podman Compose
 - Email testing: [Mailpit](https://github.com/axllent/mailpit) (dev SMTP server with web UI)

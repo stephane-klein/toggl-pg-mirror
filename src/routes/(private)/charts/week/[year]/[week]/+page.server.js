@@ -1,6 +1,7 @@
 import { error } from "@sveltejs/kit";
 
 import { computeTimeEntriesNav } from "$lib/backend/timeEntriesUrl.js";
+import { getActivityChartData } from "$lib/backend/activity-chart.js";
 
 function getMonday(year, week) {
     const jan4 = new Date(year, 0, 4);
@@ -42,7 +43,7 @@ function formatPeriodLabel(monday) {
     return `${start} – ${end}, ${monday.getFullYear()}`;
 }
 
-export function load({ params, url }) {
+export async function load({ params, url }) {
     const year = Number(params.year);
     const week = Number(params.week);
 
@@ -65,6 +66,9 @@ export function load({ params, url }) {
     const { year: nextYear, week: nextWeek } = getISOWeek(nextMonday);
 
     const navData = computeTimeEntriesNav("/charts", url, from);
+    const toDate = new Date(fromDate);
+    toDate.setDate(fromDate.getDate() + 7);
+    const { days, segments } = await getActivityChartData(from, formatDate(toDate));
 
     return {
         ...navData,
@@ -76,5 +80,7 @@ export function load({ params, url }) {
         prevLabel: `W ${prevWeek}`,
         nextHref: `/charts/week/${nextYear}/${nextWeek}`,
         nextLabel: `W ${nextWeek}`,
+        days,
+        segments,
     };
 }

@@ -17,6 +17,7 @@ DROP FUNCTION IF EXISTS upsert_time_entries;
 DROP FUNCTION IF EXISTS record_time_entry_edit_operation;
 DROP FUNCTION IF EXISTS undo_time_entry_edit_operation;
 DROP FUNCTION IF EXISTS get_matching_time_entries;
+DROP FUNCTION IF EXISTS get_activity_chart_data;
 
 -- Returns the day (as 'YYYY-MM-DD') closest to _ref that has at least one
 -- non-deleted entry, or NULL when no entry exists on either side of _ref.
@@ -683,4 +684,55 @@ BEGIN
 
     RETURN result;
 END;
+$$;
+
+-- Returns the "activity chart" sleep data for a period of calendar days [_from, _to):
+-- one row per time entry tagged "au lit", as { day, start, end } where:
+--   - day   is the attribution day (the calendar day of the bedtime, minus one
+--           day when the bedtime falls before 04:00 — a "night" belongs to the
+--           day it started on),
+--   - start is the bedtime as a real hour (decimal) measured from the midnight
+--           of the attribution day, so it can exceed 24 for a bedtime before
+--           04:00 (e.g. 01:00 on a day bucketed to the previous day reads as
+--           start 25.0),
+--   - end   is the waking hour (decimal) measured from the midnight of the
+--           attribution day, so it can exceed 24 for a wake-up after midnight
+--           (23:30 → 06:30 reads as start 23.5, end 30.5).
+-- The rendering layer subtracts DAY_START_HOUR (4) from both values to map to a
+-- 04:00→04:00 Y axis. The fetch window is [_from 04:00, _to 04:00) in
+-- Europe/Paris so a bucket in [_from, _to) always falls within it; the WHERE
+-- clause keeps only buckets of the requested period.
+CREATE FUNCTION get_activity_chart_data(
+    _from date,   -- period start (inclusive)
+    _to date      -- period end (exclusive)
+) RETURNS jsonb
+LANGUAGE sql STABLE PARALLEL SAFE
+AS $$
+    SELECT COALESCE(
+        (
+            SELECT jsonb_agg(x)
+            FROM (
+                SELECT
+                    to_char(d.day, 'YYYY-MM-DD') AS day,
+                    EXTRACT(EPOCH FROM (d.start_wall - d.day::timestamp)) / 3600.0 AS start,
+                    EXTRACT(EPOCH FROM (d.end_wall   - d.day::timestamp)) / 3600.0 AS end
+                FROM (
+                    SELECT
+                        te.started_at AT TIME ZONE 'Europe/Paris' AS start_wall,
+                        te.ended_at   AT TIME ZONE 'Europe/Paris' AS end_wall,
+                        (te.started_at AT TIME ZONE 'Europe/Paris')::date
+                            - CASE WHEN (te.started_at AT TIME ZONE 'Europe/Paris')::time < time '04:00'
+                                   THEN 1 ELSE 0 END AS day
+                    FROM time_entries te
+                    WHERE te.deleted_at IS NULL
+                      AND immutable_lower(te.tags) @> ARRAY['au lit']
+                      AND te.started_at >= ((_from::timestamp + time '04:00') AT TIME ZONE 'Europe/Paris')
+                      AND te.started_at <  ((_to::timestamp   + time '04:00') AT TIME ZONE 'Europe/Paris')
+                ) d
+                WHERE d.day >= _from AND d.day < _to
+                ORDER BY d.day, d.start_wall
+            ) x
+        ),
+        '[]'::jsonb
+    );
 $$;

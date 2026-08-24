@@ -2,7 +2,7 @@
     import GoTo from "$lib/components/GoTo.svelte";
     import ModeSelector from "$lib/components/ModeSelector.svelte";
     import DayNav from "$lib/components/nav/DayNav.svelte";
-    import ChartsPlaceholder from "../../_components/ChartsPlaceholder.svelte";
+    import ActivityChart from "../../_components/ActivityChart.svelte";
 
     let { data } = $props();
 
@@ -53,8 +53,8 @@
         currentDate={data.currentDate}
     />
 
-    <ChartsPlaceholder
-        mode={data.mode}
-        periodLabel={data.periodLabel}
+    <ActivityChart
+        days={data.days}
+        segments={data.segments}
     />
 </main>

@@ -29,6 +29,7 @@
     "@scalar/sveltekit": "^0.3.14",
     "@valibot/to-json-schema": "~1.7.1",
     "csv-parse": "~7.0.1",
+    "d3-scale": "~4.0.2",
     "date-fns": "~4.4.0",
     "date-fns-tz": "~3.2.0",
     "js-yaml": "~5.2.2",

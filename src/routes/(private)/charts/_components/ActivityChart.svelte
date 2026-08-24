@@ -1,0 +1,295 @@
+<script>
+    import { onMount } from "svelte";
+    import { scaleLinear, scaleBand } from "d3-scale";
+
+    import { fmtTime, fmtDuration, DAY_START_HOUR } from "$lib/backend/activity-chart-utils.js";
+
+    let { days = [], segments = [], color = "#534AB7", chartHeight = 420 } = $props();
+
+    const margin = { top: 8, right: 8, bottom: 26, left: 36 };
+    const MIN_COLUMN_WIDTH = 24;
+
+    // Measured on the client once mounted (null during SSR): the wrapper div
+    // width, so the chart can fill the whole page width instead of a fixed size.
+    let containerEl = $state();
+    let containerWidth = $state(null);
+
+    onMount(() => {
+        const update = () => {
+            containerWidth = containerEl?.clientWidth ?? 0;
+        };
+        update();
+        const observer = new ResizeObserver(update);
+        if (containerEl) observer.observe(containerEl);
+        return () => observer.disconnect();
+    });
+
+    let columnWidth = $derived.by(() => {
+        if (containerWidth === null) return 64; // SSR default (first paint)
+        const usable = containerWidth - margin.left - margin.right;
+        return Math.max(MIN_COLUMN_WIDTH, Math.floor(usable / days.length));
+    });
+
+    let plotWidth = $derived(days.length * columnWidth);
+    let plotHeight = $derived(chartHeight);
+
+    // The Y axis extends beyond 24h so that the sleep bar can stretch from
+    // bedtime to wake-up time in one continuous block (no wrap/split).
+    // Max offset = max(seg.end) - DAY_START_HOUR across all segments,
+    // with a floor of 26 so the axis always shows at least 6h past the start.
+    let yMax = $derived(Math.max(26, ...segments.map((s) => s.end - DAY_START_HOUR)));
+
+    let yScale = $derived(scaleLinear().domain([0, yMax]).range([0, plotHeight]));
+    let xScale = $derived(scaleBand().domain(days).range([0, plotWidth]).padding(0.15));
+
+    // Graduations every 2h, labelled with the real hour: 4h, 6h, …, 0h, 2h, 4h, 6h, 8h…
+    let yTicks = $derived(
+        Array.from({ length: Math.floor(yMax / 2) + 1 }, (_, i) => i * 2).map((offset) => ({
+            offset,
+            hour: (offset + DAY_START_HOUR) % 24,
+        })),
+    );
+
+    function dayLabel(day) {
+        const [y, m, d] = day.split("-").map(Number);
+        const weekday = new Date(y, m - 1, d).toLocaleDateString("en-US", { weekday: "short" });
+        return `${weekday} ${String(d).padStart(2, "0")}`;
+    }
+
+    let hoveredSeg = $state(null);
+
+    // Wake-up time per day: the longest sleep segment of that day (there can be
+    // several entries, e.g. a short nap plus the main night).
+    let wakeTimes = $derived(
+        Object.values(
+            segments.reduce((acc, seg) => {
+                const dur = seg.end - seg.start;
+                const prev = acc[seg.day];
+                if (!prev || dur > prev.dur) {
+                    acc[seg.day] = { day: seg.day, start: seg.start, end: seg.end, dur };
+                }
+                return acc;
+            }, {}),
+        ),
+    );
+</script>
+
+<div
+    class="overflow-x-auto"
+    bind:this={containerEl}
+>
+    {#if days.length === 0}
+        <p class="text-sm text-gray-500 mt-2">No days in period.</p>
+    {:else}
+        <svg
+            width={plotWidth + margin.left + margin.right}
+            height={plotHeight + margin.top + margin.bottom}
+            role="img"
+            aria-label="Activity chart"
+        >
+            <g transform="translate({margin.left},{margin.top})">
+                <!-- Y axis: hours -->
+                {#each yTicks as tick (tick.offset)}
+                    <line
+                        x1="0"
+                        x2={plotWidth}
+                        y1={yScale(tick.offset)}
+                        y2={yScale(tick.offset)}
+                        stroke="currentColor"
+                        stroke-opacity="0.15"
+                        stroke-dasharray="2 3"
+                    />
+                    <text
+                        x="-6"
+                        y={yScale(tick.offset) + 4}
+                        text-anchor="end"
+                        font-size="11"
+                        fill="currentColor"
+                    >
+                        {tick.hour}h
+                    </text>
+                {/each}
+
+                <!-- X axis: day columns -->
+                {#each days as day (day)}
+                    <text
+                        x={xScale(day) + xScale.bandwidth() / 2}
+                        y={plotHeight + 18}
+                        text-anchor="middle"
+                        font-size="11"
+                        fill="currentColor"
+                    >
+                        {dayLabel(day)}
+                    </text>
+                {/each}
+
+                <!-- Sleep segments: one continuous bar per entry, no wrap -->
+                {#each segments as seg (seg.day + "-" + seg.start)}
+                    {@const y0 = seg.start - DAY_START_HOUR}
+                    {@const y1 = seg.end - DAY_START_HOUR}
+                    {@const barX = xScale(seg.day) + xScale.bandwidth() / 2 - xScale.bandwidth() * 0.4}
+                    {@const barWidth = xScale.bandwidth() * 0.8}
+                    <g
+                        onmouseenter={() => (hoveredSeg = seg)}
+                        onmouseleave={() => (hoveredSeg = null)}
+                        role="presentation"
+                    >
+                        <title>
+                            Sommeil : {fmtTime(seg.start)} → {fmtTime(seg.end % 24)} ({fmtDuration(
+                                seg.end - seg.start,
+                            )})
+                        </title>
+                        <rect
+                            x={barX}
+                            y={yScale(y0)}
+                            width={barWidth}
+                            height={Math.max(2, yScale(y1) - yScale(y0))}
+                            fill={color}
+                            opacity={hoveredSeg === seg ? 0.8 : 1}
+                            style="transition: opacity 150ms"
+                        />
+                    </g>
+                {/each}
+
+                <!-- Sleep labels: bedtime, duration, wake-up (pointer-events none so hover stays on bar) -->
+                {#each wakeTimes as w (w.day)}
+                    {@const y0 = w.start - DAY_START_HOUR}
+                    {@const y1 = w.end - DAY_START_HOUR}
+                    {@const barTop = yScale(y0)}
+                    {@const barBot = yScale(y1)}
+                    {@const barMid = (barTop + barBot) / 2}
+                    {@const longEnough = w.dur >= 4}
+                    {#if longEnough}
+                        <!-- Bedtime (top of bar) -->
+                        <text
+                            x={xScale(w.day) + xScale.bandwidth() / 2}
+                            y={barTop + 14}
+                            text-anchor="middle"
+                            font-size="11"
+                            fill="#fff"
+                            stroke={color}
+                            stroke-width="3"
+                            stroke-linejoin="round"
+                            paint-order="stroke"
+                            pointer-events="none"
+                        >
+                            {fmtTime(w.start % 24)}
+                        </text>
+                        <!-- Duration label (center) -->
+                        <text
+                            x={xScale(w.day) + xScale.bandwidth() / 2}
+                            y={barMid - 5}
+                            text-anchor="middle"
+                            font-size="9"
+                            fill="#fff"
+                            opacity="0.7"
+                            pointer-events="none"
+                        >
+                            durée
+                        </text>
+                        <!-- Duration value (center) -->
+                        <text
+                            x={xScale(w.day) + xScale.bandwidth() / 2}
+                            y={barMid + 9}
+                            text-anchor="middle"
+                            font-size="13"
+                            fill="#fff"
+                            stroke={color}
+                            stroke-width="3"
+                            stroke-linejoin="round"
+                            paint-order="stroke"
+                            pointer-events="none"
+                        >
+                            {fmtDuration(w.dur)}
+                        </text>
+                        <!-- Wake-up (bottom of bar) -->
+                        <text
+                            x={xScale(w.day) + xScale.bandwidth() / 2}
+                            y={barBot - 6}
+                            text-anchor="middle"
+                            font-size="11"
+                            fill="#fff"
+                            stroke={color}
+                            stroke-width="3"
+                            stroke-linejoin="round"
+                            paint-order="stroke"
+                            pointer-events="none"
+                        >
+                            {fmtTime(w.end % 24)}
+                        </text>
+                    {:else}
+                        <!-- Short sleep: duration only -->
+                        <text
+                            x={xScale(w.day) + xScale.bandwidth() / 2}
+                            y={barMid + 4}
+                            text-anchor="middle"
+                            font-size="11"
+                            fill="#fff"
+                            stroke={color}
+                            stroke-width="3"
+                            stroke-linejoin="round"
+                            paint-order="stroke"
+                            pointer-events="none"
+                        >
+                            {fmtDuration(w.dur)}
+                        </text>
+                    {/if}
+                {/each}
+
+                <!-- Hover tooltip -->
+                {#if hoveredSeg}
+                    {@const tooltipY = Math.min(yScale(hoveredSeg.start - DAY_START_HOUR) - 8, plotHeight - 60)}
+                    <g transform="translate({xScale(hoveredSeg.day) + xScale.bandwidth() / 2}, {tooltipY})">
+                        <rect
+                            x="-52"
+                            y="-48"
+                            width="104"
+                            height="54"
+                            rx="3"
+                            fill="#fff"
+                            stroke="#ddd"
+                            stroke-width="1"
+                        />
+                        <text
+                            x="0"
+                            y="-32"
+                            text-anchor="middle"
+                            font-size="11"
+                            fill="#1a1a1a"
+                        >
+                            couché {fmtTime(hoveredSeg.start % 24)}
+                        </text>
+                        <text
+                            x="0"
+                            y="-18"
+                            text-anchor="middle"
+                            font-size="11"
+                            fill="#1a1a1a"
+                        >
+                            durée {fmtDuration(hoveredSeg.end - hoveredSeg.start)}
+                        </text>
+                        <text
+                            x="0"
+                            y="-4"
+                            text-anchor="middle"
+                            font-size="11"
+                            fill="#1a1a1a"
+                        >
+                            levé {fmtTime(hoveredSeg.end % 24)}
+                        </text>
+                    </g>
+                {/if}
+            </g>
+        </svg>
+        <div
+            class="flex items-center gap-1.5 mt-1 text-xs"
+            style="color: #666"
+        >
+            <span
+                class="inline-block"
+                style="width: 12px; height: 12px; border-radius: 2px; background-color: {color}"
+            ></span>
+            Sommeil
+        </div>
+    {/if}
+</div>

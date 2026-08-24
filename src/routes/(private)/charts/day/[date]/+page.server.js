@@ -1,6 +1,7 @@
 import { error } from "@sveltejs/kit";
 
 import { computeTimeEntriesNav } from "$lib/backend/timeEntriesUrl.js";
+import { getActivityChartData } from "$lib/backend/activity-chart.js";
 
 function addDays(dateStr, n) {
     const [y, m, d] = dateStr.split("-").map(Number);
@@ -48,7 +49,7 @@ function formatPeriodLabel(dateStr) {
     return rel ? `${rel}, ${base}` : base;
 }
 
-export function load({ params, url }) {
+export async function load({ params, url }) {
     const rawDate = params.date;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) {
         error(400, `Invalid date format: ${rawDate}`);
@@ -57,6 +58,7 @@ export function load({ params, url }) {
     const navData = computeTimeEntriesNav("/charts", url, rawDate);
     const prevPeriodDate = addDays(rawDate, -1);
     const nextPeriodDate = addDays(rawDate, 1);
+    const { days, segments } = await getActivityChartData(rawDate, addDays(rawDate, 1));
 
     return {
         ...navData,
@@ -67,5 +69,7 @@ export function load({ params, url }) {
         prevLabel: formatLabel(prevPeriodDate),
         nextHref: `/charts/day/${nextPeriodDate}`,
         nextLabel: formatLabel(nextPeriodDate),
+        days,
+        segments,
     };
 }
