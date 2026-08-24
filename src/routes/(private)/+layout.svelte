@@ -1,5 +1,25 @@
 <script>
+    import { page } from "$app/stores";
+
     let { children } = $props();
+
+    let timeEntriesHref = $derived.by(() => {
+        const pathname = $page.url.pathname;
+        if (pathname.startsWith("/time-entries/")) return pathname + $page.url.search;
+        if (pathname.startsWith("/charts/")) {
+            return `/time-entries${pathname.slice("/charts".length)}`;
+        }
+        return "/time-entries";
+    });
+
+    let chartsHref = $derived.by(() => {
+        const pathname = $page.url.pathname;
+        if (pathname.startsWith("/charts/")) return pathname + $page.url.search;
+        if (pathname.startsWith("/time-entries/")) {
+            return `/charts${pathname.slice("/time-entries".length)}`;
+        }
+        return "/charts";
+    });
 </script>
 
 <header class="border-b border-gray-300">
@@ -10,12 +30,12 @@
         >
         <nav class="text-sm text-gray-500">
             <a
-                href="/time-entries"
+                href={timeEntriesHref}
                 class="text-gray-500 no-underline hover:text-blue-600 hover:underline">Time entries</a
             >
             ·
             <a
-                href="/charts"
+                href={chartsHref}
                 class="text-gray-500 no-underline hover:text-blue-600 hover:underline">Charts</a
             >
             ·
