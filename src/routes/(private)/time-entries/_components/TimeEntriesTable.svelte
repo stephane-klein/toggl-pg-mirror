@@ -40,6 +40,14 @@
     /** @type {HTMLInputElement | undefined} */
     let descriptionInput = $state();
 
+    function daySlug(dateStr) {
+        const date = new Date(dateStr);
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, "0");
+        const d = String(date.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
+    }
+
     function dayLabel(dateStr) {
         const date = new Date(dateStr);
         const today = new Date();
@@ -601,7 +609,11 @@
                                     !group.entries.every((e) => selectedIds.has(Number(e.id)))}
                                 onchange={() => toggleGroup(group.entries)}
                             />
-                            <span class="text-sm font-bold">{dayLabel(group.date)}</span>
+                            <a
+                                href={`/time-entries/day/${daySlug(group.date)}`}
+                                class="text-sm font-bold no-underline hover:underline hover:text-blue-600"
+                                >{dayLabel(group.date)}</a
+                            >
                         </div>
                     </th>
                     <th class="px-2 py-[7px] border-b-2 border-gray-300 text-left">
@@ -653,8 +665,7 @@
                                 <div class="flex flex-col gap-[3px]">
                                     <label
                                         for="te-description"
-                                        class="mt-1 text-[9px] text-gray-400 font-semibold uppercase"
-                                        >Description</label
+                                        class="mt-1 text-[9px] text-gray-400 font-semibold uppercase">Description</label
                                     >
                                     <input
                                         id="te-description"
