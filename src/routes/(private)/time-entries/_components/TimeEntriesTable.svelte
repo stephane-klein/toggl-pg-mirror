@@ -349,7 +349,7 @@
     }
 
     async function save() {
-        const id = editing.id;
+        const id = Number(editing.id);
         const changes = buildChanges();
         if (Object.keys(changes).length === 0) {
             cancelEdit();
