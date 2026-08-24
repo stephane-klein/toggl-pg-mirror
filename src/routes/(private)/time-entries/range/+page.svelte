@@ -100,6 +100,7 @@
         </div>
 
         <RangeNav
+            basePath="/time-entries"
             {currentFrom}
             {currentTo}
         />

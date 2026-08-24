@@ -84,8 +84,8 @@ export async function load({ params, url }) {
         nearestNonEmptyLabel = `${formatLabel(nearestMonth)} (first month no-empty)`;
     }
 
-    const navData = computeTimeEntriesNav(url, rawMonth + "-01");
-    const gotoData = computeGoToData(url, sort, q, goto);
+    const navData = computeTimeEntriesNav("/time-entries", url, rawMonth + "-01");
+    const gotoData = computeGoToData("/time-entries", url, sort, q, goto);
     const { prevPageHref, nextPageHref } = buildPaginationHrefs(url, prevCursor, nextCursor, sort);
 
     return {

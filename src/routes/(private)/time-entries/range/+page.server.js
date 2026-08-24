@@ -23,7 +23,7 @@ export async function load({ url }) {
     const sort = url.searchParams.get("sort") || "asc";
     const q = url.searchParams.get("q") || "";
 
-    const navData = computeTimeEntriesNav(url);
+    const navData = computeTimeEntriesNav("/time-entries", url, null);
 
     if (from && to) {
         if (!isValidDate(from)) error(400, `Invalid from date: ${from}`);
@@ -51,7 +51,7 @@ export async function load({ url }) {
 
     const { entries, prevCursor, nextCursor, total, goto } = await getTimeEntriesPageData(view);
     const { selectedIds, selectAllMatching } = parseSelectionState(url.searchParams.get("selected"), entries);
-    const gotoData = computeGoToData(url, sort, q, goto);
+    const gotoData = computeGoToData("/time-entries", url, sort, q, goto);
 
     if (!from || !to) {
         return {

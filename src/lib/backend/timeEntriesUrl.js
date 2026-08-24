@@ -68,7 +68,7 @@ export function buildPaginationHrefs(url, prevCursor, nextCursor, sort) {
     };
 }
 
-export function computeTimeEntriesNav(url, referenceDate) {
+export function computeTimeEntriesNav(basePath, url, referenceDate) {
     const sort = url.searchParams.get("sort") || "";
     const q = url.searchParams.get("q") || "";
     const limitRaw = url.searchParams.get("limit");
@@ -106,38 +106,38 @@ export function computeTimeEntriesNav(url, referenceDate) {
         currentWeek: currentYearWeek.week,
         currentMonth,
 
-        goToDayHref: modifyCurrentUrl(url, `/time-entries/day/${realToday}`, carryParams),
+        goToDayHref: modifyCurrentUrl(url, `${basePath}/day/${realToday}`, carryParams),
         goToWeekHref: modifyCurrentUrl(
             url,
-            `/time-entries/week/${realTodayWeek.year}/${realTodayWeek.week}`,
+            `${basePath}/week/${realTodayWeek.year}/${realTodayWeek.week}`,
             carryParams,
         ),
-        goToMonthHref: modifyCurrentUrl(url, `/time-entries/month/${realToday.slice(0, 7)}`, carryParams),
-        goToYearHref: modifyCurrentUrl(url, "/time-entries/range", {
+        goToMonthHref: modifyCurrentUrl(url, `${basePath}/month/${realToday.slice(0, 7)}`, carryParams),
+        goToYearHref: modifyCurrentUrl(url, `${basePath}/range`, {
             ...carryParams,
             from: `${realToday.slice(0, 4)}-01-01`,
             to: `${realToday.slice(0, 4)}-12-31`,
         }),
 
-        modeDayHref: modifyCurrentUrl(url, `/time-entries/day/${today}`, carryParams),
+        modeDayHref: modifyCurrentUrl(url, `${basePath}/day/${today}`, carryParams),
         modeWeekHref: modifyCurrentUrl(
             url,
-            `/time-entries/week/${currentYearWeek.year}/${currentYearWeek.week}`,
+            `${basePath}/week/${currentYearWeek.year}/${currentYearWeek.week}`,
             carryParams,
         ),
-        modeMonthHref: modifyCurrentUrl(url, `/time-entries/month/${currentMonth}`, carryParams),
+        modeMonthHref: modifyCurrentUrl(url, `${basePath}/month/${currentMonth}`, carryParams),
 
-        rangeFromDayHref: modifyCurrentUrl(url, "/time-entries/range", { ...carryParams, from: today, to: today }),
-        rangeFromWeekHref: modifyCurrentUrl(url, "/time-entries/range", {
+        rangeFromDayHref: modifyCurrentUrl(url, `${basePath}/range`, { ...carryParams, from: today, to: today }),
+        rangeFromWeekHref: modifyCurrentUrl(url, `${basePath}/range`, {
             ...carryParams,
             from: today,
             to: addDays(today, 6),
         }),
-        rangeFromMonthHref: modifyCurrentUrl(url, "/time-entries/range", {
+        rangeFromMonthHref: modifyCurrentUrl(url, `${basePath}/range`, {
             ...carryParams,
             from: today,
             to: lastDayOfMonth(today),
         }),
-        rangeHref: modifyCurrentUrl(url, "/time-entries/range", carryParams),
+        rangeHref: modifyCurrentUrl(url, `${basePath}/range`, carryParams),
     };
 }

@@ -5,7 +5,7 @@
     import { modifyCurrentUrl } from "$lib/url";
     import DateInput from "$lib/components/DateInput.svelte";
 
-    let { currentFrom = null, currentTo = null } = $props();
+    let { basePath, currentFrom = null, currentTo = null } = $props();
 
     // svelte-ignore state_referenced_locally (writable input state resynced from props via $effect)
     let fromInput = $state(currentFrom ?? "");
@@ -52,7 +52,7 @@
         if (fromInput === currentFrom && toInput === currentTo) return;
         if (fromInput && toInput && isValidDate(fromInput) && isValidDate(toInput)) {
             goto(
-                modifyCurrentUrl($page.url, "/time-entries/range", {
+                modifyCurrentUrl($page.url, `${basePath}/range`, {
                     from: fromInput,
                     to: toInput,
                     before: null,

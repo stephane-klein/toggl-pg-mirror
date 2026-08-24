@@ -94,8 +94,8 @@ export async function load({ params, url }) {
 
     const nearestNonEmptyDate = nearestPeriodDay;
 
-    const navData = computeTimeEntriesNav(url, rawDate);
-    const gotoData = computeGoToData(url, sort, q, goto);
+    const navData = computeTimeEntriesNav("/time-entries", url, rawDate);
+    const gotoData = computeGoToData("/time-entries", url, sort, q, goto);
     const { prevPageHref, nextPageHref } = buildPaginationHrefs(url, prevCursor, nextCursor, sort);
 
     return {

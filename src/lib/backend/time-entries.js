@@ -254,7 +254,7 @@ export async function getMatchingTimeEntries({ from, to, q = "" }) {
     return row.data;
 }
 
-export function computeGoToData(url, sort, q, goto) {
+export function computeGoToData(basePath, url, sort, q, goto) {
     const limitRaw = url.searchParams.get("limit");
 
     function hreffy(path) {
@@ -278,7 +278,7 @@ export function computeGoToData(url, sort, q, goto) {
     let firstNonEmptyDayUrl = null;
     let firstNonEmptyDayLabel = null;
     if (!goto.todayHasEntries && goto.nearestTodayDay) {
-        firstNonEmptyDayUrl = `/time-entries/day/${goto.nearestTodayDay}`;
+        firstNonEmptyDayUrl = `${basePath}/day/${goto.nearestTodayDay}`;
         firstNonEmptyDayLabel = `${goto.nearestTodayDay} (no-empty)`;
     }
 
@@ -286,7 +286,7 @@ export function computeGoToData(url, sort, q, goto) {
     let firstNonEmptyWeekLabel = null;
     if (!goto.weekHasEntries && goto.nearestWeekDay) {
         const { year: ny, week: nw } = getISOWeek(new Date(goto.nearestWeekDay));
-        firstNonEmptyWeekUrl = `/time-entries/week/${ny}/${nw}`;
+        firstNonEmptyWeekUrl = `${basePath}/week/${ny}/${nw}`;
         firstNonEmptyWeekLabel = `W ${nw} (no-empty)`;
     }
 
@@ -294,7 +294,7 @@ export function computeGoToData(url, sort, q, goto) {
     let firstNonEmptyMonthLabel = null;
     if (!goto.monthHasEntries && goto.nearestMonthDay) {
         const nm = goto.nearestMonthDay.slice(0, 7);
-        firstNonEmptyMonthUrl = `/time-entries/month/${nm}`;
+        firstNonEmptyMonthUrl = `${basePath}/month/${nm}`;
         firstNonEmptyMonthLabel = `${nm} (no-empty)`;
     }
 

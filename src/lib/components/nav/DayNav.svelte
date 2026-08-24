@@ -5,6 +5,7 @@
     import DateInput from "$lib/components/DateInput.svelte";
 
     let {
+        basePath,
         prevLabel = "",
         prevHref = null,
         nextLabel = "",
@@ -17,7 +18,7 @@
     function handleConfirm(newDate) {
         if (newDate !== currentDate) {
             goto(
-                modifyCurrentUrl($page.url, `/time-entries/day/${newDate}`, {
+                modifyCurrentUrl($page.url, `${basePath}/day/${newDate}`, {
                     before: null,
                     after: null,
                     selected: null,

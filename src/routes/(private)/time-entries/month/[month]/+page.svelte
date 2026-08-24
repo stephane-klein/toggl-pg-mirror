@@ -120,6 +120,7 @@
         </div>
 
         <MonthNav
+            basePath="/time-entries"
             {prevLabel}
             {prevHref}
             {nextLabel}

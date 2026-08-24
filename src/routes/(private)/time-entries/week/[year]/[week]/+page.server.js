@@ -115,8 +115,8 @@ export async function load({ params, url }) {
         nearestNonEmptyLabel = `W ${nearestWeek} (first week no-empty)`;
     }
 
-    const navData = computeTimeEntriesNav(url, from);
-    const gotoData = computeGoToData(url, sort, q, goto);
+    const navData = computeTimeEntriesNav("/time-entries", url, from);
+    const gotoData = computeGoToData("/time-entries", url, sort, q, goto);
     const { prevPageHref, nextPageHref } = buildPaginationHrefs(url, prevCursor, nextCursor, sort);
 
     return {

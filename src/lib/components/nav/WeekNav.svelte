@@ -4,6 +4,7 @@
     import { modifyCurrentUrl } from "$lib/url";
 
     let {
+        basePath,
         prevLabel = "",
         prevHref = null,
         nextLabel = "",
@@ -31,7 +32,7 @@
         if (y === currentYear && w === currentWeek) return;
         if (y > 0 && w > 0 && w <= 53) {
             goto(
-                modifyCurrentUrl($page.url, `/time-entries/week/${y}/${w}`, {
+                modifyCurrentUrl($page.url, `${basePath}/week/${y}/${w}`, {
                     before: null,
                     after: null,
                     selected: null,

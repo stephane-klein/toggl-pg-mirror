@@ -121,6 +121,7 @@
         </div>
 
         <WeekNav
+            basePath="/time-entries"
             {prevLabel}
             {prevHref}
             {nextLabel}
