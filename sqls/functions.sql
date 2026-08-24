@@ -92,6 +92,7 @@ AS $$
                   OR (
                       left(_q, 1) = '"'
                       AND right(_q, 1) = '"'
+                      AND length(_q) >= 2
                       AND (
                           substring(_q, 2, length(_q) - 2) = ''
                           OR description ILIKE immutable_unaccent(substring(_q, 2, length(_q) - 2))
@@ -154,6 +155,7 @@ AS $$
                   OR (
                       left(_q, 1) = '"'
                       AND right(_q, 1) = '"'
+                      AND length(_q) >= 2
                       AND (
                           substring(_q, 2, length(_q) - 2) = ''
                           OR description ILIKE immutable_unaccent(substring(_q, 2, length(_q) - 2))
@@ -212,8 +214,10 @@ AS $$
               OR _q = ''
               OR (_q = '/null' AND description IS NULL)
               OR (
-                  left(_q, 1) = '"'
-                  AND right(_q, 1) = '"'
+                           left(_q, 1) = '"'
+                           AND right(_q, 1) = '"'
+                           AND length(_q) >= 2
+                   AND length(_q) >= 2
                   AND (
                       substring(_q, 2, length(_q) - 2) = ''
                       OR description ILIKE immutable_unaccent(substring(_q, 2, length(_q) - 2))

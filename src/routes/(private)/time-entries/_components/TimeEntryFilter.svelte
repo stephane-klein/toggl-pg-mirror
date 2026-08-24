@@ -41,6 +41,10 @@
         return /^#+\s*$/.test(value);
     }
 
+    function isUnclosedQuote(value) {
+        return (value.match(/"/g) || []).length % 2 === 1;
+    }
+
     /** @param {string} value */
     function validate(value) {
         try {
@@ -79,6 +83,11 @@
             hint = { value, message: "Only # — type a tag name or pick from suggestions" };
             return;
         }
+        if (isUnclosedQuote(value)) {
+            isPending = false;
+            hint = { value, message: 'Unclosed quote — type a closing "' };
+            return;
+        }
         getKnownTags().then((known) => {
             if (seq !== syncSeq) return;
             const missing = extractTagNames(value).find((name) => !known.has(name));
@@ -113,6 +122,10 @@
             if (err) return;
             if (isBareHash(inputValue)) {
                 hint = { value: inputValue, message: "Only # — type a tag name or pick from suggestions" };
+                return;
+            }
+            if (isUnclosedQuote(inputValue)) {
+                hint = { value: inputValue, message: 'Unclosed quote — type a closing "' };
                 return;
             }
             hint = null;
