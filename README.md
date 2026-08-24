@@ -277,8 +277,9 @@ $ mise run push-image
 Alternatively, build and push via a GitHub Action workflow (manual trigger) instead of a local Podman build:
 
 ```bash
-$ mise run ci-build-push-image            # on the current branch
+$ mise run ci-build-push-image            # on the current branch (ref default: main)
 $ mise run ci-build-push-image main       # on a specific ref
+$ mise run ci-build-push-image --wait     # trigger, then wait for CI to finish
 ```
 
 This runs the `build-push-image.yml` workflow through `gh workflow run`. The workflow

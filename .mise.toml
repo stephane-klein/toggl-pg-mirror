@@ -155,8 +155,25 @@ description = "Push the container image to GitHub Container Registry"
 
 [tasks.ci-build-push-image]
 description = "Trigger the build & push image GitHub Action workflow via gh CLI (manual CI)"
+usage = '''
+arg "[ref]" help="Git ref (branch, tag, or SHA) to build" default="main"
+flag "--wait" help="Wait for the workflow to finish before returning"
+'''
 run = """
-gh workflow run build-push-image.yml --ref "main"
+gh workflow run build-push-image.yml --ref "{{usage.ref}}"
+{% if usage.wait %}
+RUN_ID=""
+for _ in $(seq 1 30); do
+  RUN_ID=$(gh run list --workflow=build-push-image.yml --limit 1 --json databaseId --jq '.[0].databaseId')
+  [ -n "$RUN_ID" ] && break
+  sleep 2
+done
+if [ -z "$RUN_ID" ]; then
+  echo "Error: could not find the workflow run" >&2
+  exit 1
+fi
+gh run watch --exit-status "$RUN_ID"
+{% endif %}
 """
 
 [tasks.setup-ghcr-actions]
