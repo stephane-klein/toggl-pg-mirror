@@ -1,6 +1,7 @@
 <script>
     let { value: initialValue = "", onconfirm = () => {} } = $props();
 
+    // svelte-ignore state_referenced_locally (value captured once on mount; parent remounts via {#key} to reset)
     let value = $state(initialValue);
     let nativeInput;
     let error = $state(false);

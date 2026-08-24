@@ -141,8 +141,10 @@
     }
 </script>
 
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions (delegated Enter shortcut on the filter container; SearchField handles its own keyboard) -->
 <div
     class="py-2"
+    role="group"
     onkeydown={handleKeydown}
 >
     <div class="filter-field">

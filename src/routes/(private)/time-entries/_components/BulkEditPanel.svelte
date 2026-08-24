@@ -179,9 +179,12 @@
     aria-hidden="true"
 ></div>
 
-<section
+<div
     class="fixed inset-x-0 top-0 z-50 w-full border-b border-gray-300 bg-blue-50 px-6 py-3"
+    role="dialog"
+    aria-modal="true"
     aria-label="Bulk edit selected time entries"
+    tabindex="-1"
     onkeydown={handleKeydown}
 >
     <div class="mb-3 border-b border-gray-200 pb-2">
@@ -281,4 +284,4 @@
             {/if}
         </div>
     </div>
-</section>
+</div>

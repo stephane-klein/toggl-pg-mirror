@@ -38,7 +38,7 @@
     /** @type {ReturnType<typeof setTimeout> | undefined} */
     let movedOutTimer;
     /** @type {HTMLInputElement | undefined} */
-    let descriptionInput;
+    let descriptionInput = $state();
 
     function dayLabel(dateStr) {
         const date = new Date(dateStr);
@@ -651,10 +651,13 @@
                                 class="px-2 py-[7px] border-b border-gray-300 align-middle"
                             >
                                 <div class="flex flex-col gap-[3px]">
-                                    <label class="mt-1 text-[9px] text-gray-400 font-semibold uppercase"
+                                    <label
+                                        for="te-description"
+                                        class="mt-1 text-[9px] text-gray-400 font-semibold uppercase"
                                         >Description</label
                                     >
                                     <input
+                                        id="te-description"
                                         bind:this={descriptionInput}
                                         type="text"
                                         class="box-border h-[30px] w-full px-2 text-[12px] border border-gray-300 rounded bg-white"
@@ -664,10 +667,13 @@
                                     />
                                     <div class="flex items-end gap-2">
                                         <div class="flex-1 flex flex-col">
-                                            <label class="mt-1 text-[9px] text-gray-400 font-semibold uppercase"
+                                            <label
+                                                for="te-tags"
+                                                class="mt-1 text-[9px] text-gray-400 font-semibold uppercase"
                                                 >Tags</label
                                             >
                                             <InputTags
+                                                id="te-tags"
                                                 bind:value={editing.values.tags}
                                                 tags={getAllTags}
                                                 matchTags={fuzzyMatch}
@@ -676,10 +682,13 @@
                                             />
                                         </div>
                                         <div class="flex flex-col">
-                                            <label class="mt-1 text-[9px] text-gray-400 font-semibold uppercase"
+                                            <label
+                                                for="te-started"
+                                                class="mt-1 text-[9px] text-gray-400 font-semibold uppercase"
                                                 >Started</label
                                             >
                                             <input
+                                                id="te-started"
                                                 type="text"
                                                 class="box-border h-[30px] w-[190px] px-2 text-[12px] font-mono border border-gray-300 rounded bg-white"
                                                 bind:value={editing.values.startedAtTxt}
@@ -688,10 +697,13 @@
                                             />
                                         </div>
                                         <div class="flex flex-col">
-                                            <label class="mt-1 text-[9px] text-gray-400 font-semibold uppercase"
+                                            <label
+                                                for="te-ended"
+                                                class="mt-1 text-[9px] text-gray-400 font-semibold uppercase"
                                                 >Ended</label
                                             >
                                             <input
+                                                id="te-ended"
                                                 type="text"
                                                 class="box-border h-[30px] w-[190px] px-2 text-[12px] font-mono border border-gray-300 rounded bg-white"
                                                 bind:value={editing.values.endedAtTxt}
@@ -785,6 +797,7 @@
                                 onmousedown={() => (suppressBlurCancel = !!editing)}
                             >
                                 {#each entry.tags as tag (tag)}
+                                    <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions (non-interactive tag chip; click only stops row-edit propagation) -->
                                     <span
                                         class="inline-block text-[11px] text-gray-500 border border-gray-300 rounded px-[5px] mr-[3px] whitespace-nowrap"
                                         onclick={(event) => event.stopPropagation()}>{tag}</span

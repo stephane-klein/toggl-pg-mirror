@@ -7,7 +7,9 @@
 
     let { currentFrom = null, currentTo = null } = $props();
 
+    // svelte-ignore state_referenced_locally (writable input state resynced from props via $effect)
     let fromInput = $state(currentFrom ?? "");
+    // svelte-ignore state_referenced_locally (writable input state resynced from props via $effect)
     let toInput = $state(currentTo ?? "");
 
     $effect(() => {

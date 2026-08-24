@@ -13,7 +13,9 @@
         nearestNonEmptyLabel = "",
     } = $props();
 
+    // svelte-ignore state_referenced_locally (writable input state resynced from props via $effect)
     let monthYearInput = $state(currentMonth ? currentMonth.split("-")[0] : "");
+    // svelte-ignore state_referenced_locally (writable input state resynced from props via $effect)
     let monthNumInput = $state(currentMonth ? currentMonth.split("-")[1] : "");
     let debounceTimer;
 

@@ -11,17 +11,23 @@
     import Pagination from "../_components/Pagination.svelte";
 
     let { data } = $props();
+    // svelte-ignore state_referenced_locally (writable state resynced from props via $effect)
     let entries = $state(data.entries);
     let periodLabel = $derived(data.periodLabel);
     let sort = $derived(data.sort);
+    // svelte-ignore state_referenced_locally (writable state resynced from props via $effect)
     let total = $state(data.total);
     let currentFrom = $derived(data.currentFrom);
     let currentTo = $derived(data.currentTo);
+    // svelte-ignore state_referenced_locally (writable state resynced from props via $effect)
     let prevPageHref = $state(data.prevPageHref);
+    // svelte-ignore state_referenced_locally (writable state resynced from props via $effect)
     let nextPageHref = $state(data.nextPageHref);
     let hasFilter = $derived(data.hasFilter);
     let view = $derived(data.view);
+    // svelte-ignore state_referenced_locally (writable state resynced from props via $effect)
     let selectedIds = $state(new Set(data.selectedIds));
+    // svelte-ignore state_referenced_locally (writable state resynced from props via $effect)
     let selectAllMatching = $state(data.selectAllMatching);
 
     $effect(() => {
