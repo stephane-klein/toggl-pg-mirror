@@ -1,5 +1,8 @@
+import { redirect } from "@sveltejs/kit";
+
 export function load(event) {
-    return {
-        user: event.locals.user,
-    };
+    if (!event.locals.user) {
+        throw redirect(302, "/login");
+    }
+    throw redirect(302, "/time-entries");
 }
