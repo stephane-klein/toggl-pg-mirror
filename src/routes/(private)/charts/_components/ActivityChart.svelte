@@ -80,14 +80,15 @@
     let sleepStats = $derived(computeSleepStats(segments));
 </script>
 
-<div
-    class="overflow-x-auto"
-    bind:this={containerEl}
-    style="overflow-y: visible"
->
-    {#if days.length === 0}
-        <p class="text-sm text-gray-500 mt-2">No days in period.</p>
-    {:else}
+{#if days.length === 0}
+    <p class="text-sm text-gray-500 mt-2">No days in period.</p>
+{:else}
+    <h2 class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Activity chart</h2>
+    <div
+        class="overflow-x-auto"
+        bind:this={containerEl}
+        style="overflow-y: visible"
+    >
         <svg
             width={plotWidth + margin.left + margin.right}
             height={plotHeight + margin.top + margin.bottom}
@@ -372,5 +373,5 @@
                 </p>
             </div>
         {/if}
-    {/if}
-</div>
+    </div>
+{/if}

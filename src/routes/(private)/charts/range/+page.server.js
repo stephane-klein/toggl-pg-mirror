@@ -1,7 +1,8 @@
 import { error } from "@sveltejs/kit";
 
 import { computeTimeEntriesNav } from "$lib/backend/timeEntriesUrl.js";
-import { getActivityChartData } from "$lib/backend/activity-chart.js";
+import { getChartsPageData } from "$lib/backend/activity-chart.js";
+import { ACTIVITY_MATRIX_CATEGORIES, buildActivityMatrix } from "$lib/backend/activity-matrix.js";
 
 function addDays(dateStr, n) {
     const [y, m, d] = dateStr.split("-").map(Number);
@@ -30,10 +31,12 @@ export async function load({ url }) {
 
     let days = [];
     let segments = [];
+    let matrix = [];
     if (from && to) {
-        const { days: ds, segments: ss } = await getActivityChartData(from, addDays(to, 1));
+        const { days: ds, segments: ss, matrixRows } = await getChartsPageData(from, addDays(to, 1));
         days = ds;
         segments = ss;
+        matrix = buildActivityMatrix(days, ACTIVITY_MATRIX_CATEGORIES, matrixRows);
     }
 
     return {
@@ -44,5 +47,6 @@ export async function load({ url }) {
         periodLabel: from && to ? `${from} – ${to}` : "",
         days,
         segments,
+        matrix,
     };
 }

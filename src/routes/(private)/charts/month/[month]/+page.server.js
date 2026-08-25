@@ -1,7 +1,8 @@
 import { error } from "@sveltejs/kit";
 
 import { computeTimeEntriesNav } from "$lib/backend/timeEntriesUrl.js";
-import { getActivityChartData } from "$lib/backend/activity-chart.js";
+import { getChartsPageData } from "$lib/backend/activity-chart.js";
+import { ACTIVITY_MATRIX_CATEGORIES, buildActivityMatrix } from "$lib/backend/activity-matrix.js";
 
 function firstOfMonth(year, month) {
     const d = new Date(year, month - 1, 1);
@@ -38,10 +39,11 @@ export async function load({ params, url }) {
     const nextMonth = addMonths(rawMonth, 1);
 
     const navData = computeTimeEntriesNav("/charts", url, firstOfMonth(year, monthNum));
-    const { days, segments } = await getActivityChartData(
+    const { days, segments, matrixRows } = await getChartsPageData(
         firstOfMonth(year, monthNum),
         firstOfMonth(year, monthNum + 1),
     );
+    const matrix = buildActivityMatrix(days, ACTIVITY_MATRIX_CATEGORIES, matrixRows);
 
     return {
         ...navData,
@@ -54,5 +56,6 @@ export async function load({ params, url }) {
         nextLabel: formatLabel(nextMonth),
         days,
         segments,
+        matrix,
     };
 }

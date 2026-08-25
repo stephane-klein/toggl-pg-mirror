@@ -4,6 +4,7 @@
     import ModeSelector from "$lib/components/ModeSelector.svelte";
     import MonthNav from "$lib/components/nav/MonthNav.svelte";
     import ActivityChart from "../../_components/ActivityChart.svelte";
+    import ActivityMatrix from "../../_components/ActivityMatrix.svelte";
 
     let { data } = $props();
 
@@ -74,5 +75,10 @@
     <ActivityChart
         days={data.days}
         segments={data.segments}
+    />
+
+    <ActivityMatrix
+        days={data.days}
+        matrix={data.matrix}
     />
 </main>

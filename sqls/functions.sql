@@ -18,6 +18,8 @@ DROP FUNCTION IF EXISTS record_time_entry_edit_operation;
 DROP FUNCTION IF EXISTS undo_time_entry_edit_operation;
 DROP FUNCTION IF EXISTS get_matching_time_entries;
 DROP FUNCTION IF EXISTS get_activity_chart_data;
+DROP FUNCTION IF EXISTS get_activity_matrix_data;
+DROP FUNCTION IF EXISTS get_charts_page_data;
 
 -- Returns the day (as 'YYYY-MM-DD') closest to _ref that has at least one
 -- non-deleted entry, or NULL when no entry exists on either side of _ref.
@@ -734,5 +736,75 @@ AS $$
             ) x
         ),
         '[]'::jsonb
+    );
+$$;
+
+-- Aggregates the activity matrix for the calendar period [_from, _to): one row
+-- per (day, category tag) that has at least one non-deleted entry. The day is
+-- the calendar day in Europe/Paris (midnight → midnight), not the 04:00-based
+-- day used by get_activity_chart_data: the matrix counts occurrences per day,
+-- it does not position time spans on a 24h axis.
+--   - day            : 'YYYY-MM-DD' (Europe/Paris calendar day of started_at)
+--   - tag            : lowercased category tag
+--   - count          : number of time entries carrying that tag that day
+--   - duration_hours : summed duration of those entries, in decimal hours
+-- An entry carrying several category tags counts once per tag; a duration that
+-- spans midnight is attributed entirely to the started_at day.
+CREATE FUNCTION get_activity_matrix_data(
+    _from date,   -- period start (inclusive)
+    _to date,     -- period end (exclusive)
+    _tags jsonb   -- category tags to aggregate, lowercased on the fly
+) RETURNS jsonb
+LANGUAGE sql STABLE PARALLEL SAFE
+AS $$
+    SELECT COALESCE(
+        (
+            SELECT jsonb_agg(x)
+            FROM (
+                SELECT
+                    to_char(day, 'YYYY-MM-DD') AS day,
+                    tag,
+                    count(*)::int AS count,
+                    COALESCE(sum(duration_hours), 0) AS duration_hours
+                FROM (
+                    SELECT
+                        (te.started_at AT TIME ZONE 'Europe/Paris')::date AS day,
+                        immutable_lower(t.tag) AS tag,
+                        EXTRACT(EPOCH FROM (COALESCE(te.ended_at, now()) - te.started_at)) / 3600.0
+                            AS duration_hours
+                    FROM time_entries te
+                    CROSS JOIN LATERAL unnest(te.tags) AS t(tag)
+                    WHERE te.deleted_at IS NULL
+                      -- Exactly the entries whose Europe/Paris calendar day is in
+                      -- [_from, _to); kept as a started_at range so the index on
+                      -- started_at applies (the Paris-day equality would not).
+                      AND te.started_at >= (_from::timestamp AT TIME ZONE 'Europe/Paris')
+                      AND te.started_at <  (_to::timestamp   AT TIME ZONE 'Europe/Paris')
+                      AND immutable_lower(t.tag) = ANY (
+                          SELECT immutable_lower(v)
+                          FROM jsonb_array_elements_text(_tags) AS v
+                      )
+                ) e
+                GROUP BY day, tag
+                ORDER BY day, tag
+            ) x
+        ),
+        '[]'::jsonb
+    );
+$$;
+
+-- Single stored function serving a full /charts page render (ADR 002): one
+-- round-trip that composes the sleep activity chart segments and the activity
+-- matrix rows.
+CREATE FUNCTION get_charts_page_data(
+    _from date,   -- period start (inclusive)
+    _to date,     -- period end (exclusive)
+    _tags jsonb   -- activity matrix category tags
+) RETURNS jsonb
+LANGUAGE sql STABLE PARALLEL SAFE
+AS $$
+    SELECT jsonb_build_object(
+        'segments', get_activity_chart_data(_from, _to),
+        'matrix',   get_activity_matrix_data(_from, _to, _tags)
     );
 $$;
