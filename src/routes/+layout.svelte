@@ -21,6 +21,11 @@
                     >
                     |
                     <a
+                        href="/api/reference"
+                        class="text-gray-500 no-underline hover:underline">API</a
+                    >
+                    |
+                    <a
                         href="https://github.com/stephane-klein/toggl-pg-mirror"
                         class="text-gray-500 no-underline hover:underline">GitHub</a
                     >
