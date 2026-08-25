@@ -3,6 +3,7 @@
     import { scaleLinear, scaleBand } from "d3-scale";
 
     import { fmtTime, fmtDuration, DAY_START_HOUR } from "$lib/backend/activity-chart-utils.js";
+    import { computeSleepStats } from "$lib/backend/sleep-stats.js";
 
     let { days = [], segments = [], color = "#534AB7", chartHeight = 420 } = $props();
 
@@ -72,6 +73,11 @@
             }, {}),
         ),
     );
+
+    // Weekly/monthly sleep statistics over the main nights only (median + std
+    // dev of bedtime/wake/duration, plus min/max duration). Null on the day
+    // view or when fewer than 2 nights have data.
+    let sleepStats = $derived(computeSleepStats(segments));
 </script>
 
 <div
@@ -291,5 +297,80 @@
             ></span>
             Sommeil
         </div>
+        {#if sleepStats}
+            <div
+                class="mt-2 text-xs leading-5"
+                style="color: #666"
+            >
+                <p>Analyse du sommeil sur une période de <span class="font-mono">{sleepStats.n}</span> nuits.</p>
+                <table class="border-collapse mt-1">
+                    <thead>
+                        <tr>
+                            <th class="font-normal text-left pr-5"></th>
+                            <th class="font-normal text-left pr-5">Médiane</th>
+                            <th class="font-normal text-left pr-5">Moyenne</th>
+                            <th class="font-normal text-left pr-5">Écart type</th>
+                            <th class="font-normal text-left pr-5">P25</th>
+                            <th class="font-normal text-left pr-5">P75</th>
+                            <th class="font-normal text-left pr-5">Min</th>
+                            <th class="font-normal text-left">Max</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th
+                                scope="row"
+                                class="font-normal text-left pr-5">Heure de couché</th
+                            >
+                            <td class="font-mono pr-5">{fmtTime(sleepStats.bedtime.median % 24)}</td>
+                            <td class="font-mono pr-5">{fmtTime(sleepStats.bedtime.mean % 24)}</td>
+                            <td class="font-mono pr-5">{fmtDuration(sleepStats.bedtime.stddev)}</td>
+                            <td class="font-mono pr-5">{fmtTime(sleepStats.bedtime.p25 % 24)}</td>
+                            <td class="font-mono pr-5">{fmtTime(sleepStats.bedtime.p75 % 24)}</td>
+                            <td class="font-mono pr-5">{fmtTime(sleepStats.bedtime.min % 24)}</td>
+                            <td class="font-mono">{fmtTime(sleepStats.bedtime.max % 24)}</td>
+                        </tr>
+                        <tr>
+                            <th
+                                scope="row"
+                                class="font-normal text-left pr-5">Heure de levé</th
+                            >
+                            <td class="font-mono pr-5">{fmtTime(sleepStats.wake.median % 24)}</td>
+                            <td class="font-mono pr-5">{fmtTime(sleepStats.wake.mean % 24)}</td>
+                            <td class="font-mono pr-5">{fmtDuration(sleepStats.wake.stddev)}</td>
+                            <td class="font-mono pr-5">{fmtTime(sleepStats.wake.p25 % 24)}</td>
+                            <td class="font-mono pr-5">{fmtTime(sleepStats.wake.p75 % 24)}</td>
+                            <td class="font-mono pr-5">{fmtTime(sleepStats.wake.min % 24)}</td>
+                            <td class="font-mono">{fmtTime(sleepStats.wake.max % 24)}</td>
+                        </tr>
+                        <tr>
+                            <th
+                                scope="row"
+                                class="font-normal text-left pr-5">Temps de sommeil</th
+                            >
+                            <td class="font-mono pr-5">{fmtDuration(sleepStats.duration.median)}</td>
+                            <td class="font-mono pr-5">{fmtDuration(sleepStats.duration.mean)}</td>
+                            <td class="font-mono pr-5">{fmtDuration(sleepStats.duration.stddev)}</td>
+                            <td class="font-mono pr-5">{fmtDuration(sleepStats.duration.p25)}</td>
+                            <td class="font-mono pr-5">{fmtDuration(sleepStats.duration.p75)}</td>
+                            <td class="font-mono pr-5">{fmtDuration(sleepStats.duration.min)}</td>
+                            <td class="font-mono">{fmtDuration(sleepStats.duration.max)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p class="mt-2">
+                    <span class="font-semibold">Écart type</span> : mesure la dispersion des valeurs autour de la moyenne
+                    ; plus la valeur est faible, plus le rythme est régulier.
+                </p>
+                <p>
+                    <span class="font-semibold">P25</span> : un quart des nuits se situe à cette valeur ou plus tôt (couché,
+                    levé) / ou moins (temps de sommeil).
+                </p>
+                <p>
+                    <span class="font-semibold">P75</span> : les trois quarts des nuits se situent à cette valeur ou plus
+                    tôt (couché, levé) / ou moins (temps de sommeil).
+                </p>
+            </div>
+        {/if}
     {/if}
 </div>

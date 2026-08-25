@@ -35,10 +35,11 @@ export function fmtTime(hour) {
     return label;
 }
 
-// 7.5 → "7h30"
+// 7.5 → "07h30"
 export function fmtDuration(hours) {
     const h = Math.floor(hours);
     const m = Math.round((hours - h) * 60);
     const mStr = String(m).padStart(2, "0");
-    return `${h}h${mStr}`;
+    const hStr = String(h).padStart(2, "0");
+    return `${hStr}h${mStr}`;
 }

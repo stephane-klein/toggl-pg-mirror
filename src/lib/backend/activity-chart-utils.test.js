@@ -37,9 +37,9 @@ test("fmtTime renders a decimal hour as HHhMM", () => {
 });
 
 test("fmtDuration renders hours as XhMM", () => {
-    assert.equal(fmtDuration(7.5), "7h30");
-    assert.equal(fmtDuration(7), "7h00");
-    assert.equal(fmtDuration(8.25), "8h15");
+    assert.equal(fmtDuration(7.5), "07h30");
+    assert.equal(fmtDuration(7), "07h00");
+    assert.equal(fmtDuration(8.25), "08h15");
 });
 
 // Regression: SQL function get_activity_chart_data must return start/end
