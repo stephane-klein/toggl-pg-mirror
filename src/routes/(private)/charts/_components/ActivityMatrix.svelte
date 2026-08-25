@@ -40,7 +40,7 @@
     let xScale = $derived(scaleBand().domain(days).range([0, plotWidth]).padding(0.12));
     let yScale = $derived(
         scaleBand()
-            .domain(matrix.map((row) => row.category.key))
+            .domain(matrix.map((row) => row.category.tag))
             .range([0, plotHeight])
             .padding(0.15),
     );
@@ -63,6 +63,17 @@
 
 {#if days.length === 0}
     <p class="text-sm text-gray-500 mt-2">No days in period.</p>
+{:else if matrix.length === 0}
+    <section class="mt-8">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Activity matrix</h2>
+        <p class="text-sm text-gray-500 mt-2">
+            No activity matrix categories configured yet.
+            <a
+                href="/my/profile/"
+                class="text-blue-600 hover:underline">Configure your activity matrix in your profile</a
+            >.
+        </p>
+    </section>
 {:else}
     <section class="mt-8">
         <h2 class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Activity matrix</h2>
@@ -80,10 +91,10 @@
             >
                 <g transform="translate({margin.left},{margin.top})">
                     <!-- Y axis: category rows -->
-                    {#each matrix as row (row.category.key)}
+                    {#each matrix as row (row.category.tag)}
                         <text
                             x="-8"
-                            y={yScale(row.category.key) + yScale.bandwidth() / 2 + 4}
+                            y={yScale(row.category.tag) + yScale.bandwidth() / 2 + 4}
                             text-anchor="end"
                             font-size="11"
                             fill="currentColor"
@@ -117,11 +128,11 @@
                     {/each}
 
                     <!-- Cells: one per (category, day), zero cells included -->
-                    {#each matrix as row (row.category.key)}
-                        {#each row.cells as cell (row.category.key + ":" + cell.day)}
+                    {#each matrix as row (row.category.tag)}
+                        {#each row.cells as cell (row.category.tag + ":" + cell.day)}
                             {@const has = cell.count > 0}
                             {@const x = xScale(cell.day)}
-                            {@const y = yScale(row.category.key)}
+                            {@const y = yScale(row.category.tag)}
                             <g role="presentation">
                                 <rect
                                     {x}

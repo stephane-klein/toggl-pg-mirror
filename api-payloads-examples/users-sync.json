@@ -3,7 +3,11 @@
     {
       "email": "alice@example.com",
       "display_name": "Alice Admin",
-      "password": "passwordpassword"
+      "password": "passwordpassword",
+      "activity_matrix_categories": [
+        { "label": "Restaurant", "tag": "restaurant", "color": "#D62828" },
+        { "label": "Sport", "tag": "sport", "color": "#2A9D8F" }
+      ]
     },
     {
       "email": "bob@example.com",

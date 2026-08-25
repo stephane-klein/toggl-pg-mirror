@@ -2,7 +2,7 @@ import { error } from "@sveltejs/kit";
 
 import { computeTimeEntriesNav } from "$lib/backend/timeEntriesUrl.js";
 import { getChartsPageData } from "$lib/backend/activity-chart.js";
-import { ACTIVITY_MATRIX_CATEGORIES, buildActivityMatrix } from "$lib/backend/activity-matrix.js";
+import { buildActivityMatrix } from "$lib/backend/activity-matrix.js";
 
 function firstOfMonth(year, month) {
     const d = new Date(year, month - 1, 1);
@@ -24,7 +24,7 @@ function addMonths(monthStr, n) {
     return `${yy}-${mm}`;
 }
 
-export async function load({ params, url }) {
+export async function load({ params, url, locals }) {
     const rawMonth = params.month;
     if (!/^\d{4}-\d{2}$/.test(rawMonth)) {
         error(400, `Invalid month format: ${rawMonth}`);
@@ -39,11 +39,12 @@ export async function load({ params, url }) {
     const nextMonth = addMonths(rawMonth, 1);
 
     const navData = computeTimeEntriesNav("/charts", url, firstOfMonth(year, monthNum));
-    const { days, segments, matrixRows } = await getChartsPageData(
+    const { days, categories, segments, matrixRows } = await getChartsPageData(
         firstOfMonth(year, monthNum),
         firstOfMonth(year, monthNum + 1),
+        locals.user.id,
     );
-    const matrix = buildActivityMatrix(days, ACTIVITY_MATRIX_CATEGORIES, matrixRows);
+    const matrix = buildActivityMatrix(days, categories, matrixRows);
 
     return {
         ...navData,

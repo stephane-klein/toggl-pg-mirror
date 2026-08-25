@@ -2,7 +2,7 @@ import { error } from "@sveltejs/kit";
 
 import { computeTimeEntriesNav } from "$lib/backend/timeEntriesUrl.js";
 import { getChartsPageData } from "$lib/backend/activity-chart.js";
-import { ACTIVITY_MATRIX_CATEGORIES, buildActivityMatrix } from "$lib/backend/activity-matrix.js";
+import { buildActivityMatrix } from "$lib/backend/activity-matrix.js";
 
 function addDays(dateStr, n) {
     const [y, m, d] = dateStr.split("-").map(Number);
@@ -50,7 +50,7 @@ function formatPeriodLabel(dateStr) {
     return rel ? `${rel}, ${base}` : base;
 }
 
-export async function load({ params, url }) {
+export async function load({ params, url, locals }) {
     const rawDate = params.date;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) {
         error(400, `Invalid date format: ${rawDate}`);
@@ -59,8 +59,12 @@ export async function load({ params, url }) {
     const navData = computeTimeEntriesNav("/charts", url, rawDate);
     const prevPeriodDate = addDays(rawDate, -1);
     const nextPeriodDate = addDays(rawDate, 1);
-    const { days, segments, matrixRows } = await getChartsPageData(rawDate, addDays(rawDate, 1));
-    const matrix = buildActivityMatrix(days, ACTIVITY_MATRIX_CATEGORIES, matrixRows);
+    const { days, categories, segments, matrixRows } = await getChartsPageData(
+        rawDate,
+        addDays(rawDate, 1),
+        locals.user.id,
+    );
+    const matrix = buildActivityMatrix(days, categories, matrixRows);
 
     return {
         ...navData,

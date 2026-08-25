@@ -3,6 +3,7 @@ import { safeParse } from "valibot";
 import { hashPassword } from "$lib/backend/auth.js";
 import { sql } from "$lib/backend/pg.js";
 import { userPatchSchema } from "$lib/schemas/user.js";
+import { findDuplicateCategoryTag } from "$lib/schemas/activity-matrix.js";
 import { requireAdminToken } from "../../_helpers.js";
 import { problem } from "../../../_problem.js";
 
@@ -18,7 +19,7 @@ export async function GET(event) {
     if (authError) return authError;
 
     const [user] = await sql`
-        SELECT id, email, display_name, oidc_issuer, oidc_subject, is_active, created_at, updated_at
+        SELECT id, email, display_name, oidc_issuer, oidc_subject, is_active, activity_matrix_categories, created_at, updated_at
         FROM users WHERE id = ${event.params.id}
     `;
 
@@ -43,11 +44,17 @@ export async function PATCH(event) {
     if (!parsed.success) {
         return problem(422, parsed.issues[0].message, event.request.url);
     }
-    const { email, display_name, password, oidc_issuer, oidc_subject, is_active } = parsed.output;
+    const { email, display_name, password, oidc_issuer, oidc_subject, is_active, activity_matrix_categories } =
+        parsed.output;
     const emailTrim = email?.trim();
     const displayNameTrim = display_name?.trim();
     const oidcIssuer = oidc_issuer?.replace(/\/$/, "").trim();
     const oidcSubject = oidc_subject?.trim();
+
+    const duplicateTag = activity_matrix_categories && findDuplicateCategoryTag(activity_matrix_categories);
+    if (duplicateTag) {
+        return problem(422, `Duplicate category tag: ${duplicateTag}`, event.request.url);
+    }
 
     if (emailTrim !== undefined) {
         const conflict = await sql`SELECT id FROM users WHERE email = ${emailTrim} AND id != ${event.params.id}`;
@@ -91,9 +98,10 @@ export async function PATCH(event) {
             oidc_issuer   = COALESCE(${oidcIssuer || null}, oidc_issuer),
             oidc_subject  = COALESCE(${oidcSubject || null}, oidc_subject),
             is_active     = COALESCE(${is_active !== undefined ? is_active : null}, is_active),
+            activity_matrix_categories = COALESCE(${activity_matrix_categories ?? null}, activity_matrix_categories),
             updated_at    = ${now}
         WHERE id = ${event.params.id}
-        RETURNING id, email, display_name, oidc_issuer, oidc_subject, is_active, created_at, updated_at
+        RETURNING id, email, display_name, oidc_issuer, oidc_subject, is_active, activity_matrix_categories, created_at, updated_at
     `;
 
     return json({

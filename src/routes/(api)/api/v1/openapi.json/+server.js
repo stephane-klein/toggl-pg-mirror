@@ -1,6 +1,7 @@
 import { json } from "@sveltejs/kit";
 import { toJsonSchema } from "@valibot/to-json-schema";
 import { userFieldsSchema, userPatchSchema } from "$lib/schemas/user.js";
+import { activityMatrixCategorySchema } from "$lib/schemas/activity-matrix.js";
 
 // Request-body schemas are derived from the valibot schemas that actually
 // validate the handlers, so the OpenAPI contract can never drift from the code.
@@ -30,6 +31,11 @@ const upsertAnnotations = {
     },
     oidc_issuer: { description: "OIDC issuer URL", example: "https://auth.example.com" },
     oidc_subject: { description: "OIDC subject identifier", example: "johndoe" },
+    activity_matrix_categories: {
+        description:
+            "Optional activity matrix categories [{ label, tag, color }]. Omit to keep the existing value on update; an empty array clears the configuration (no matrix shown).",
+        example: [{ label: "Restaurant", tag: "restaurant", color: "#D62828" }],
+    },
 };
 
 // The upsert paths (PUT and sync) unconditionally require email + display_name;
@@ -46,6 +52,23 @@ const userPatchJson = annotate(stripSchemaMeta(toJsonSchema(userPatchSchema)), {
     required: [],
     props: { ...upsertAnnotations, is_active: { description: "Whether the account is active" } },
 });
+
+const activityMatrixCategoryJson = annotate(stripSchemaMeta(toJsonSchema(activityMatrixCategorySchema)), {
+    required: ["label", "tag", "color"],
+    props: {
+        label: { description: "Display label shown on the matrix Y axis", example: "Restaurant" },
+        tag: {
+            description: "Toggl tag the matrix aggregates; doubles as the category identifier (unique in the list)",
+            example: "restaurant",
+        },
+        color: { description: "Hex color of the matrix cells", example: "#D62828" },
+    },
+});
+const activityMatrixCategoriesJson = {
+    type: "array",
+    items: activityMatrixCategoryJson,
+    description: "Ordered activity matrix categories. An empty list means no matrix is shown.",
+};
 
 export function GET() {
     return json({
@@ -391,6 +414,66 @@ export function GET() {
                     },
                 },
             },
+            "/api/v1/me/activity-matrix-categories": {
+                get: {
+                    summary: "Get my activity matrix categories",
+                    description:
+                        "Returns the ordered activity matrix categories of the authenticated user. A user who never configured a list receives an empty list.",
+                    security: [{ userBearer: [] }],
+                    responses: {
+                        200: {
+                            description: "The activity matrix categories",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            data: { $ref: "#/components/schemas/ActivityMatrixCategories" },
+                                            _links: { $ref: "#/components/schemas/Links" },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                        401: { $ref: "#/components/responses/Unauthorized" },
+                        500: { $ref: "#/components/responses/InternalError" },
+                    },
+                },
+                put: {
+                    summary: "Replace my activity matrix categories (idempotent)",
+                    description:
+                        "Fully replaces the list in a single call; tags must be unique. An empty array clears the configuration (no matrix shown).",
+                    security: [{ userBearer: [] }],
+                    requestBody: {
+                        required: true,
+                        content: {
+                            "application/json": {
+                                schema: { $ref: "#/components/schemas/ActivityMatrixCategories" },
+                            },
+                        },
+                    },
+                    responses: {
+                        200: {
+                            description: "The updated activity matrix categories",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            data: { $ref: "#/components/schemas/ActivityMatrixCategories" },
+                                            _links: { $ref: "#/components/schemas/Links" },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                        400: { $ref: "#/components/responses/BadRequest" },
+                        401: { $ref: "#/components/responses/Unauthorized" },
+                        422: { $ref: "#/components/responses/Unprocessable" },
+                        500: { $ref: "#/components/responses/InternalError" },
+                    },
+                },
+            },
         },
         components: {
             schemas: {
@@ -415,6 +498,12 @@ export function GET() {
                         display_name: { type: "string", example: "John Doe" },
                         oidc_issuer: { type: "string", nullable: true, example: "https://auth.example.com" },
                         oidc_subject: { type: "string", nullable: true, example: "johndoe" },
+                        activity_matrix_categories: {
+                            allOf: [{ $ref: "#/components/schemas/ActivityMatrixCategories" }],
+                            nullable: true,
+                            description:
+                                "Stored activity matrix categories; null when not configured (no matrix is shown until configured)",
+                        },
                         is_active: { type: "boolean", example: true },
                         created_at: { type: "string", format: "date-time", example: "2026-07-11T09:00:00+02:00" },
                         updated_at: { type: "string", format: "date-time", example: "2026-07-11T09:00:00+02:00" },
@@ -452,6 +541,8 @@ export function GET() {
                         },
                     },
                 },
+                ActivityMatrixCategory: activityMatrixCategoryJson,
+                ActivityMatrixCategories: activityMatrixCategoriesJson,
                 ProblemDetail: {
                     type: "object",
                     properties: {

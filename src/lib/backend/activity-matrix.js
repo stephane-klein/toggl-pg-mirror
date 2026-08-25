@@ -6,16 +6,10 @@
 // duration. The server aggregates rows (get_activity_matrix_data) and this
 // module shapes them into the full grid (zero cells included) consumed by
 // ActivityMatrix.svelte.
-
-// Fixed category order — the significant display order, not alphabetical.
-export const ACTIVITY_MATRIX_CATEGORIES = [
-    { key: "restaurant", label: "Restaurant", tag: "restaurant", color: "#D62828" },
-    { key: "sport", label: "Sport", tag: "sport", color: "#2A9D8F" },
-    { key: "fastfood", label: "Fastfood", tag: "fastfood", color: "#F77F00" },
-    { key: "courses", label: "Courses", tag: "courses", color: "#8338EC" },
-    { key: "metro", label: "Métro", tag: "metro", color: "#2196F3" },
-    { key: "velo", label: "Vélo", tag: "vélo", color: "#4CAF50" },
-];
+//
+// The category list is per-user (users.activity_matrix_categories, see
+// activity-matrix-store.js): an empty list means "not configured" and the
+// charts page shows a link to the profile instead of the matrix.
 
 // Cell opacity proportional to the count, encoding intensity without a
 // continuous color scale (1, 2, 3 occurrences/day would be illegible).
@@ -29,9 +23,12 @@ export function cellOpacity(count) {
 // get_activity_matrix_data: [{ day, tag, count, duration_hours }].
 export function buildActivityMatrix(days, categories, rows) {
     return categories.map((category) => {
+        // get_activity_matrix_data lowercases tags; compare case-insensitively so
+        // a user-configured tag like "Vélo" still matches the "vélo" rows.
+        const tag = category.tag.toLowerCase();
         const byDay = new Map();
         rows.forEach((row) => {
-            if (row.tag === category.tag) {
+            if (row.tag === tag) {
                 byDay.set(row.day, { day: row.day, count: row.count, durationHours: row.duration_hours });
             }
         });

@@ -794,17 +794,35 @@ AS $$
 $$;
 
 -- Single stored function serving a full /charts page render (ADR 002): one
--- round-trip that composes the sleep activity chart segments and the activity
--- matrix rows.
+-- round-trip that composes the sleep activity chart segments, the user's
+-- activity matrix categories and the matrix rows (one row per (day, tag)).
 CREATE FUNCTION get_charts_page_data(
     _from date,   -- period start (inclusive)
     _to date,     -- period end (exclusive)
-    _tags jsonb   -- activity matrix category tags
+    _user_id text -- user whose activity matrix categories drive the matrix
 ) RETURNS jsonb
 LANGUAGE sql STABLE PARALLEL SAFE
 AS $$
+    WITH categories AS (
+        -- Always one row, even when the user does not exist or has no
+        -- categories configured (NULL and [] both mean "not configured").
+        SELECT COALESCE(u.activity_matrix_categories, '[]'::jsonb) AS value
+        FROM (SELECT 1) AS one
+        LEFT JOIN users u ON u.id = _user_id
+    )
     SELECT jsonb_build_object(
-        'segments', get_activity_chart_data(_from, _to),
-        'matrix',   get_activity_matrix_data(_from, _to, _tags)
-    );
+        'categories', c.value,
+        'segments',   get_activity_chart_data(_from, _to),
+        'matrix',     get_activity_matrix_data(
+            _from,
+            _to,
+            COALESCE(
+                (SELECT jsonb_agg(j->>'tag')
+                 FROM jsonb_array_elements(c.value) AS j
+                 WHERE j->>'tag' IS NOT NULL),
+                '[]'::jsonb
+            )
+        )
+    )
+    FROM categories c;
 $$;

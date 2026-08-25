@@ -3,6 +3,7 @@ import { safeParse } from "valibot";
 import { generateId, hashPassword } from "$lib/backend/auth.js";
 import { sql } from "$lib/backend/pg.js";
 import { userFieldsSchema } from "$lib/schemas/user.js";
+import { findDuplicateCategoryTag } from "$lib/schemas/activity-matrix.js";
 import { requireAdminToken } from "../../_helpers.js";
 import { problem } from "../../../_problem.js";
 
@@ -21,7 +22,14 @@ function validateUpsertItem(item) {
     if (!fields.success) {
         throw new SyncError(400, fields.issues[0].message);
     }
-    const { email: rawEmail, display_name, password, oidc_issuer, oidc_subject } = fields.output;
+    const {
+        email: rawEmail,
+        display_name,
+        password,
+        oidc_issuer,
+        oidc_subject,
+        activity_matrix_categories,
+    } = fields.output;
     const email = rawEmail?.trim();
     const displayName = display_name?.trim();
     const oidcIssuer = oidc_issuer?.replace(/\/$/, "").trim();
@@ -29,6 +37,11 @@ function validateUpsertItem(item) {
 
     if (!email) throw new SyncError(400, "each upsert item must have a non-empty email");
     if (!displayName) throw new SyncError(400, "each upsert item must have a non-empty display_name");
+
+    const duplicateTag = activity_matrix_categories && findDuplicateCategoryTag(activity_matrix_categories);
+    if (duplicateTag) {
+        throw new SyncError(422, `Duplicate category tag: ${duplicateTag}`);
+    }
 
     const hasOidc = oidcIssuer !== undefined || oidcSubject !== undefined;
     if ((oidcIssuer === undefined) !== (oidcSubject === undefined)) {
@@ -41,6 +54,7 @@ function validateUpsertItem(item) {
         password,
         oidcIssuer: oidcIssuer || null,
         oidcSubject: oidcSubject || null,
+        activityMatrixCategories: activity_matrix_categories ?? null,
         hasOidc,
     };
 }
@@ -106,7 +120,7 @@ export async function PUT(event) {
         const { created, updated, deleted, users } = await sql.begin(async (tx) => {
             const emails = [...seenUpsert, ...deleteEmails];
             const existingRows = await tx`
-                SELECT id, email, password_hash FROM users WHERE email IN ${tx(emails)}
+                SELECT id, email, password_hash, activity_matrix_categories FROM users WHERE email IN ${tx(emails)}
             `;
             const existingByEmail = new Map(existingRows.map((row) => [row.email, row]));
 
@@ -131,9 +145,9 @@ export async function PUT(event) {
                 const existing = existingByEmail.get(item.email);
                 if (!existing) {
                     await tx`
-                        INSERT INTO users (id, email, display_name, password_hash, oidc_issuer, oidc_subject)
+                        INSERT INTO users (id, email, display_name, password_hash, oidc_issuer, oidc_subject, activity_matrix_categories)
                         VALUES (${generateId()}, ${item.email}, ${item.displayName}, ${item.passwordHash},
-                                ${item.oidcIssuer}, ${item.oidcSubject})
+                                ${item.oidcIssuer}, ${item.oidcSubject}, ${item.activityMatrixCategories})
                     `;
                     created += 1;
                 } else {
@@ -143,6 +157,7 @@ export async function PUT(event) {
                             password_hash = ${item.password ? item.passwordHash : existing.password_hash},
                             oidc_issuer   = ${item.oidcIssuer},
                             oidc_subject  = ${item.oidcSubject},
+                            activity_matrix_categories = ${item.activityMatrixCategories ?? existing.activity_matrix_categories},
                             updated_at    = ${now}
                         WHERE email = ${item.email}
                     `;
@@ -158,7 +173,7 @@ export async function PUT(event) {
             }
 
             const users = await tx`
-                SELECT id, email, display_name, oidc_issuer, oidc_subject, is_active, created_at, updated_at
+                SELECT id, email, display_name, oidc_issuer, oidc_subject, is_active, activity_matrix_categories, created_at, updated_at
                 FROM users ORDER BY created_at, id
             `;
 

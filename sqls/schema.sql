@@ -130,6 +130,9 @@ CREATE TABLE IF NOT EXISTS users (
     oidc_subject  TEXT,
     -- locale: reserved for future i18n support.
     locale        TEXT,
+    -- Per-user activity matrix categories [{ label, tag, color }] (NULL or
+    -- [] means "not configured": no matrix is shown until categories are set).
+    activity_matrix_categories JSONB,
     is_active     BOOLEAN                  NOT NULL DEFAULT TRUE,
     created_at    TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at    TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()

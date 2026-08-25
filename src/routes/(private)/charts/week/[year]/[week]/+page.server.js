@@ -2,7 +2,7 @@ import { error } from "@sveltejs/kit";
 
 import { computeTimeEntriesNav } from "$lib/backend/timeEntriesUrl.js";
 import { getChartsPageData } from "$lib/backend/activity-chart.js";
-import { ACTIVITY_MATRIX_CATEGORIES, buildActivityMatrix } from "$lib/backend/activity-matrix.js";
+import { buildActivityMatrix } from "$lib/backend/activity-matrix.js";
 
 function getMonday(year, week) {
     const jan4 = new Date(year, 0, 4);
@@ -44,7 +44,7 @@ function formatPeriodLabel(monday) {
     return `${start} – ${end}, ${monday.getFullYear()}`;
 }
 
-export async function load({ params, url }) {
+export async function load({ params, url, locals }) {
     const year = Number(params.year);
     const week = Number(params.week);
 
@@ -69,8 +69,12 @@ export async function load({ params, url }) {
     const navData = computeTimeEntriesNav("/charts", url, from);
     const toDate = new Date(fromDate);
     toDate.setDate(fromDate.getDate() + 7);
-    const { days, segments, matrixRows } = await getChartsPageData(from, formatDate(toDate));
-    const matrix = buildActivityMatrix(days, ACTIVITY_MATRIX_CATEGORIES, matrixRows);
+    const { days, categories, segments, matrixRows } = await getChartsPageData(
+        from,
+        formatDate(toDate),
+        locals.user.id,
+    );
+    const matrix = buildActivityMatrix(days, categories, matrixRows);
 
     return {
         ...navData,

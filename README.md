@@ -17,7 +17,9 @@ A Node.js service that mirrors Toggl time-tracking data into a self-controlled P
 - HTTP server: SvelteKit 2 with adapter-node (SSR)
 - Build tool: Vite
 - Search field: [svelte-codemirror-search-field](https://github.com/stephane-klein/svelte-codemirror-search-field) — CodeMirror 6-based field with tag autocomplete
+- Autocomplete select: [svelecte](https://github.com/mskocik/svelecte) — tag picker with free entry (creatable) in the profile activity matrix editor
 - Chart axes: [d3-scale](https://github.com/d3/d3-scale) — scale utilities (linear, band) for the sleep activity chart
+- Drag & drop: [svelte-dnd-action](https://github.com/isaacHagoel/svelte-dnd-action) — pointer-based row reordering with live visual feedback in the profile activity matrix editor
 - SvelteKit [remote functions](https://svelte.dev/docs/kit/remote-functions) (`$app/server`) — experimental RPC for tag autocomplete
 - Containers: Podman Compose
 - Email testing: [Mailpit](https://github.com/axllent/mailpit) (dev SMTP server with web UI)
@@ -132,6 +134,12 @@ workflow reconcile the set of users with a declared desired state:
   atomic transaction. Body: `{ "upsert": [...], "delete": [{ "email" }] }`.
   Deleting a non-existent email is a no-op. Response: `{ created, updated,
 deleted, users }`.
+
+Upsert items may also carry the optional `activity_matrix_categories` field
+(an ordered `[{ label, tag, color }]` list, see
+[`api-payloads-examples/users-sync.json`](./api-payloads-examples/users-sync.json)
+for an example). When omitted, an existing value is kept; an empty array clears
+the configuration (the activity matrix is hidden until categories are set).
 
 The workflow is declarative: a configuration file (your GitOps source of truth)
 declares the desired users, and a runner applies it to the instance. Because the

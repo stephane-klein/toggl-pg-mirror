@@ -3,6 +3,7 @@ import { safeParse } from "valibot";
 import { generateId, hashPassword } from "$lib/backend/auth.js";
 import { sql } from "$lib/backend/pg.js";
 import { userFieldsSchema } from "$lib/schemas/user.js";
+import { findDuplicateCategoryTag } from "$lib/schemas/activity-matrix.js";
 import { generateCursor, requireAdminToken } from "../_helpers.js";
 import { problem } from "../../_problem.js";
 
@@ -15,14 +16,14 @@ export async function GET(event) {
 
     const users = cursorParam
         ? await sql`
-              SELECT id, email, display_name, oidc_issuer, oidc_subject, is_active, created_at, updated_at
+              SELECT id, email, display_name, oidc_issuer, oidc_subject, is_active, activity_matrix_categories, created_at, updated_at
               FROM users
               WHERE (created_at, id) > (${JSON.parse(Buffer.from(cursorParam, "base64").toString()).created_at}, ${JSON.parse(Buffer.from(cursorParam, "base64").toString()).id})
               ORDER BY created_at, id
               LIMIT ${pageSize + 1}
           `
         : await sql`
-              SELECT id, email, display_name, oidc_issuer, oidc_subject, is_active, created_at, updated_at
+              SELECT id, email, display_name, oidc_issuer, oidc_subject, is_active, activity_matrix_categories, created_at, updated_at
               FROM users
               ORDER BY created_at, id
               LIMIT ${pageSize + 1}
@@ -50,11 +51,16 @@ export async function POST(event) {
     if (!parsed.success) {
         return problem(400, parsed.issues[0].message, event.request.url);
     }
-    const { email, display_name, password, oidc_issuer, oidc_subject } = parsed.output;
+    const { email, display_name, password, oidc_issuer, oidc_subject, activity_matrix_categories } = parsed.output;
     const emailTrim = email?.trim();
     const displayNameTrim = display_name?.trim();
     const oidcIssuer = oidc_issuer?.replace(/\/$/, "").trim();
     const oidcSubject = oidc_subject?.trim();
+
+    const duplicateTag = activity_matrix_categories && findDuplicateCategoryTag(activity_matrix_categories);
+    if (duplicateTag) {
+        return problem(422, `Duplicate category tag: ${duplicateTag}`, event.request.url);
+    }
 
     const hasOidc = oidcIssuer !== undefined || oidcSubject !== undefined;
 
@@ -88,10 +94,10 @@ export async function POST(event) {
     const displayName = displayNameTrim || null;
 
     const [user] = await sql`
-        INSERT INTO users (id, email, display_name, password_hash, oidc_issuer, oidc_subject)
+        INSERT INTO users (id, email, display_name, password_hash, oidc_issuer, oidc_subject, activity_matrix_categories)
         VALUES (${id}, ${emailTrim || null}, ${displayName}, ${passwordHash},
-                ${oidcIssuer || null}, ${oidcSubject || null})
-        RETURNING id, email, display_name, oidc_issuer, oidc_subject, is_active, created_at, updated_at
+                ${oidcIssuer || null}, ${oidcSubject || null}, ${activity_matrix_categories ?? null})
+        RETURNING id, email, display_name, oidc_issuer, oidc_subject, is_active, activity_matrix_categories, created_at, updated_at
     `;
 
     return json(
@@ -119,11 +125,23 @@ export async function PUT(event) {
     if (!parsed.success) {
         return problem(400, parsed.issues[0].message, event.request.url);
     }
-    const { email: rawEmail, display_name, password, oidc_issuer, oidc_subject } = parsed.output;
+    const {
+        email: rawEmail,
+        display_name,
+        password,
+        oidc_issuer,
+        oidc_subject,
+        activity_matrix_categories,
+    } = parsed.output;
     const email = rawEmail?.trim();
     const displayName = display_name?.trim();
     const oidcIssuer = oidc_issuer?.replace(/\/$/, "").trim();
     const oidcSubject = oidc_subject?.trim();
+
+    const duplicateTag = activity_matrix_categories && findDuplicateCategoryTag(activity_matrix_categories);
+    if (duplicateTag) {
+        return problem(422, `Duplicate category tag: ${duplicateTag}`, event.request.url);
+    }
 
     if (!email) return problem(400, "email is required", event.request.url);
     if (!displayName) return problem(400, "display_name is required", event.request.url);
@@ -133,7 +151,8 @@ export async function PUT(event) {
         return problem(422, "Both oidc_issuer and oidc_subject must be provided together", event.request.url);
     }
 
-    const [existing] = await sql`SELECT id, password_hash FROM users WHERE email = ${email}`;
+    const [existing] =
+        await sql`SELECT id, password_hash, activity_matrix_categories FROM users WHERE email = ${email}`;
 
     if (hasOidc) {
         const conflict = await sql`
@@ -153,10 +172,10 @@ export async function PUT(event) {
     if (!existing) {
         const id = generateId();
         [user] = await sql`
-            INSERT INTO users (id, email, display_name, password_hash, oidc_issuer, oidc_subject)
+            INSERT INTO users (id, email, display_name, password_hash, oidc_issuer, oidc_subject, activity_matrix_categories)
             VALUES (${id}, ${email}, ${displayName}, ${passwordHash},
-                    ${oidcIssuer || null}, ${oidcSubject || null})
-            RETURNING id, email, display_name, oidc_issuer, oidc_subject, is_active, created_at, updated_at
+                    ${oidcIssuer || null}, ${oidcSubject || null}, ${activity_matrix_categories ?? null})
+            RETURNING id, email, display_name, oidc_issuer, oidc_subject, is_active, activity_matrix_categories, created_at, updated_at
         `;
     } else {
         [user] = await sql`
@@ -165,9 +184,10 @@ export async function PUT(event) {
                 password_hash = ${password ? passwordHash : existing.password_hash},
                 oidc_issuer   = ${oidcIssuer || null},
                 oidc_subject  = ${oidcSubject || null},
+                activity_matrix_categories = ${activity_matrix_categories ?? existing.activity_matrix_categories},
                 updated_at    = ${now}
             WHERE email = ${email}
-            RETURNING id, email, display_name, oidc_issuer, oidc_subject, is_active, created_at, updated_at
+            RETURNING id, email, display_name, oidc_issuer, oidc_subject, is_active, activity_matrix_categories, created_at, updated_at
         `;
     }
 

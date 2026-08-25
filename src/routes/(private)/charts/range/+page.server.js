@@ -2,7 +2,7 @@ import { error } from "@sveltejs/kit";
 
 import { computeTimeEntriesNav } from "$lib/backend/timeEntriesUrl.js";
 import { getChartsPageData } from "$lib/backend/activity-chart.js";
-import { ACTIVITY_MATRIX_CATEGORIES, buildActivityMatrix } from "$lib/backend/activity-matrix.js";
+import { buildActivityMatrix } from "$lib/backend/activity-matrix.js";
 
 function addDays(dateStr, n) {
     const [y, m, d] = dateStr.split("-").map(Number);
@@ -18,7 +18,7 @@ function isValidDate(dateStr) {
     return /^\d{4}-\d{2}-\d{2}$/.test(dateStr) && !isNaN(new Date(dateStr).getTime());
 }
 
-export async function load({ url }) {
+export async function load({ url, locals }) {
     const from = url.searchParams.get("from");
     const to = url.searchParams.get("to");
 
@@ -33,10 +33,15 @@ export async function load({ url }) {
     let segments = [];
     let matrix = [];
     if (from && to) {
-        const { days: ds, segments: ss, matrixRows } = await getChartsPageData(from, addDays(to, 1));
+        const {
+            days: ds,
+            categories,
+            segments: ss,
+            matrixRows,
+        } = await getChartsPageData(from, addDays(to, 1), locals.user.id);
         days = ds;
         segments = ss;
-        matrix = buildActivityMatrix(days, ACTIVITY_MATRIX_CATEGORIES, matrixRows);
+        matrix = buildActivityMatrix(days, categories, matrixRows);
     }
 
     return {

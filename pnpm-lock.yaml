@@ -65,6 +65,12 @@ importers:
       postgres-shift:
         specifier: ~0.1.0
         version: 0.1.0
+      svelecte:
+        specifier: ~5.3.0
+        version: 5.3.0(svelte@5.56.9)
+      svelte-dnd-action:
+        specifier: ~0.9.79
+        version: 0.9.79(svelte@5.56.9)
       valibot:
         specifier: ~1.4.2
         version: 1.4.2
@@ -2070,6 +2076,11 @@ packages:
     resolution: {integrity: sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==}
     engines: {node: '>= 0.4'}
 
+  svelecte@5.3.0:
+    resolution: {integrity: sha512-9WKD6KxPf31CweyZtObTetGtkq1TncBA2E+aSHcT+bfjALgP+LUGMMQUU+2qhlfSoGpw9JYmLfxphGjb0q350g==}
+    peerDependencies:
+      svelte: ^5.2.7
+
   svelte-codemirror-search-field@0.11.0:
     resolution: {integrity: sha512-tDD5nXn1lmRtwm+W11cehGpkwkDOQAWQ7Rq16vhm/Gtna2QW3A+HFq4V8xST1p7/ceEL3idlM70CmMKr0ROc6Q==}
     peerDependencies:
@@ -2078,6 +2089,11 @@ packages:
       '@codemirror/state': ^6.0.0
       '@codemirror/view': ^6.0.0
       svelte: ^5.0.0
+
+  svelte-dnd-action@0.9.79:
+    resolution: {integrity: sha512-zCKaG1Q9hVgfJFyZXhY+uIpo9+cjsG03CqwNz8yBlWCRBphC8U2zli9FzIcrL4rhXEs8yV+asS4rV0RHDuQqQQ==}
+    peerDependencies:
+      svelte: '>=3.23.0 || ^5.0.0-next.0'
 
   svelte-eslint-parser@1.8.1:
     resolution: {integrity: sha512-5zgKBqAf6V8Jyrmr1jViksyG4NKT8NheYwkdxRaMRDAqpGWi9wR8ktcGrAZbfMn/PHUp1BWzAp0cYQECkWuAMA==}
@@ -4110,6 +4126,10 @@ snapshots:
 
   supports-preserve-symlinks-flag@1.0.0: {}
 
+  svelecte@5.3.0(svelte@5.56.9):
+    dependencies:
+      svelte: 5.56.9
+
   svelte-codemirror-search-field@0.11.0(@codemirror/autocomplete@6.20.3)(@codemirror/commands@6.10.4)(@codemirror/state@6.7.1)(@codemirror/view@6.43.8)(svelte@5.56.9):
     dependencies:
       '@codemirror/autocomplete': 6.20.3
@@ -4117,6 +4137,10 @@ snapshots:
       '@codemirror/state': 6.7.1
       '@codemirror/view': 6.43.8
       chevrotain: 13.2.0
+      svelte: 5.56.9
+
+  svelte-dnd-action@0.9.79(svelte@5.56.9):
+    dependencies:
       svelte: 5.56.9
 
   svelte-eslint-parser@1.8.1(svelte@5.56.9):
