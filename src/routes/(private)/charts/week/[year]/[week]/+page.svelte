@@ -1,10 +1,14 @@
 <script>
+    import { goto } from "$app/navigation";
     import GoTo from "$lib/components/GoTo.svelte";
     import ModeSelector from "$lib/components/ModeSelector.svelte";
     import WeekNav from "$lib/components/nav/WeekNav.svelte";
     import ActivityChart from "../../../_components/ActivityChart.svelte";
 
     let { data } = $props();
+
+    let prevHref = $derived(data.prevHref);
+    let nextHref = $derived(data.nextHref);
 
     let goToProps = $derived({
         goToDayHref: data.goToDayHref,
@@ -32,7 +36,21 @@
         rangeFromMonthHref: data.rangeFromMonthHref,
         rangeHref: data.rangeHref,
     });
+
+    function handleKeydown(event) {
+        if (event.target.tagName === "INPUT" || event.target.tagName === "SELECT" || event.target.isContentEditable)
+            return;
+        if (event.key === "ArrowLeft" && prevHref) {
+            event.preventDefault();
+            goto(prevHref);
+        } else if (event.key === "ArrowRight" && nextHref) {
+            event.preventDefault();
+            goto(nextHref);
+        }
+    }
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
 
 <svelte:head>
     <title>{data.periodLabel} — toggl-pg-mirror</title>
