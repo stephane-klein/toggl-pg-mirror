@@ -49,6 +49,15 @@ spec:
               value: "postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST).{{ .Values.cnpg.namespace }}:$(DB_PORT)/$(DB_NAME)"
             - name: TOGGL_PG_MIRROR_POSTGRES_SCHEMA
               value: {{ .Values.postgresql.schema }}
+            - name: TOGGL_PG_MIRROR_MCP_READER_POSTGRES_ROLE
+              value: {{ .Values.mcp.readerRole }}
+            {{- if .Values.existingSecret.mcpReaderPostgresPasswordKey }}
+            - name: TOGGL_PG_MIRROR_MCP_READER_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.existingSecret.name }}
+                  key: {{ .Values.existingSecret.mcpReaderPostgresPasswordKey }}
+            {{- end }}
             - name: TOGGL_PG_MIRROR_TOGGL_API_TOKEN
               valueFrom:
                 secretKeyRef:

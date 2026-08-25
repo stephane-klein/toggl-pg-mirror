@@ -161,6 +161,35 @@ CREATE TABLE IF NOT EXISTS api_tokens (
 
 CREATE INDEX IF NOT EXISTS idx_api_tokens_user_id ON api_tokens (user_id);
 
+CREATE TABLE IF NOT EXISTS mcp_tokens (
+    id         TEXT                     NOT NULL PRIMARY KEY,
+    user_id    TEXT                     NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name       TEXT                     NOT NULL,
+    token_hash TEXT                     NOT NULL UNIQUE,
+    last_used  TIMESTAMP WITH TIME ZONE,
+    expires_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_mcp_tokens_user_id ON mcp_tokens (user_id);
+
+CREATE TABLE IF NOT EXISTS mcp_access_log (
+    id             BIGINT  GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    token_id       TEXT    REFERENCES mcp_tokens(id) ON DELETE SET NULL,
+    user_id        TEXT    REFERENCES users(id) ON DELETE SET NULL,
+    session_id     TEXT,
+    client_name    TEXT,
+    client_version TEXT,
+    ip             TEXT,
+    query          TEXT NOT NULL,
+    purpose        TEXT,
+    success        BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_mcp_access_log_user_id ON mcp_access_log (user_id);
+CREATE INDEX IF NOT EXISTS idx_mcp_access_log_created_at ON mcp_access_log (created_at);
+
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
     id         TEXT                     NOT NULL PRIMARY KEY,
     user_id    TEXT                     NOT NULL REFERENCES users(id) ON DELETE CASCADE,

@@ -26,6 +26,11 @@
                     >
                     |
                     <a
+                        href="/mcp"
+                        class="text-gray-500 no-underline hover:underline">MCP</a
+                    >
+                    |
+                    <a
                         href="https://github.com/stephane-klein/toggl-pg-mirror"
                         class="text-gray-500 no-underline hover:underline">GitHub</a
                     >

@@ -20,6 +20,7 @@ DROP FUNCTION IF EXISTS get_matching_time_entries;
 DROP FUNCTION IF EXISTS get_activity_chart_data;
 DROP FUNCTION IF EXISTS get_activity_matrix_data;
 DROP FUNCTION IF EXISTS get_charts_page_data;
+DROP FUNCTION IF EXISTS get_mcp_access_log_page_data;
 
 -- Returns the day (as 'YYYY-MM-DD') closest to _ref that has at least one
 -- non-deleted entry, or NULL when no entry exists on either side of _ref.
@@ -825,4 +826,68 @@ AS $$
         )
     )
     FROM categories c;
+$$;
+
+-- Returns the MCP access-log page: a month calendar of daily query counts plus a
+-- paginated list of log rows, optionally filtered to a single day.
+-- Returns the MCP access-log page: a paginated list of log rows filtered to a
+-- date range (both NULL means "all time").
+CREATE FUNCTION get_mcp_access_log_page_data(_from date, _to date, _page integer, _page_size integer)
+RETURNS jsonb
+LANGUAGE sql STABLE PARALLEL SAFE
+AS $$
+    WITH page_base AS (
+        SELECT l.id, l.created_at, l.client_name, l.client_version, l.ip,
+               l.user_id, u.display_name, l.query, l.purpose, l.success
+        FROM mcp_access_log l
+        LEFT JOIN users u ON u.id = l.user_id
+        WHERE (_from IS NULL AND _to IS NULL)
+           OR (l.created_at >= _from AND l.created_at < _to + interval '1 day')
+    ),
+    total AS (
+        SELECT count(*)::bigint AS n FROM page_base
+    ),
+    page AS (
+        SELECT * FROM page_base
+        ORDER BY created_at DESC
+        LIMIT _page_size OFFSET (_page - 1) * _page_size
+    )
+    SELECT jsonb_build_object(
+        'rows',
+        COALESCE(
+            (SELECT jsonb_agg(jsonb_build_object(
+                'id', id,
+                'created_at', created_at,
+                'client_name', client_name,
+                'client_version', client_version,
+                'ip', ip,
+                'user_id', user_id,
+                'display_name', display_name,
+                'query', query,
+                'purpose', purpose,
+                'success', success
+            )) FROM page),
+            '[]'::jsonb
+        ),
+        'total', (SELECT n FROM total),
+        'page', _page,
+        'page_count', GREATEST(1, ceil((SELECT n FROM total)::numeric / _page_size)::int),
+        'from', _from,
+        'to', _to
+    )
+$$;
+
+-- Security: default-deny function execution.
+-- PostgreSQL grants EXECUTE to PUBLIC on every new function. The app role owns
+-- these functions so it keeps EXECUTE implicitly; revoking PUBLIC only blocks
+-- other roles (e.g. the MCP reader role) until an explicit GRANT is added.
+-- Placed after all CREATEs because a CREATE resets privileges to the default.
+DO $$
+DECLARE
+    schema_name text := current_schema();
+BEGIN
+    EXECUTE format('REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA %I FROM PUBLIC', schema_name);
+    -- Future functions inherit default-deny instead of PUBLIC EXECUTE.
+    EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA %I REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC', schema_name);
+END
 $$;

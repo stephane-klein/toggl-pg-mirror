@@ -55,6 +55,16 @@
             >
             ·
             <a
+                href="/my/mcp-tokens"
+                class="text-gray-500 no-underline hover:text-blue-600 hover:underline">MCP Tokens</a
+            >
+            ·
+            <a
+                href="/mcp/log"
+                class="text-gray-500 no-underline hover:text-blue-600 hover:underline">MCP Logs</a
+            >
+            ·
+            <a
                 href="/logout"
                 class="text-gray-500 no-underline hover:text-blue-600 hover:underline">Sign out</a
             >

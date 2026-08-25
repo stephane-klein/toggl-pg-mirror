@@ -31,7 +31,8 @@ $ kubectl create secret generic toggl-pg-mirror \
   -n toggl-pg-mirror \
   --from-literal=toggl-token=YOUR_TOGGL_API_TOKEN \
   --from-literal=admin-token=$(openssl rand -hex 32) \
-  --from-literal=smtp-password=YOUR_SMTP_PASSWORD
+  --from-literal=smtp-password=YOUR_SMTP_PASSWORD \
+  --from-literal=mcp-reader-postgres-password=$(openssl rand -hex 24)
 
 # 2. Install or upgrade (via helmfile)
 $ helmfile apply
@@ -42,10 +43,25 @@ $ helmfile apply
 See [`values.yaml`](./values.yaml).
 
 All application secrets live in a single Kubernetes Secret (default name
-`toggl-pg-mirror`) referenced by `existingSecret`. The secret holds three keys,
-configurable via `existingSecret.togglTokenKey`, `existingSecret.adminTokenKey`
-and `existingSecret.smtpPassKey` (defaults: `toggl-token`, `admin-token`,
-`smtp-password`).
+`toggl-pg-mirror`) referenced by `existingSecret`. The secret holds keys,
+configurable via `existingSecret.togglTokenKey`, `existingSecret.adminTokenKey`,
+`existingSecret.smtpPassKey` and `existingSecret.mcpReaderPostgresPasswordKey`
+(defaults: `toggl-token`, `admin-token`, `smtp-password`,
+`mcp-reader-postgres-password`).
+
+### MCP read-only server
+
+The service exposes a read-only [MCP](https://modelcontextprotocol.io) server at
+`/mcp/readonly` that lets an AI agent query the `time_entries` table over raw SQL
+(see the `src/routes/(mcp)/mcp` page in the app). Access is read-only by design,
+enforced both by HTTP authentication (a per-user MCP token) and by a dedicated
+PostgreSQL role with `SELECT`-only privileges on `time_entries`.
+
+At startup the app creates this reader role when the
+`mcp-reader-postgres-password` key (default) of the application secret is set.
+The role name defaults to `toggl_mcp_reader`, configurable via `mcp.readerRole`.
+If the key is absent, the MCP read-only access is silently disabled. The app's
+DB user must have permission to `CREATE ROLE` (the standard CNPG app user does).
 
 ### Admin token
 

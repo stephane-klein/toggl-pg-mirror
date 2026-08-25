@@ -1,0 +1,1 @@
+ALTER TABLE mcp_access_log ADD COLUMN purpose TEXT;

@@ -27,6 +27,7 @@ A Node.js service that mirrors Toggl time-tracking data into a self-controlled P
 - **Authentication** — sessions, API tokens, password reset, magic link login (following [Lucia](https://lucia-auth.com/sessions/overview) security recommendations)
 - **API documentation** — interactive reference at `/api/reference` powered by [Scalar](https://scalar.com/)
 - **OpenAPI spec** — auto-generated and served at `/api/v1/openapi.json`
+- **MCP server** — [@modelcontextprotocol/sdk](https://github.com/modelcontextprotocol/typescript-sdk) — read-only Model Context Protocol server served at `/mcp/readonly` (see below)
 
 ## AI-Assisted Development
 
@@ -183,6 +184,99 @@ Tokens are SHA-256 hashed before storage — the raw value is shown only once
 at creation. They authenticate requests via the `Authorization: Bearer`
 header, which is accepted anywhere a session cookie is.
 
+## MCP read-only server
+
+The service exposes a [Model Context Protocol](https://modelcontextprotocol.io)
+(MCP) server that lets an AI agent read from the `time_entries` table over raw
+SQL. It is served directly by SvelteKit at `/mcp/readonly` — no separate
+process needed.
+
+Access is read-only by design, enforced at two levels:
+
+- **Database role** — queries run as a dedicated PostgreSQL role
+  (`TOGGL_PG_MIRROR_MCP_READER_POSTGRES_ROLE`, default `toggl_mcp_reader`) with
+  `SELECT`-only privileges on `time_entries` (created at startup by
+  `ensureMcpReaderRole()`).
+- **HTTP authentication** — every request must carry
+  `Authorization: Bearer <your-mcp-token>`, where the token is a per-user MCP
+  token created from the web UI at `/my/mcp-tokens/`. Requests with an invalid
+  or expired token are rejected.
+
+### Tool
+
+| Tool               | Description                                                                                |
+| ------------------ | ------------------------------------------------------------------------------------------ |
+| `readOnlySqlQuery` | Execute a read-only SQL query (`SELECT`/`EXPLAIN`/`WITH`) against the `time_entries` table |
+
+### Usage
+
+```bash
+$ pnpm dev   # dev server on :5173 (or pnpm build && node build for :3000)
+```
+
+```bash
+$ curl -s -X POST http://localhost:5173/mcp/readonly \
+    -H "Authorization: Bearer YOUR_MCP_TOKEN" \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+```
+
+### OpenCode
+
+Add to your project's `opencode.jsonc` or `~/.config/opencode/opencode.jsonc`:
+
+```jsonc
+{
+  "mcp": {
+    "toggl-pg-mirror-readonly": {
+      "type": "remote",
+      "url": "http://127.0.0.1:5173/mcp/readonly",
+      "enabled": true,
+      "headers": {
+        "Authorization": "Bearer YOUR_MCP_TOKEN",
+      },
+    },
+  },
+}
+```
+
+### Claude Desktop (local development)
+
+Claude Desktop's remote connectors are reached from Anthropic's cloud servers,
+not from your machine — so a plain `http://localhost` URL is rejected, and even
+a self-signed certificate won't be trusted. For local development, bridge the
+Streamable HTTP endpoint through [`mcp-remote`](https://www.npmjs.com/package/mcp-remote):
+Claude Desktop speaks stdio to `mcp-remote`, which talks Streamable HTTP to the
+local server over plain HTTP.
+
+Add to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "toggl-pg-mirror-readonly": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "http://127.0.0.1:5173/mcp/readonly",
+        "--transport",
+        "http-only",
+        "--allow-http",
+        "--header",
+        "Authorization:${MCP_TOKEN}"
+      ],
+      "env": { "MCP_TOKEN": "Bearer YOUR_MCP_TOKEN" }
+    }
+  }
+}
+```
+
+Restart Claude Desktop, then check **Settings → Developer → MCP Servers**. This
+method is for local development only — a deployed instance exposes the endpoint
+over HTTPS and can be added directly as a remote connector.
+
 ## Email
 
 Outgoing email is sent via SMTP using [nodemailer](https://nodemailer.com/).
@@ -273,6 +367,8 @@ Environment variables:
   TOGGL_PG_MIRROR_TOGGL_API_TOKEN           Toggl API token
   TOGGL_PG_MIRROR_ADMIN_TOKEN               Admin token for the admin API (at least 32 characters)
   TOGGL_PG_MIRROR_POLL_INTERVAL_SECONDS     Sync daemon polling interval in seconds (default: 600)
+  TOGGL_PG_MIRROR_MCP_READER_POSTGRES_ROLE     PostgreSQL role name for the MCP read-only access (default: toggl_mcp_reader)
+  TOGGL_PG_MIRROR_MCP_READER_POSTGRES_PASSWORD Password for the MCP reader role (creates the role at startup when set)
 ```
 
 ## Build and push container image

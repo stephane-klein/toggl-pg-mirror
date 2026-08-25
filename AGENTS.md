@@ -59,6 +59,12 @@ shared `requireUser(event)` helper from `src/lib/server/require-user.js`) and
 throw `error(401, ...)` otherwise. Never rely on the `(private)` route group or
 a layout guard to protect a remote function.
 
+The MCP endpoint at `/mcp/readonly` is likewise not protected by any layout
+guard. It enforces its own `Authorization: Bearer <mcp-token>` check (a per-user
+MCP token created at `/my/mcp-tokens/`, validated via `validateMcpToken`) directly in
+`src/routes/(mcp)/mcp/readonly/+server.js`, and runs queries
+through the read-only PostgreSQL role (see `src/lib/server/mcp/mcp-readonly-db.js`).
+
 ## Project Structure
 
 ### SvelteKit Routes
@@ -70,6 +76,7 @@ a layout guard to protect a remote function.
 - `src/routes/(infra)/-/healthy/+server.js` — `/-/healthy` endpoint
 - `src/routes/(infra)/-/ready/+server.js` — `/-/ready` endpoint (DB check, sync status)
 - `src/routes/(infra)/-/version.json/+server.js` — `/-/version.json` endpoint
+- `src/routes/(mcp)/mcp/readonly/+server.js` — read-only MCP server at `/mcp/readonly` (JSON-RPC over Streamable HTTP)
 - `src/hooks.server.js` — server hooks (auth, sync daemon initialization, graceful shutdown)
 - `src/app.html` — HTML shell
 
@@ -123,6 +130,18 @@ parameter values are folded at plan time. See ADR 002.
 Migrations are managed by [`postgres-shift`](https://github.com/porsager/postgres-shift) and located in `sqls/migrations/`.
 
 The complete schema (consolidated) is written by hand in `sqls/schema.sql`.
+
+### Function execution privileges (default-deny)
+
+Functions are PUBLIC-executable by default in PostgreSQL. `sqls/functions.sql`
+ends with a `DO` block that revokes `EXECUTE ON ALL FUNCTIONS IN SCHEMA ... FROM
+PUBLIC` and sets `ALTER DEFAULT PRIVILEGES`, so only the owning app role can call
+functions by default. Any other role that needs a function gets an explicit,
+per-function `GRANT EXECUTE`. The MCP reader role's grants live in
+`ensureMcpReaderRole` (`src/lib/server/mcp/mcp-reader-role.js`): `SELECT` on
+`time_entries` plus `EXECUTE` on the fuzzy-search helpers `immutable_unaccent`,
+`immutable_lower` and `unaccent`. Never rely on PUBLIC EXECUTE for a new
+function; add an explicit grant instead.
 
 ## Node.js Paradigms
 

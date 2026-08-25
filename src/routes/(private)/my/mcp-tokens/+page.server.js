@@ -1,8 +1,8 @@
 import { fail } from "@sveltejs/kit";
-import { createApiToken, deleteApiToken, listUserApiTokens } from "$lib/backend/auth.js";
+import { createMcpToken, deleteMcpToken, listUserMcpTokens } from "$lib/backend/auth.js";
 
 export async function load(event) {
-    const tokens = await listUserApiTokens(event.locals.user.id);
+    const tokens = await listUserMcpTokens(event.locals.user.id);
 
     return { tokens };
 }
@@ -25,7 +25,7 @@ export const actions = {
         }
 
         const expiresInDays = expiresInDaysRaw ? Number(expiresInDaysRaw) : null;
-        const token = await createApiToken(user.id, name, expiresInDays);
+        const token = await createMcpToken(user.id, name, expiresInDays);
 
         return { created: true, raw: token.raw, name: token.name };
     },
@@ -41,7 +41,7 @@ export const actions = {
             return fail(400, { error: "Token ID is required." });
         }
 
-        await deleteApiToken(user.id, tokenId);
+        await deleteMcpToken(user.id, tokenId);
 
         return { deleted: true };
     },

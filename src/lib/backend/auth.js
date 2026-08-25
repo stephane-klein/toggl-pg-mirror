@@ -75,7 +75,7 @@ export async function invalidateAllUserSessions(userId) {
     await sql`DELETE FROM sessions WHERE user_id = ${userId}`;
 }
 
-async function hashToken(token) {
+export async function hashToken(token) {
     const encoder = new TextEncoder();
     const data = encoder.encode(token);
     const hashBuffer = await crypto.subtle.digest("SHA-256", data);
@@ -125,12 +125,62 @@ export async function validateApiToken(raw) {
     return token;
 }
 
-export async function deleteApiToken(tokenId) {
-    await sql`DELETE FROM api_tokens WHERE id = ${tokenId}`;
+export async function deleteApiToken(userId, tokenId) {
+    await sql`DELETE FROM api_tokens WHERE id = ${tokenId} AND user_id = ${userId}`;
 }
 
 export async function listUserApiTokens(userId) {
     return await sql`SELECT id, name, last_used, created_at, expires_at FROM api_tokens WHERE user_id = ${userId}`;
+}
+
+export async function createMcpToken(userId, name, expiresInDays = null) {
+    const id = generateId();
+    const raw = nanoid(48);
+
+    // prettier-ignore
+    await sql`
+        INSERT INTO mcp_tokens (id, user_id, name, token_hash, expires_at)
+        VALUES (
+            ${id},                   -- id
+            ${userId},               -- user_id
+            ${name},                 -- name
+            ${await hashToken(raw)}, -- token_hash
+            ${
+                expiresInDays
+                    ? new Date(now().getTime() + expiresInDays * 24 * 3600 * 1000)
+                    : null
+            }                        -- expires_at
+        )
+    `;
+
+    return { id, name, raw };
+}
+
+export async function validateMcpToken(raw) {
+    const tokenHash = await hashToken(raw);
+
+    const [token] = await sql`
+        SELECT t.id, t.user_id, t.expires_at, u.is_active, u.display_name
+        FROM mcp_tokens t
+        INNER JOIN users u ON u.id = t.user_id
+        WHERE t.token_hash = ${tokenHash}
+    `;
+
+    if (!token) return null;
+    if (!token.is_active) return null;
+    if (token.expires_at && now().getTime() >= token.expires_at.getTime()) return { expired: true };
+
+    await sql`UPDATE mcp_tokens SET last_used = ${now()} WHERE id = ${token.id}`;
+
+    return token;
+}
+
+export async function deleteMcpToken(userId, tokenId) {
+    await sql`DELETE FROM mcp_tokens WHERE id = ${tokenId} AND user_id = ${userId}`;
+}
+
+export async function listUserMcpTokens(userId) {
+    return await sql`SELECT id, name, last_used, created_at, expires_at FROM mcp_tokens WHERE user_id = ${userId}`;
 }
 
 export async function createPasswordResetToken(email) {

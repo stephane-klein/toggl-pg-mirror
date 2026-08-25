@@ -4,10 +4,13 @@ import { logger } from "$lib/backend/logger.js";
 import { verifySmtpConnection } from "$lib/backend/mailer.js";
 import { sql } from "$lib/backend/pg.js";
 import { startSyncDaemon, stopSyncDaemon } from "$lib/backend/sync.js";
+import { ensureMcpReaderRole } from "$lib/server/mcp/mcp-reader-role.js";
 import { togglIsConfigured } from "$lib/backend/toggl-client.js";
 import { runWithMetrics as runWithPgMetrics, summarize as summarizePgMetrics } from "$lib/server/pg-metrics.js";
 
 const pollIntervalSeconds = parseInt(process.env.TOGGL_PG_MIRROR_POLL_INTERVAL_SECONDS || "600", 10);
+
+await ensureMcpReaderRole();
 
 if (togglIsConfigured) {
     logger.info({ pollIntervalSeconds }, "Starting sync daemon");
@@ -112,3 +115,18 @@ async function requestHandler({ event, resolve }) {
 }
 
 export const handle = sequence(authHandle, metricsHandle, requestHandler);
+
+/** @type {import('@sveltejs/kit').HandleServerError} */
+export function handleError({ status, error, event }) {
+    const pathname = event.url.pathname;
+
+    // MCP clients probe OAuth/.well-known discovery endpoints before connecting.
+    // We authenticate with a Bearer header (not OAuth), so these always 404 and
+    // would otherwise spam the logs. Silence them.
+    if (status === 404 && pathname.includes(".well-known")) {
+        return;
+    }
+
+    const formattedText = `\n\x1b[1;31m[${status}] ${event.request.method} ${pathname}\x1b[0m`;
+    console.error(status === 404 ? formattedText : `${formattedText}\n${error.stack}`);
+}

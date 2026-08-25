@@ -31,17 +31,28 @@ cnpg:
   copySecretName: memex-app
 
 # Single Kubernetes Secret holding all application secrets (Toggl API token,
-# admin token, SMTP password). Create it manually in the target namespace:
+# admin token, SMTP password, MCP reader PostgreSQL password). Create it
+# manually in the target namespace:
 #   kubectl create secret generic toggl-pg-mirror \
 #     -n toggl-pg-mirror \
 #     --from-literal=toggl-token=YOUR_TOGGL_API_TOKEN \
 #     --from-literal=admin-token=YOUR_ADMIN_TOKEN_AT_LEAST_32_CHARS \
-#     --from-literal=smtp-password=YOUR_SMTP_PASSWORD
+#     --from-literal=smtp-password=YOUR_SMTP_PASSWORD \
+#     --from-literal=mcp-reader-postgres-password=YOUR_MCP_READER_POSTGRES_PASSWORD
 existingSecret:
   name: toggl-pg-mirror
   togglTokenKey: toggl-token
   adminTokenKey: admin-token
   smtpPassKey: smtp-password
+  mcpReaderPostgresPasswordKey: mcp-reader-postgres-password
+
+# Read-only MCP server — exposes time_entries over SQL to AI agents.
+# The reader PostgreSQL role is created at app startup with SELECT-only
+# privileges when the password (existingSecret.mcpReaderPostgresPasswordKey)
+# is set. If the key is absent, the MCP read-only access is disabled.
+mcp:
+  # PostgreSQL role name used for read-only MCP access.
+  readerRole: toggl_mcp_reader
 
 # SMTP configuration for outgoing emails (e.g. the send-test-mail admin endpoint).
 # The password is read from the existingSecret (smtpPassKey).

@@ -101,6 +101,9 @@ mise run import-csvs
 [tasks.enter-in-pg]
 run = "usql ${TOGGL_PG_MIRROR_POSTGRES_URL}"
 
+[tasks.enter-in-pg-mcp-reader]
+run = "usql ${TOGGL_PG_MIRROR_MCP_READER_URL}"
+
 [tasks.build-image]
 quiet = true
 run = """
