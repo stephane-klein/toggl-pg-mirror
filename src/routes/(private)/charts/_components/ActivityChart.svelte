@@ -56,7 +56,7 @@
         return `${weekday} ${String(d).padStart(2, "0")}`;
     }
 
-    let hoveredSeg = $state(null);
+    let hoveredSeg = $state.raw(null);
 
     // Wake-up time per day: the longest sleep segment of that day (there can be
     // several entries, e.g. a short nap plus the main night).
@@ -77,6 +77,7 @@
 <div
     class="overflow-x-auto"
     bind:this={containerEl}
+    style="overflow-y: visible"
 >
     {#if days.length === 0}
         <p class="text-sm text-gray-500 mt-2">No days in period.</p>
@@ -84,6 +85,7 @@
         <svg
             width={plotWidth + margin.left + margin.right}
             height={plotHeight + margin.top + margin.bottom}
+            overflow="visible"
             role="img"
             aria-label="Activity chart"
         >
@@ -134,11 +136,6 @@
                         onmouseleave={() => (hoveredSeg = null)}
                         role="presentation"
                     >
-                        <title>
-                            Sommeil : {fmtTime(seg.start)} → {fmtTime(seg.end % 24)} ({fmtDuration(
-                                seg.end - seg.start,
-                            )})
-                        </title>
                         <rect
                             x={barX}
                             y={yScale(y0)}
@@ -238,7 +235,10 @@
 
                 <!-- Hover tooltip -->
                 {#if hoveredSeg}
-                    {@const tooltipY = Math.min(yScale(hoveredSeg.start - DAY_START_HOUR) - 8, plotHeight - 60)}
+                    {@const tooltipY = Math.min(
+                        Math.max(yScale(hoveredSeg.start - DAY_START_HOUR) - 8, 48),
+                        plotHeight - 60,
+                    )}
                     <g transform="translate({xScale(hoveredSeg.day) + xScale.bandwidth() / 2}, {tooltipY})">
                         <rect
                             x="-52"
