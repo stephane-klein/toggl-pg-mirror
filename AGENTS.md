@@ -130,6 +130,12 @@ Every page render that needs several values from the database must be served by 
 single stored SQL function (CTE + JSON) — one round-trip per render.
 See `docs/decisions/2026-07_002-single-sql-function-per-page-render.md`.
 
+Prefer pure `LANGUAGE sql` stored functions over PL/pgSQL whenever the body is
+declarative (a plain sequence of DML/SELECT statements, no control flow).
+Reserve `LANGUAGE plpgsql` for functions that genuinely need procedural
+features: `IF`, loops, `RAISE EXCEPTION`, dynamic SQL (`EXECUTE`), or
+`SELECT ... INTO` variables.
+
 When calling a stored SQL function from a `postgres` query, prefer PostgreSQL's
 named-argument notation so each placeholder is labeled with its parameter name:
 
