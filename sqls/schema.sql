@@ -11,20 +11,13 @@ LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT SECURITY DEFINER
 SET search_path FROM CURRENT
 RETURN unaccent(input_text);
 
--- IMMUTABLE lowercase wrappers for the case-insensitive tags GIN index
--- (lower() is STABLE by default; PostgreSQL requires IMMUTABLE for index expressions).
+-- IMMUTABLE lowercase wrapper kept for the read-only MCP role's fuzzy search
+-- (lower() is STABLE by default; PostgreSQL requires IMMUTABLE for index
+-- expressions). The text[] overload was dropped in migration 00023 — tags are
+-- no longer a TEXT[] column.
 CREATE OR REPLACE FUNCTION immutable_lower(input_text text) RETURNS text
 LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT
 RETURN lower(input_text);
-
-CREATE OR REPLACE FUNCTION immutable_lower(input_texts text[]) RETURNS text[]
-LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT
-RETURN (
-    -- COALESCE: array_agg over an empty array yields NULL, which would make
-    -- "tags && NOT ..." exclude empty-tag rows (~46%) from negated filters.
-    SELECT COALESCE(array_agg(lower(elem) ORDER BY ord), '{}'::text[])
-    FROM unnest(input_texts) WITH ORDINALITY AS e(elem, ord)
-);
 
 -- Bronze layer: raw Toggl time entries, mirrored as-is.
 -- toggl_uid is the native Toggl API identifier, used as the natural deduplication key (NULL for CSV imports).
@@ -34,7 +27,6 @@ CREATE TABLE IF NOT EXISTS time_entries (
     toggl_uid     BIGINT       UNIQUE,              -- NULL for CSV imports
     started_at    TIMESTAMPTZ  NOT NULL,
     ended_at      TIMESTAMPTZ,                      -- NULL while the entry is still running
-    tags          TEXT[]       NOT NULL DEFAULT '{}',
     description   TEXT,
     import_source VARCHAR(10) NOT NULL CHECK (import_source IN ('api_sync', 'csv')),
     project       TEXT,
@@ -43,6 +35,26 @@ CREATE TABLE IF NOT EXISTS time_entries (
     deleted_at    TIMESTAMPTZ  DEFAULT NULL,
     manually_edited_at TIMESTAMPTZ DEFAULT NULL,
     CONSTRAINT time_entries_ended_at_check CHECK (ended_at IS NULL OR ended_at >= started_at)
+);
+
+-- Normalized tags (replaces the time_entries.tags TEXT[] column, removed in
+-- migration 00023): the dimension holds one row per distinct tag with the
+-- exact case as received from Toggl (case-sensitive identity), and the join
+-- table one row per (entry, tag) preserving the original array order via
+-- position. There is no trigger: every write path maintains these tables
+-- explicitly through set_time_entry_tags().
+CREATE TABLE IF NOT EXISTS time_entry_tags (
+    id          BIGINT       GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name        TEXT         NOT NULL UNIQUE,
+    created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS time_entry_tag_entries (
+    entry_id  BIGINT NOT NULL REFERENCES time_entries(id) ON DELETE CASCADE,
+    tag_id    BIGINT NOT NULL REFERENCES time_entry_tags(id) ON DELETE CASCADE,
+    position  INT    NOT NULL,
+    PRIMARY KEY (entry_id, tag_id)
 );
 
 -- Silver layer: records every modification to a time entry with full traceability.
@@ -102,12 +114,13 @@ CREATE INDEX IF NOT EXISTS idx_time_entries_description_unaccent_trgm
     ON time_entries USING GIN (immutable_unaccent(description) gin_trgm_ops)
     WHERE deleted_at IS NULL;
 
--- Case-insensitive GIN index on the tags array for tag search (serves the @>
--- and && predicates, matching tag names regardless of case); restricted to
--- non-deleted entries like the other hot-path indexes.
-CREATE INDEX IF NOT EXISTS idx_time_entries_tags_active
-    ON time_entries USING GIN (immutable_lower(tags))
-    WHERE deleted_at IS NULL;
+-- Reading the tags of a list of entries (array_agg ORDER BY position).
+CREATE INDEX IF NOT EXISTS idx_time_entry_tag_entries_entry_id_position
+    ON time_entry_tag_entries (entry_id, position);
+
+-- Filtering entries by tag (semi-join on tag_id).
+CREATE INDEX IF NOT EXISTS idx_time_entry_tag_entries_tag_id
+    ON time_entry_tag_entries (tag_id);
 
 -- Look up the full change history of a given time entry.
 CREATE INDEX IF NOT EXISTS idx_time_entry_audit_log_entry_id

@@ -89,14 +89,13 @@
         </tbody>
     </table>
 
-    <p class="mb-2">Available table:</p>
+    <p class="mb-2">Available tables:</p>
     <pre class="bg-gray-100 p-4 rounded-md overflow-x-auto text-xs font-mono mb-4">
 time_entries(
   id            BIGINT,
   toggl_uid     BIGINT,
   started_at    TIMESTAMPTZ,
   ended_at      TIMESTAMPTZ,
-  tags          TEXT[],
   description   TEXT,
   import_source VARCHAR(10),
   project       TEXT,
@@ -104,7 +103,27 @@ time_entries(
   updated_at    TIMESTAMPTZ,
   deleted_at    TIMESTAMPTZ,
   manually_edited_at TIMESTAMPTZ
+)
+time_entry_tags(
+  id         BIGINT,
+  name       TEXT,      -- exact case, one row per distinct tag
+  created_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ
+)
+time_entry_tag_entries(
+  entry_id BIGINT,
+  tag_id   BIGINT,
+  position INT        -- preserves the original tag order on the entry
 )</pre>
+
+    <p class="mb-4">
+        Tags are normalized: join <code class="bg-gray-100 px-1 py-0.5 rounded-sm">time_entries</code> to
+        <code class="bg-gray-100 px-1 py-0.5 rounded-sm">time_entry_tag_entries</code> on <code
+            class="bg-gray-100 px-1 py-0.5 rounded-sm">entry_id</code
+        >, then to <code class="bg-gray-100 px-1 py-0.5 rounded-sm">time_entry_tags</code> on <code
+            class="bg-gray-100 px-1 py-0.5 rounded-sm">tag_id</code
+        >. Match tag names case-insensitively with <code class="bg-gray-100 px-1 py-0.5 rounded-sm">lower(name)</code>.
+    </p>
 
     <h2 class="text-lg font-bold mb-3 mt-6">Usage</h2>
     <pre class="bg-gray-100 p-4 rounded-md overflow-x-auto text-xs font-mono mb-4">

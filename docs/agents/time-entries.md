@@ -180,7 +180,8 @@ accepts exactly what the UI shows.
   jsonb parameter of `get_time_entries_page_data()`.
 - The tag list for autocomplete comes live from
   `_components/tags.remote.js` (`getAllTags` remote function, `SELECT DISTINCT
-unnest(tags)` over non-deleted entries).
+  name FROM time_entry_tags` — tags are normalized in the dimension table,
+  not stored as a TEXT[] column on time_entries).
 
 ## Rules for contributors
 

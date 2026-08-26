@@ -7,9 +7,8 @@ export const getAllTags = query(async () => {
     requireUser(getRequestEvent());
 
     const rows = await sql`
-        SELECT DISTINCT unnest(tags) AS tag
-        FROM time_entries
-        WHERE deleted_at IS NULL
+        SELECT DISTINCT name AS tag
+        FROM time_entry_tags
         ORDER BY tag
     `;
     return rows.map((row) => row.tag);

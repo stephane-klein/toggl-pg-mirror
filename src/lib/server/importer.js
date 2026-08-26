@@ -26,13 +26,28 @@ export async function importTimeEntries({ startDate, endDate, debug = false }) {
     `;
     const deletedCsv = deletedCsvResult.count;
 
+    // CSV rows are hard-deleted (CASCADE removes their join rows); purge any
+    // dimension name left unreferenced.
+    await sql`
+        DELETE FROM time_entry_tags t
+        WHERE NOT EXISTS (SELECT 1 FROM time_entry_tag_entries j WHERE j.tag_id = t.id)
+    `;
+
     const dbEntries = await sql`
-        SELECT id, toggl_uid, started_at, ended_at, tags, description, project, updated_at, manually_edited_at
-        FROM time_entries
-        WHERE import_source = 'api_sync'
-          AND deleted_at IS NULL
-          AND started_at >= ${startDate}
-          AND started_at <= ${endDate}
+        SELECT te.id, te.toggl_uid, te.started_at, te.ended_at,
+               COALESCE(tg.tags, '{}'::text[]) AS tags,
+               te.description, te.project, te.updated_at, te.manually_edited_at
+        FROM time_entries te
+        LEFT JOIN LATERAL (
+            SELECT array_agg(tgt.name ORDER BY jt.position) AS tags
+            FROM time_entry_tag_entries jt
+            JOIN time_entry_tags tgt ON tgt.id = jt.tag_id
+            WHERE jt.entry_id = te.id
+        ) tg ON TRUE
+        WHERE te.import_source = 'api_sync'
+          AND te.deleted_at IS NULL
+          AND te.started_at >= ${startDate}
+          AND te.started_at <= ${endDate}
     `;
 
     const { entries: apiEntries, quotaRemaining, quotaResetsIn } = await getTimeEntries({ startDate, endDate, debug });
@@ -64,6 +79,11 @@ export async function importTimeEntries({ startDate, endDate, debug = false }) {
     await sql.begin(async (tx) => {
         for (const entry of toDelete) {
             await tx`UPDATE time_entries SET deleted_at = NOW() WHERE id = ${entry.id}`;
+            await tx`DELETE FROM time_entry_tag_entries WHERE entry_id = ${entry.id}`;
+            await tx`
+                DELETE FROM time_entry_tags t
+                WHERE NOT EXISTS (SELECT 1 FROM time_entry_tag_entries j WHERE j.tag_id = t.id)
+            `;
             await tx`
                 INSERT INTO time_entry_audit_log ${sql({
                     entry_id: entry.id,
@@ -87,18 +107,16 @@ export async function importTimeEntries({ startDate, endDate, debug = false }) {
                 toggl_uid: e.toggl_uid,
                 started_at: e.started_at,
                 ended_at: e.ended_at,
-                tags: e.tags,
                 description: e.description,
                 import_source: IMPORT_SOURCE,
                 project: e.project,
             }));
 
             const result = await tx`
-                INSERT INTO time_entries ${sql(rows, "toggl_uid", "started_at", "ended_at", "tags", "description", "import_source", "project")}
+                INSERT INTO time_entries ${sql(rows, "toggl_uid", "started_at", "ended_at", "description", "import_source", "project")}
                 ON CONFLICT (toggl_uid) DO UPDATE SET
                     started_at = EXCLUDED.started_at,
                     ended_at = EXCLUDED.ended_at,
-                    tags = EXCLUDED.tags,
                     description = EXCLUDED.description,
                     project = EXCLUDED.project,
                     import_source = EXCLUDED.import_source,
@@ -129,22 +147,34 @@ export async function importTimeEntries({ startDate, endDate, debug = false }) {
                         },
                     })}
                 `;
+                await tx.unsafe(`SELECT set_time_entry_tags($1::bigint, $2::text[])`, [row.id, entry.tags ?? []], {
+                    prepare: false,
+                });
             }
             inserted = toInsert.length;
         }
 
         for (const { dbEntry, apiEntry, changes } of toUpdate) {
+            const setFields = changes.filter((field) => field !== "tags");
             const updateData = {};
-            for (const field of changes) {
+            for (const field of setFields) {
                 updateData[field] = apiEntry[field];
             }
             updateData.updated_at = new Date();
 
             await tx`
                 UPDATE time_entries
-                SET ${sql(updateData, ...changes, "updated_at")}
+                SET ${sql(updateData, ...setFields, "updated_at")}
                 WHERE id = ${dbEntry.id}
             `;
+
+            if (changes.includes("tags")) {
+                await tx.unsafe(
+                    `SELECT set_time_entry_tags($1::bigint, $2::text[])`,
+                    [dbEntry.id, apiEntry.tags ?? []],
+                    { prepare: false },
+                );
+            }
 
             for (const field of changes) {
                 await tx`

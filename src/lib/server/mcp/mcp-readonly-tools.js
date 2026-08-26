@@ -25,7 +25,10 @@ export async function createMcpReadonlyServer({ displayName, context }) {
                     "  - An entry is 'running' when ended_at IS NULL.\n" +
                     "  - Exclude soft-deleted entries: WHERE deleted_at IS NULL.\n" +
                     "  - Duration = ended_at - started_at; aggregate by day/week, project or tag to summarize how time is spent.\n" +
-                    "  - tags is a TEXT[] array — use unnest(tags) to search per tag.\n" +
+                    "  - Tags are normalized: time_entry_tags holds one row per distinct tag (name, exact case) and\n" +
+                    "    time_entry_tag_entries one row per (entry_id, tag_id) with a position column. Join time_entries to\n" +
+                    "    time_entry_tag_entries on entry_id, then to time_entry_tags on tag_id, to search per tag;\n" +
+                    "    match case-insensitively with lower(name).\n" +
                     "Timezone conversion:\n" +
                     "  - started_at and ended_at are TIMESTAMPTZ columns stored in UTC.\n" +
                     "  - Use the AT TIME ZONE operator to convert them to a timezone:\n" +

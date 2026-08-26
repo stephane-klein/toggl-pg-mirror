@@ -39,9 +39,17 @@ function normalizeBulkTags(raw, field) {
 // inline editor; an empty string or null clears a field.
 export async function updateTimeEntry({ id, changes }) {
     const [current] = await sql`
-        SELECT id, toggl_uid, started_at, ended_at, tags, description, project, import_source
-        FROM time_entries
-        WHERE id = ${id}
+        SELECT te.id, te.toggl_uid, te.started_at, te.ended_at,
+               COALESCE(tg.tags, '{}'::text[]) AS tags,
+               te.description, te.project, te.import_source
+        FROM time_entries te
+        LEFT JOIN LATERAL (
+            SELECT array_agg(tgt.name ORDER BY jt.position) AS tags
+            FROM time_entry_tag_entries jt
+            JOIN time_entry_tags tgt ON tgt.id = jt.tag_id
+            WHERE jt.entry_id = te.id
+        ) tg ON TRUE
+        WHERE te.id = ${id}
     `;
     if (!current) {
         error(404, `Time entry ${id} not found`);
@@ -118,9 +126,17 @@ export async function updateTimeEntriesBulk({ ids, changes }) {
 
     return sql.begin(async (tx) => {
         const currentEntries = await tx`
-            SELECT id, toggl_uid, started_at, ended_at, tags, description, project, import_source, updated_at
-            FROM time_entries
-            WHERE id = ANY(${tx.array(uniqueIds, 20)})
+            SELECT te.id, te.toggl_uid, te.started_at, te.ended_at,
+                   COALESCE(tg.tags, '{}'::text[]) AS tags,
+                   te.description, te.project, te.import_source, te.updated_at
+            FROM time_entries te
+            LEFT JOIN LATERAL (
+                SELECT array_agg(tgt.name ORDER BY jt.position) AS tags
+                FROM time_entry_tag_entries jt
+                JOIN time_entry_tags tgt ON tgt.id = jt.tag_id
+                WHERE jt.entry_id = te.id
+            ) tg ON TRUE
+            WHERE te.id = ANY(${tx.array(uniqueIds, 20)})
             FOR UPDATE
         `;
 

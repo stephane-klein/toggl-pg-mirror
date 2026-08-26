@@ -48,6 +48,12 @@ export async function importCsvFromStream(readable) {
           AND started_at <= ${maxDate}
     `;
 
+    // Hard deletes cascade to the join rows; purge dimension names left orphaned.
+    await sql`
+        DELETE FROM time_entry_tags t
+        WHERE NOT EXISTS (SELECT 1 FROM time_entry_tag_entries j WHERE j.tag_id = t.id)
+    `;
+
     const BATCH_SIZE = 2000;
     let inserted = 0;
     const allEntryIds = [];
@@ -55,11 +61,18 @@ export async function importCsvFromStream(readable) {
     for (let i = 0; i < toInsert.length; i += BATCH_SIZE) {
         const batch = toInsert.slice(i, i + BATCH_SIZE);
         const result = await sql`
-            INSERT INTO toggl.time_entries ${sql(batch, "toggl_uid", "started_at", "ended_at", "tags", "description", "import_source", "project")}
+            INSERT INTO toggl.time_entries ${sql(batch, "toggl_uid", "started_at", "ended_at", "description", "import_source", "project")}
             RETURNING id
         `;
         const ids = result.map((row) => row.id);
         allEntryIds.push(...ids);
+
+        // Tags are normalized: reconcile dimension + join for every inserted row.
+        for (let idx = 0; idx < batch.length; idx++) {
+            await sql.unsafe(`SELECT set_time_entry_tags($1::bigint, $2::text[])`, [ids[idx], batch[idx].tags ?? []], {
+                prepare: false,
+            });
+        }
         inserted += batch.length;
     }
 

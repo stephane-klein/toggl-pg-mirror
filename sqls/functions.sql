@@ -27,6 +27,166 @@ DROP FUNCTION IF EXISTS get_activity_chart_data;
 DROP FUNCTION IF EXISTS get_activity_matrix_data;
 DROP FUNCTION IF EXISTS get_charts_page_data;
 DROP FUNCTION IF EXISTS get_mcp_access_log_page_data;
+DROP FUNCTION IF EXISTS set_time_entry_tags;
+DROP FUNCTION IF EXISTS rename_time_entry_tag;
+DROP FUNCTION IF EXISTS entry_matches_tags;
+
+SET LOCAL client_min_messages = notice;
+
+-- Reconciles an entry's normalized tags: ensures every distinct tag in _tags
+-- exists in the dimension (case-sensitive identity, first-write-wins on the
+-- name), then rewrites the entry's join rows with the original array order.
+-- Orphaned dimension rows (referenced by no entry) are purged in the same
+-- transaction. This is the single write point for tags, called by every write
+-- path (upsert_time_entries, importer.js, csv-importer.js) so the dimension
+-- and join always mirror the entry's tag set.
+CREATE FUNCTION set_time_entry_tags(_entry_id bigint, _tags text[]) RETURNS void
+LANGUAGE sql
+AS $$
+    INSERT INTO time_entry_tags (name)
+    SELECT DISTINCT trim(t)
+    FROM unnest(_tags) AS t
+    WHERE trim(t) <> ''
+    ON CONFLICT (name) DO NOTHING;
+
+    DELETE FROM time_entry_tag_entries WHERE entry_id = _entry_id;
+
+    INSERT INTO time_entry_tag_entries (entry_id, tag_id, position)
+    SELECT _entry_id, tgt.id, t.tag_ord - 1
+    FROM unnest(_tags) WITH ORDINALITY AS t(tag, tag_ord)
+    JOIN time_entry_tags tgt ON tgt.name = trim(t.tag)
+    WHERE trim(t.tag) <> '';
+
+    DELETE FROM time_entry_tags t
+    WHERE NOT EXISTS (
+        SELECT 1 FROM time_entry_tag_entries j WHERE j.tag_id = t.id
+    );
+$$;
+
+-- Renames (or merges into) a tag in the dimension. Because the dimension is the
+-- source of truth for names and the join references tags by id, a rename needs
+-- no per-entry array rewrite — the new name propagates to every entry carrying
+-- it through the join. Matching is case-sensitive (Toggl semantics): _old_name
+-- must match a dimension row exactly.
+--
+-- Cases:
+--   - target lower(new) already exists → merge: repoint join rows to the
+--     existing row (dropping duplicates on the (entry_id, tag_id) PK) and
+--     delete the old row;
+--   - otherwise → rename the dimension row in place.
+--
+-- Full per-entry audit (decision: trace every touched entry) + freeze: each
+-- affected entry gets a 'manual' audit row for field_changed='tags' with the
+-- before/after tag arrays, and is frozen (manually_edited_at = NOW()) so the
+-- Toggl sync does not overwrite the rename. Returns { renamed, entries }.
+CREATE FUNCTION rename_time_entry_tag(_old_name text, _new_name text) RETURNS jsonb
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    old_tag_id bigint;
+    target_tag_id bigint;
+    affected bigint;
+    result jsonb;
+BEGIN
+    SELECT id INTO old_tag_id FROM time_entry_tags WHERE name = _old_name;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Tag "%" not found', _old_name;
+    END IF;
+
+    IF _new_name IS NULL OR trim(_new_name) = '' THEN
+        RAISE EXCEPTION 'New tag name must not be empty';
+    END IF;
+
+    SELECT count(DISTINCT entry_id) INTO affected
+    FROM time_entry_tag_entries WHERE tag_id = old_tag_id;
+
+    SELECT id INTO target_tag_id FROM time_entry_tags WHERE name = _new_name;
+
+    -- Audit every entry currently carrying the old tag, before repointing.
+    INSERT INTO time_entry_audit_log (entry_id, source, field_changed, old_value, new_value)
+    SELECT
+        j.entry_id,
+        'manual',
+        'tags',
+        -- old: the entry's tag set as it stands (with the old name)
+        (SELECT COALESCE(jsonb_agg(t.name ORDER BY jj.position), '[]'::jsonb)
+         FROM time_entry_tag_entries jj
+         JOIN time_entry_tags t ON t.id = jj.tag_id
+         WHERE jj.entry_id = j.entry_id),
+        -- new: the same set, but with the old name replaced by the new one
+        (
+            SELECT COALESCE(jsonb_agg(
+                CASE WHEN t.name = _old_name THEN _new_name ELSE t.name END
+                ORDER BY jj.position), '[]'::jsonb)
+            FROM time_entry_tag_entries jj
+            JOIN time_entry_tags t ON t.id = jj.tag_id
+            WHERE jj.entry_id = j.entry_id
+        )
+    FROM time_entry_tag_entries j
+    WHERE j.tag_id = old_tag_id;
+
+    -- Freeze affected entries so Toggl sync skips them.
+    UPDATE time_entries te
+    SET manually_edited_at = NOW(), updated_at = NOW()
+    WHERE te.id IN (SELECT DISTINCT entry_id FROM time_entry_tag_entries WHERE tag_id = old_tag_id);
+
+    IF target_tag_id IS NULL THEN
+        UPDATE time_entry_tags SET name = _new_name, updated_at = NOW() WHERE id = old_tag_id;
+    ELSE
+        -- Merge: drop join rows that would collide on the (entry_id, tag_id)
+        -- PK (entries already carrying the target tag), then repoint the rest.
+        DELETE FROM time_entry_tag_entries
+        WHERE tag_id = old_tag_id
+          AND entry_id IN (SELECT entry_id FROM time_entry_tag_entries WHERE tag_id = target_tag_id);
+        UPDATE time_entry_tag_entries SET tag_id = target_tag_id WHERE tag_id = old_tag_id;
+        DELETE FROM time_entry_tags WHERE id = old_tag_id;
+    END IF;
+
+    SELECT jsonb_build_object(
+        'renamed', _new_name,
+        'entries', affected
+    ) INTO result;
+    RETURN result;
+END;
+$$;
+
+-- Case-insensitive tag-filter predicate shared by the page-data and matching
+-- queries (ADR 002: one SQL function per render — this helper keeps the DNF
+-- logic in a single place). _tags is a DNF array [{ and: [...], not: [...] },
+-- ...]; an entry matches when at least one conjunct holds: every 'and' tag is
+-- present and no 'not' tag is present. Matching is case-insensitive via
+-- lower(name) so the UI filter stays case-insensitive (tags are stored with
+-- Toggl's exact case).
+CREATE FUNCTION entry_matches_tags(_entry_id bigint, _tags jsonb) RETURNS boolean
+LANGUAGE sql STABLE PARALLEL SAFE
+AS $$
+    SELECT _tags IS NULL
+        OR EXISTS (
+            SELECT 1
+            FROM jsonb_array_elements(_tags) AS conj(j)
+            WHERE NOT EXISTS (
+                    SELECT 1
+                    FROM jsonb_array_elements_text(conj.j -> 'and') AS v
+                    WHERE NOT EXISTS (
+                        SELECT 1
+                        FROM time_entry_tag_entries jt
+                        JOIN time_entry_tags tgt ON tgt.id = jt.tag_id
+                        WHERE jt.entry_id = _entry_id
+                          AND lower(tgt.name) = lower(v)
+                    )
+                )
+              AND NOT EXISTS (
+                    SELECT 1
+                    FROM time_entry_tag_entries jt
+                    JOIN time_entry_tags tgt ON tgt.id = jt.tag_id
+                    WHERE jt.entry_id = _entry_id
+                      AND lower(tgt.name) IN (
+                          SELECT lower(v)
+                          FROM jsonb_array_elements_text(conj.j -> 'not') AS v
+                      )
+                )
+        );
+$$;
 
 SET LOCAL client_min_messages = notice;
 -- Returns the day (as 'YYYY-MM-DD') closest to _ref that has at least one
@@ -90,23 +250,33 @@ AS $$
     page AS (
         (
             -- ascending ordering: first page and after-cursor navigation
-            SELECT id, description, tags, started_at, ended_at
-            FROM time_entries
+            SELECT
+                te.id,
+                te.description,
+                COALESCE((
+                    SELECT array_agg(tgt.name ORDER BY jt.position)
+                    FROM time_entry_tag_entries jt
+                    JOIN time_entry_tags tgt ON tgt.id = jt.tag_id
+                    WHERE jt.entry_id = te.id
+                ), '{}'::text[]) AS tags,
+                te.started_at,
+                te.ended_at
+            FROM time_entries te
             WHERE _asc
-              AND deleted_at IS NULL
-              AND started_at >= _from::timestamptz
-              AND started_at < _to::timestamptz
+              AND te.deleted_at IS NULL
+              AND te.started_at >= _from::timestamptz
+              AND te.started_at < _to::timestamptz
               AND (
                   _q IS NULL
                   OR _q = ''
-                  OR (_q = '/null' AND description IS NULL)
+                  OR (_q = '/null' AND te.description IS NULL)
                   OR (
                       left(_q, 1) = '"'
                       AND right(_q, 1) = '"'
                       AND length(_q) >= 2
                       AND (
                           substring(_q, 2, length(_q) - 2) = ''
-                          OR description ILIKE immutable_unaccent(substring(_q, 2, length(_q) - 2))
+                          OR te.description ILIKE immutable_unaccent(substring(_q, 2, length(_q) - 2))
                       )
                   )
                   OR (
@@ -115,61 +285,55 @@ AS $$
                       AND NOT EXISTS (
                           SELECT 1
                           FROM unnest(string_to_array(_q, ' ')) w
-                          WHERE immutable_unaccent(description) NOT ILIKE immutable_unaccent('%' || w || '%')
+                          WHERE immutable_unaccent(te.description) NOT ILIKE immutable_unaccent('%' || w || '%')
                       )
                   )
               )
-              AND (
-                  _tags IS NULL
-                  OR EXISTS (
-                      SELECT 1
-                      FROM jsonb_array_elements(_tags) AS conj(j)
-                      WHERE immutable_lower(tags) @> ARRAY(
-                                SELECT immutable_lower(v)
-                                FROM jsonb_array_elements_text(conj.j -> 'and') AS v
-                            )
-                        AND NOT (
-                            immutable_lower(tags) && ARRAY(
-                                SELECT immutable_lower(v)
-                                FROM jsonb_array_elements_text(conj.j -> 'not') AS v
-                            )
-                        )
-                  )
-              )
+              AND entry_matches_tags(te.id, _tags)
               AND (
                   (_before_started_at IS NULL AND _after_started_at IS NULL)
                   OR (
                       _before_started_at IS NOT NULL
-                      AND (started_at, id) < (_before_started_at, _before_id)
+                      AND (te.started_at, te.id) < (_before_started_at, _before_id)
                   )
                   OR (
                       _after_started_at IS NOT NULL
-                      AND (started_at, id) > (_after_started_at, _after_id)
+                      AND (te.started_at, te.id) > (_after_started_at, _after_id)
                   )
               )
-            ORDER BY started_at ASC, id ASC
+            ORDER BY te.started_at ASC, te.id ASC
             LIMIT _limit + 1
         )
         UNION ALL
         (
             -- descending ordering: sort=desc and before-cursor navigation
-            SELECT id, description, tags, started_at, ended_at
-            FROM time_entries
+            SELECT
+                te.id,
+                te.description,
+                COALESCE((
+                    SELECT array_agg(tgt.name ORDER BY jt.position)
+                    FROM time_entry_tag_entries jt
+                    JOIN time_entry_tags tgt ON tgt.id = jt.tag_id
+                    WHERE jt.entry_id = te.id
+                ), '{}'::text[]) AS tags,
+                te.started_at,
+                te.ended_at
+            FROM time_entries te
             WHERE NOT _asc
-              AND deleted_at IS NULL
-              AND started_at >= _from::timestamptz
-              AND started_at < _to::timestamptz
+              AND te.deleted_at IS NULL
+              AND te.started_at >= _from::timestamptz
+              AND te.started_at < _to::timestamptz
               AND (
                   _q IS NULL
                   OR _q = ''
-                  OR (_q = '/null' AND description IS NULL)
+                  OR (_q = '/null' AND te.description IS NULL)
                   OR (
                       left(_q, 1) = '"'
                       AND right(_q, 1) = '"'
                       AND length(_q) >= 2
                       AND (
                           substring(_q, 2, length(_q) - 2) = ''
-                          OR description ILIKE immutable_unaccent(substring(_q, 2, length(_q) - 2))
+                          OR te.description ILIKE immutable_unaccent(substring(_q, 2, length(_q) - 2))
                       )
                   )
                   OR (
@@ -178,39 +342,23 @@ AS $$
                       AND NOT EXISTS (
                           SELECT 1
                           FROM unnest(string_to_array(_q, ' ')) w
-                          WHERE immutable_unaccent(description) NOT ILIKE immutable_unaccent('%' || w || '%')
+                          WHERE immutable_unaccent(te.description) NOT ILIKE immutable_unaccent('%' || w || '%')
                       )
                   )
               )
-              AND (
-                  _tags IS NULL
-                  OR EXISTS (
-                      SELECT 1
-                      FROM jsonb_array_elements(_tags) AS conj(j)
-                      WHERE immutable_lower(tags) @> ARRAY(
-                                SELECT immutable_lower(v)
-                                FROM jsonb_array_elements_text(conj.j -> 'and') AS v
-                            )
-                        AND NOT (
-                            immutable_lower(tags) && ARRAY(
-                                SELECT immutable_lower(v)
-                                FROM jsonb_array_elements_text(conj.j -> 'not') AS v
-                            )
-                        )
-                  )
-              )
+              AND entry_matches_tags(te.id, _tags)
               AND (
                   (_before_started_at IS NULL AND _after_started_at IS NULL)
                   OR (
                       _before_started_at IS NOT NULL
-                      AND (started_at, id) < (_before_started_at, _before_id)
+                      AND (te.started_at, te.id) < (_before_started_at, _before_id)
                   )
                   OR (
                       _after_started_at IS NOT NULL
-                      AND (started_at, id) > (_after_started_at, _after_id)
+                      AND (te.started_at, te.id) > (_after_started_at, _after_id)
                   )
               )
-            ORDER BY started_at DESC, id DESC
+            ORDER BY te.started_at DESC, te.id DESC
             LIMIT _limit + 1
         )
     ),
@@ -244,23 +392,7 @@ AS $$
                   )
               )
           )
-          AND (
-              _tags IS NULL
-              OR EXISTS (
-                  SELECT 1
-                  FROM jsonb_array_elements(_tags) AS conj(j)
-                  WHERE immutable_lower(tags) @> ARRAY(
-                            SELECT immutable_lower(v)
-                            FROM jsonb_array_elements_text(conj.j -> 'and') AS v
-                        )
-                    AND NOT (
-                        immutable_lower(tags) && ARRAY(
-                            SELECT immutable_lower(v)
-                            FROM jsonb_array_elements_text(conj.j -> 'not') AS v
-                        )
-                    )
-              )
-          )
+          AND entry_matches_tags(id, _tags)
     ),
     prev_has AS (
         SELECT EXISTS (
@@ -371,21 +503,32 @@ AS $$
         (
             SELECT jsonb_agg(x)
             FROM (
-                SELECT id::text AS id, description, tags, started_at, ended_at, started_at::text AS started_at_txt
-                FROM time_entries
-                WHERE deleted_at IS NULL
-                  AND started_at >= _from::timestamptz
-                  AND started_at < _to::timestamptz
+                SELECT
+                te.id::text AS id,
+                te.description,
+                COALESCE((
+                    SELECT array_agg(tgt.name ORDER BY jt.position)
+                    FROM time_entry_tag_entries jt
+                    JOIN time_entry_tags tgt ON tgt.id = jt.tag_id
+                    WHERE jt.entry_id = te.id
+                ), '{}'::text[]) AS tags,
+                te.started_at,
+                te.ended_at,
+                te.started_at::text AS started_at_txt
+                FROM time_entries te
+                WHERE te.deleted_at IS NULL
+                  AND te.started_at >= _from::timestamptz
+                  AND te.started_at < _to::timestamptz
                   AND (
                       _q IS NULL
                       OR _q = ''
-                      OR (_q = '/null' AND description IS NULL)
+                      OR (_q = '/null' AND te.description IS NULL)
                       OR (
                           left(_q, 1) = '"'
                           AND right(_q, 1) = '"'
                           AND (
                               substring(_q, 2, length(_q) - 2) = ''
-                              OR description ILIKE immutable_unaccent(substring(_q, 2, length(_q) - 2))
+                              OR te.description ILIKE immutable_unaccent(substring(_q, 2, length(_q) - 2))
                           )
                       )
                       OR (
@@ -394,28 +537,12 @@ AS $$
                           AND NOT EXISTS (
                               SELECT 1
                               FROM unnest(string_to_array(_q, ' ')) w
-                              WHERE immutable_unaccent(description) NOT ILIKE immutable_unaccent('%' || w || '%')
+                              WHERE immutable_unaccent(te.description) NOT ILIKE immutable_unaccent('%' || w || '%')
                           )
                       )
                   )
-                  AND (
-                      _tags IS NULL
-                      OR EXISTS (
-                          SELECT 1
-                          FROM jsonb_array_elements(_tags) AS conj(j)
-                          WHERE immutable_lower(tags) @> ARRAY(
-                                    SELECT immutable_lower(v)
-                                    FROM jsonb_array_elements_text(conj.j -> 'and') AS v
-                                )
-                            AND NOT (
-                                immutable_lower(tags) && ARRAY(
-                                    SELECT immutable_lower(v)
-                                    FROM jsonb_array_elements_text(conj.j -> 'not') AS v
-                                )
-                            )
-                      )
-                  )
-                ORDER BY started_at ASC, id ASC
+                  AND entry_matches_tags(te.id, _tags)
+                ORDER BY te.started_at ASC, te.id ASC
             ) x
         ),
         '[]'::jsonb
@@ -502,9 +629,16 @@ BEGIN
         )
     ),
     existing AS (
-        SELECT te.id, te.toggl_uid, te.started_at, te.ended_at, te.tags,
+        SELECT te.id, te.toggl_uid, te.started_at, te.ended_at,
+               COALESCE(tg.tags, '{}'::text[]) AS tags,
                te.description, te.project, te.updated_at
         FROM time_entries te
+        LEFT JOIN LATERAL (
+            SELECT array_agg(tgt.name ORDER BY jt.position) AS tags
+            FROM time_entry_tag_entries jt
+            JOIN time_entry_tags tgt ON tgt.id = jt.tag_id
+            WHERE jt.entry_id = te.id
+        ) tg ON TRUE
         JOIN input i
           ON (i.id IS NOT NULL AND te.id = i.id)
           OR (i.id IS NULL AND i.toggl_uid IS NOT NULL AND te.toggl_uid = i.toggl_uid)
@@ -525,16 +659,15 @@ BEGIN
           )
     ),
     inserted AS (
-        INSERT INTO time_entries (toggl_uid, started_at, ended_at, tags, description, project, import_source, manually_edited_at)
-        SELECT i.toggl_uid, i.started_at, i.ended_at, COALESCE(i.tags, '{}'),
-               i.description, i.project, _import_source,
+        INSERT INTO time_entries (toggl_uid, started_at, ended_at, description, project, import_source, manually_edited_at)
+        SELECT i.toggl_uid, i.started_at, i.ended_at, i.description, i.project, _import_source,
                CASE WHEN _source = 'manual' THEN NOW() END
         FROM input i
         LEFT JOIN existing e
           ON (i.id IS NOT NULL AND e.id = i.id)
           OR (i.id IS NULL AND i.toggl_uid IS NOT NULL AND e.toggl_uid = i.toggl_uid)
         WHERE e.id IS NULL
-        RETURNING id, started_at, ended_at, tags, description, project
+        RETURNING id, toggl_uid, started_at, ended_at, description, project
     ),
     audit_created AS (
         INSERT INTO time_entry_audit_log (entry_id, source, field_changed, old_value, new_value)
@@ -544,15 +677,17 @@ BEGIN
                    'ended_at', ins.ended_at,
                    'description', ins.description,
                    'project', ins.project,
-                   'tags', ins.tags
+                   'tags', COALESCE(i.tags, '{}')
                )
         FROM inserted ins
+        JOIN input i
+          ON (i.id IS NOT NULL AND ins.id = i.id)
+          OR (i.toggl_uid IS NOT NULL AND ins.toggl_uid = i.toggl_uid)
     ),
     updated AS (
         UPDATE time_entries te
         SET started_at = i.started_at,
             ended_at = i.ended_at,
-            tags = COALESCE(i.tags, '{}'),
             description = i.description,
             project = i.project,
             updated_at = NOW(),
@@ -590,6 +725,35 @@ BEGIN
         'updated', (SELECT count(*) FROM updated),
         'unchanged', (SELECT count(*) FROM existing) - (SELECT count(*) FROM updated)
     ) INTO result;
+
+    -- Reconcile the normalized tags of every inserted/updated entry (their
+    -- updated_at was set to NOW() above; unchanged rows keep their old value).
+    -- The old tag set is reconstructed from the join (name, exact case) and
+    -- compared to the input, so a case-only drift from a manual edit is
+    -- preserved by set_time_entry_tags (first write wins on the dimension
+    -- name). Entries whose tags did not change are skipped.
+    PERFORM set_time_entry_tags(r.entry_id, COALESCE(r.tags, '{}'::text[]))
+    FROM (
+        SELECT te.id AS entry_id, i.tags, COALESCE(tg.tags, '{}'::text[]) AS old_tags
+        FROM (
+            SELECT id, toggl_uid, started_at, ended_at, tags, description, project, updated_at
+            FROM jsonb_to_recordset(_entries) AS t(
+                id bigint, toggl_uid bigint, started_at timestamptz, ended_at timestamptz,
+                tags text[], description text, project text, updated_at timestamptz
+            )
+        ) i
+        JOIN time_entries te
+          ON (i.id IS NOT NULL AND te.id = i.id)
+          OR (i.id IS NULL AND i.toggl_uid IS NOT NULL AND te.toggl_uid = i.toggl_uid)
+        LEFT JOIN LATERAL (
+            SELECT array_agg(tgt.name ORDER BY jt.position) AS tags
+            FROM time_entry_tag_entries jt
+            JOIN time_entry_tags tgt ON tgt.id = jt.tag_id
+            WHERE jt.entry_id = te.id
+        ) tg ON TRUE
+        WHERE te.updated_at = NOW()
+          AND i.tags IS DISTINCT FROM COALESCE(tg.tags, '{}'::text[])
+    ) r;
 
     RETURN result;
 END;
@@ -735,7 +899,13 @@ AS $$
                                    THEN 1 ELSE 0 END AS day
                     FROM time_entries te
                     WHERE te.deleted_at IS NULL
-                      AND immutable_lower(te.tags) @> ARRAY['au lit']
+                      AND EXISTS (
+                          SELECT 1
+                          FROM time_entry_tag_entries jt
+                          JOIN time_entry_tags tgt ON tgt.id = jt.tag_id
+                          WHERE jt.entry_id = te.id
+                            AND lower(tgt.name) = 'au lit'
+                      )
                       AND te.started_at >= ((_from::timestamp + time '04:00') AT TIME ZONE 'Europe/Paris')
                       AND te.started_at <  ((_to::timestamp   + time '04:00') AT TIME ZONE 'Europe/Paris')
                 ) d
@@ -777,19 +947,20 @@ AS $$
                 FROM (
                     SELECT
                         (te.started_at AT TIME ZONE 'Europe/Paris')::date AS day,
-                        immutable_lower(t.tag) AS tag,
+                        lower(tgt.name) AS tag,
                         EXTRACT(EPOCH FROM (COALESCE(te.ended_at, now()) - te.started_at)) / 3600.0
                             AS duration_hours
                     FROM time_entries te
-                    CROSS JOIN LATERAL unnest(te.tags) AS t(tag)
+                    JOIN time_entry_tag_entries jt ON jt.entry_id = te.id
+                    JOIN time_entry_tags tgt ON tgt.id = jt.tag_id
                     WHERE te.deleted_at IS NULL
                       -- Exactly the entries whose Europe/Paris calendar day is in
                       -- [_from, _to); kept as a started_at range so the index on
                       -- started_at applies (the Paris-day equality would not).
                       AND te.started_at >= (_from::timestamp AT TIME ZONE 'Europe/Paris')
                       AND te.started_at <  (_to::timestamp   AT TIME ZONE 'Europe/Paris')
-                      AND immutable_lower(t.tag) = ANY (
-                          SELECT immutable_lower(v)
+                      AND lower(tgt.name) = ANY (
+                          SELECT lower(v)
                           FROM jsonb_array_elements_text(_tags) AS v
                       )
                 ) e

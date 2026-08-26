@@ -66,9 +66,10 @@ export async function ensureMcpReaderRole() {
         await sql.unsafe(`
             GRANT USAGE ON SCHEMA "${POSTGRES_SCHEMA}" TO "${role}";
             GRANT SELECT ON "${POSTGRES_SCHEMA}".time_entries TO "${role}";
+            GRANT SELECT ON "${POSTGRES_SCHEMA}".time_entry_tags TO "${role}";
+            GRANT SELECT ON "${POSTGRES_SCHEMA}".time_entry_tag_entries TO "${role}";
             GRANT EXECUTE ON FUNCTION "${POSTGRES_SCHEMA}".immutable_unaccent(text) TO "${role}";
             GRANT EXECUTE ON FUNCTION "${POSTGRES_SCHEMA}".immutable_lower(text) TO "${role}";
-            GRANT EXECUTE ON FUNCTION "${POSTGRES_SCHEMA}".immutable_lower(text[]) TO "${role}";
         `);
 
         // Best-effort: the app role may lack the right to ALTER ROLE when the

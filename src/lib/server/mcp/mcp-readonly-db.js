@@ -32,18 +32,25 @@ let cachedSchema = null;
 export async function getTimeEntriesSchema() {
     if (cachedSchema) return cachedSchema;
 
-    const rows = await sqlReadonly`
-        SELECT a.attname AS column_name,
-               format_type(a.atttypid, a.atttypmod) AS data_type
-        FROM pg_attribute a
-        JOIN pg_class c ON c.oid = a.attrelid
-        JOIN pg_namespace n ON n.oid = c.relnamespace
-        WHERE n.nspname = ${POSTGRES_SCHEMA}
-          AND c.relname = 'time_entries'
-          AND a.attnum > 0 AND NOT a.attisdropped
-        ORDER BY a.attnum`;
+    const describe = async (table) => {
+        const rows = await sqlReadonly`
+            SELECT a.attname AS column_name,
+                   format_type(a.atttypid, a.atttypmod) AS data_type
+            FROM pg_attribute a
+            JOIN pg_class c ON c.oid = a.attrelid
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname = ${POSTGRES_SCHEMA}
+              AND c.relname = ${table}
+              AND a.attnum > 0 AND NOT a.attisdropped
+            ORDER BY a.attnum`;
+        return `  ${rows.map(({ column_name, data_type }) => `${column_name}  ${data_type}`).join(",\n  ")}`;
+    };
 
-    cachedSchema = `time_entries(\n${rows.map(({ column_name, data_type }) => `  ${column_name}  ${data_type}`).join(",\n")}\n)`;
+    cachedSchema = [
+        `time_entries(\n  ${await describe("time_entries")}\n)`,
+        `time_entry_tags(\n  ${await describe("time_entry_tags")}\n)`,
+        `time_entry_tag_entries(\n  ${await describe("time_entry_tag_entries")}\n)`,
+    ].join(", ");
     return cachedSchema;
 }
 
