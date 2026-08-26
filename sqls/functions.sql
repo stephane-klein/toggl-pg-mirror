@@ -882,6 +882,9 @@ $$;
 -- these functions so it keeps EXECUTE implicitly; revoking PUBLIC only blocks
 -- other roles (e.g. the MCP reader role) until an explicit GRANT is added.
 -- Placed after all CREATEs because a CREATE resets privileges to the default.
+-- Silence the one-per-extension-function WARNING 01006 emitted by the REVOKE
+-- below (nothing to revoke on pg_trgm / unaccent ACLs).
+SET LOCAL client_min_messages = error;
 DO $$
 DECLARE
     schema_name text := current_schema();
