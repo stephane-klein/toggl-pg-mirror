@@ -75,7 +75,15 @@ export async function createMcpReadonlyServer({ displayName, context }) {
         let result;
         let success = true;
         try {
-            result = await sqlReadonly.unsafe(args.query);
+            // Run each query in a read-only transaction scoped to one pooled
+            // connection, so the hardening settings apply even when the app role
+            // could not ALTER ROLE (e.g. a role provisioned by CNPG managed.roles).
+            result = await sqlReadonly.begin(async (tx) => {
+                await tx`SET TRANSACTION READ ONLY`;
+                await tx`SET LOCAL statement_timeout = '10s'`;
+                await tx`SET LOCAL idle_in_transaction_session_timeout = '10s'`;
+                return await tx.unsafe(args.query);
+            });
         } catch (err) {
             success = false;
             throw err;

@@ -106,7 +106,20 @@ async function handleMcp(event) {
         );
     }
 
-    const { transport } = await createSession(user, context);
+    let transport;
+    try {
+        ({ transport } = await createSession(user, context));
+    } catch (err) {
+        logger.error({ err }, "Failed to create MCP read-only session");
+        return new Response(
+            JSON.stringify({
+                jsonrpc: "2.0",
+                error: { code: -32000, message: "MCP read-only access unavailable" },
+                id: null,
+            }),
+            { status: 503, headers: { "Content-Type": "application/json" } },
+        );
+    }
     return transport.handleRequest(request);
 }
 

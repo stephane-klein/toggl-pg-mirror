@@ -29,29 +29,65 @@ export async function ensureMcpReaderRole() {
         return;
     }
 
+    const [current] = await sql`
+        SELECT rolsuper, rolcreaterole FROM pg_roles WHERE rolname = current_user
+    `;
+    const canManageRoles = Boolean(current?.rolsuper || current?.rolcreaterole);
+
+    const [existing] = await sql`SELECT 1 AS found FROM pg_roles WHERE rolname = ${role}`;
+
+    if (!existing && !canManageRoles) {
+        logger.error(
+            { role, env: MCP_READER_PASSWORD_ENV },
+            `Cannot create MCP reader role "${role}" — the current PostgreSQL role cannot CREATE ROLE. ` +
+                "Provision the role yourself (e.g. via CloudNativePG spec.managed.roles) with a password " +
+                "matching the password env var, then restart. MCP read-only access stays disabled.",
+        );
+        return;
+    }
+
     try {
+        // When the role was provisioned externally (e.g. CNPG managed.roles),
+        // the app role cannot ALTER ROLE — its password comes from the same
+        // secret, so it is already correct.
+        if (canManageRoles) {
+            await sql.unsafe(`
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '${escapeSqlString(role)}') THEN
+                        CREATE ROLE "${role}" LOGIN;
+                    END IF;
+                END
+                $$;
+                ALTER ROLE "${role}" WITH LOGIN PASSWORD '${escapeSqlString(password)}';
+            `);
+        }
+
         await sql.unsafe(`
-            DO $$
-            BEGIN
-                IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '${escapeSqlString(role)}') THEN
-                    CREATE ROLE "${role}" LOGIN;
-                END IF;
-            END
-            $$;
-            ALTER ROLE "${role}" WITH LOGIN PASSWORD '${escapeSqlString(password)}';
             GRANT USAGE ON SCHEMA "${POSTGRES_SCHEMA}" TO "${role}";
             GRANT SELECT ON "${POSTGRES_SCHEMA}".time_entries TO "${role}";
-            -- Fuzzy-search helpers (immutable wrappers + the underlying unaccent
-            -- extension function): granted explicitly because functions.sql
-            -- revokes PUBLIC EXECUTE by default. Re-applied on every start.
             GRANT EXECUTE ON FUNCTION "${POSTGRES_SCHEMA}".immutable_unaccent(text) TO "${role}";
             GRANT EXECUTE ON FUNCTION "${POSTGRES_SCHEMA}".immutable_lower(text) TO "${role}";
             GRANT EXECUTE ON FUNCTION "${POSTGRES_SCHEMA}".immutable_lower(text[]) TO "${role}";
             GRANT EXECUTE ON FUNCTION "${POSTGRES_SCHEMA}".unaccent(text) TO "${role}";
-            ALTER ROLE "${role}" SET statement_timeout = '10s';
-            ALTER ROLE "${role}" SET idle_in_transaction_session_timeout = '10s';
-            ALTER ROLE "${role}" SET default_transaction_read_only = on;
         `);
+
+        // Best-effort: the app role may lack the right to ALTER ROLE when the
+        // role was provisioned externally. The reader client also applies these
+        // settings per connection, so a failure here is not blocking.
+        try {
+            await sql.unsafe(`
+                ALTER ROLE "${role}" SET statement_timeout = '10s';
+                ALTER ROLE "${role}" SET idle_in_transaction_session_timeout = '10s';
+                ALTER ROLE "${role}" SET default_transaction_read_only = on;
+            `);
+        } catch (err) {
+            logger.warn(
+                { err, role },
+                "Failed to set default session parameters on MCP reader role — applied per connection instead",
+            );
+        }
+
         logger.info({ role, schema: POSTGRES_SCHEMA }, "MCP reader role ensured");
     } catch (err) {
         logger.error({ err, role }, "Failed to create MCP reader role");

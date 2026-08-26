@@ -57,11 +57,60 @@ The service exposes a read-only [MCP](https://modelcontextprotocol.io) server at
 enforced both by HTTP authentication (a per-user MCP token) and by a dedicated
 PostgreSQL role with `SELECT`-only privileges on `time_entries`.
 
-At startup the app creates this reader role when the
-`mcp-reader-postgres-password` key (default) of the application secret is set.
-The role name defaults to `toggl_mcp_reader`, configurable via `mcp.readerRole`.
-If the key is absent, the MCP read-only access is silently disabled. The app's
-DB user must have permission to `CREATE ROLE` (the standard CNPG app user does).
+The reader role name defaults to `toggl_mcp_reader`, configurable via
+`mcp.readerRole`. Its password is read from the `mcp-reader-postgres-password`
+key (default) of the application secret; if that key is absent, the MCP
+read-only access is disabled.
+
+At startup the app grants the role its privileges (`USAGE` on the schema,
+`SELECT` on `time_entries`, `EXECUTE` on the fuzzy-search helpers). It only
+**creates** the role when the application database user has `CREATE ROLE`
+(local dev with a superuser); on CloudNativePG the application user has neither
+`CREATEROLE` nor superuser, so the role must be provisioned by the operator
+first — see below. Session hardening (read-only transaction, 10 s statement
+timeout) is applied by the app on every connection, so nothing needs to be
+configured at the database level.
+
+#### Provisioning the reader role on CloudNativePG
+
+The CNPG application user (e.g. `memex`) cannot create roles, so declare the
+reader role with [CNPG role management](https://cloudnative-pg.io/docs/current/declarative_role_management/).
+The role password must **match** the `mcp-reader-postgres-password` value of the
+application secret.
+
+1. Pick a password and store it in a Secret in the CNPG cluster namespace (the
+   role's `passwordSecret` is read there, key `password`):
+
+   ```bash
+   $ kubectl create secret generic toggl-mcp-reader -n memex \
+       --from-literal=password=YOUR_READER_PASSWORD
+   ```
+
+2. Declare the role in the `memex` cluster values (`helmfile/values/cnpg-memex.yaml`,
+   chart `cnpg/cluster` — `cluster.roles` maps to `spec.managed.roles`):
+
+   ```yaml
+   cluster:
+     managed:
+       roles:
+         - name: toggl_mcp_reader
+           login: true
+           passwordSecret:
+             name: toggl-mcp-reader
+   ```
+
+3. Use the **same** password for the application secret key
+   `mcp-reader-postgres-password` (e.g. `openssl rand -hex 24` stored in both
+   secrets).
+
+4. Apply (`helmfile apply`) and restart the app. On startup `ensureMcpReaderRole`
+   skips creating or altering the role (the app has no such privilege) and only
+   applies the grants; session hardening is applied per connection.
+
+As an alternative to role management (e.g. when you prefer one-shot SQL), the
+cluster has `enableSuperuserAccess: true`, so you can create the role manually
+with the superuser secret (`memex-superuser`) — but the declarative
+`managed.roles` approach is idempotent and GitOps-friendly.
 
 ### Admin token
 
