@@ -140,7 +140,7 @@ functions by default. Any other role that needs a function gets an explicit,
 per-function `GRANT EXECUTE`. The MCP reader role's grants live in
 `ensureMcpReaderRole` (`src/lib/server/mcp/mcp-reader-role.js`): `SELECT` on
 `time_entries` plus `EXECUTE` on the fuzzy-search helpers `immutable_unaccent`,
-`immutable_lower` and `unaccent`. Never rely on PUBLIC EXECUTE for a new
+`immutable_lower`. Never rely on PUBLIC EXECUTE for a new
 function; add an explicit grant instead.
 
 ## Node.js Paradigms

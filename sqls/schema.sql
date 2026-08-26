@@ -4,8 +4,11 @@ CREATE EXTENSION IF NOT EXISTS unaccent;
 
 -- IMMUTABLE wrapper around unaccent() for use in a trigram GIN index
 -- (PostgreSQL requires IMMUTABLE for index expressions; unaccent() is STABLE by default).
+-- SECURITY DEFINER: the read-only MCP role uses it for fuzzy accent-insensitive
+-- search without needing direct EXECUTE on the unaccent extension function.
 CREATE OR REPLACE FUNCTION immutable_unaccent(input_text text) RETURNS text
-LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT
+LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT SECURITY DEFINER
+SET search_path FROM CURRENT
 RETURN unaccent(input_text);
 
 -- IMMUTABLE lowercase wrappers for the case-insensitive tags GIN index

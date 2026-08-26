@@ -69,7 +69,6 @@ export async function ensureMcpReaderRole() {
             GRANT EXECUTE ON FUNCTION "${POSTGRES_SCHEMA}".immutable_unaccent(text) TO "${role}";
             GRANT EXECUTE ON FUNCTION "${POSTGRES_SCHEMA}".immutable_lower(text) TO "${role}";
             GRANT EXECUTE ON FUNCTION "${POSTGRES_SCHEMA}".immutable_lower(text[]) TO "${role}";
-            GRANT EXECUTE ON FUNCTION "${POSTGRES_SCHEMA}".unaccent(text) TO "${role}";
         `);
 
         // Best-effort: the app role may lack the right to ALTER ROLE when the
@@ -82,9 +81,9 @@ export async function ensureMcpReaderRole() {
                 ALTER ROLE "${role}" SET default_transaction_read_only = on;
             `);
         } catch (err) {
-            logger.warn(
+            logger.debug(
                 { err, role },
-                "Failed to set default session parameters on MCP reader role — applied per connection instead",
+                "Cannot set default session parameters on MCP reader role — applied per connection instead",
             );
         }
 
