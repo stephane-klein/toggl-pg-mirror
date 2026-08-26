@@ -26,6 +26,17 @@ export async function createMcpReadonlyServer({ displayName, context }) {
                     "  - Exclude soft-deleted entries: WHERE deleted_at IS NULL.\n" +
                     "  - Duration = ended_at - started_at; aggregate by day/week, project or tag to summarize how time is spent.\n" +
                     "  - tags is a TEXT[] array — use unnest(tags) to search per tag.\n" +
+                    "Timezone conversion:\n" +
+                    "  - started_at and ended_at are TIMESTAMPTZ columns stored in UTC.\n" +
+                    "  - Use the AT TIME ZONE operator to convert them to a timezone:\n" +
+                    "      started_at AT TIME ZONE 'Europe/Paris'\n" +
+                    "  - Unless the user asks for another timezone, convert to the Paris timezone (Europe/Paris) by default.\n" +
+                    "Example:\n" +
+                    "  SELECT started_at AT TIME ZONE 'Europe/Paris' AS started_at_paris,\n" +
+                    "         ended_at AT TIME ZONE 'Europe/Paris' AS ended_at_paris\n" +
+                    "  FROM time_entries\n" +
+                    "  WHERE deleted_at IS NULL\n" +
+                    "  LIMIT 5;\n" +
                     "Only SELECT, EXPLAIN, and WITH (read-only CTE) queries are allowed.",
                 inputSchema: {
                     type: "object",
