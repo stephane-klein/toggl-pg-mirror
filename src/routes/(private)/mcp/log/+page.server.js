@@ -1,4 +1,4 @@
-import { getMcpAccessLogPageData } from "$lib/backend/mcp-access-log.js";
+import { getMcpAccessLogPageData } from "$lib/server/mcp-access-log.js";
 import { format, startOfMonth, subDays } from "date-fns";
 
 const PAGE_SIZE = 100;

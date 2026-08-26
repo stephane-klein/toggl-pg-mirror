@@ -1,9 +1,6 @@
 import { json } from "@sveltejs/kit";
 import { safeParse } from "valibot";
-import {
-    getUserActivityMatrixCategories,
-    setUserActivityMatrixCategories,
-} from "$lib/backend/activity-matrix-store.js";
+import { getUserActivityMatrixCategories, setUserActivityMatrixCategories } from "$lib/server/activity-matrix-store.js";
 import { activityMatrixCategoriesSchema } from "$lib/schemas/activity-matrix.js";
 import { problem } from "../../_problem.js";
 

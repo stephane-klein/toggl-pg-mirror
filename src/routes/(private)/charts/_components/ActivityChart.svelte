@@ -2,8 +2,8 @@
     import { onMount } from "svelte";
     import { scaleLinear, scaleBand } from "d3-scale";
 
-    import { fmtTime, fmtDuration, DAY_START_HOUR } from "$lib/backend/activity-chart-utils.js";
-    import { computeSleepStats } from "$lib/backend/sleep-stats.js";
+    import { fmtTime, fmtDuration, DAY_START_HOUR } from "$lib/shared/activity-chart-utils.js";
+    import { computeSleepStats } from "$lib/shared/sleep-stats.js";
 
     let { days = [], segments = [], color = "#534AB7", chartHeight = 420 } = $props();
 

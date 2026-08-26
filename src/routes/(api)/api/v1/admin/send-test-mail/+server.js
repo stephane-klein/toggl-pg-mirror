@@ -2,8 +2,8 @@ import { json } from "@sveltejs/kit";
 import { email, pipe, safeParse, string } from "valibot";
 import { requireAdminToken } from "../_helpers.js";
 import { problem } from "../../_problem.js";
-import { sendMail } from "$lib/backend/mailer.js";
-import { logger } from "$lib/backend/logger.js";
+import { sendMail } from "$lib/server/mailer.js";
+import { logger } from "$lib/server/logger.js";
 
 const TEST_EMAIL_TO = process.env.TEST_EMAIL_TO;
 const SUBJECT = "Test email from toggl-pg-mirror";

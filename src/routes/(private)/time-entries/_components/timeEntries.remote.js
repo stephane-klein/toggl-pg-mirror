@@ -2,12 +2,9 @@ import { command, getRequestEvent } from "$app/server";
 
 import { requireUser } from "$lib/server/require-user.js";
 
-import {
-    getTimeEntriesPageData,
-    getMatchingTimeEntries as loadMatchingTimeEntries,
-} from "$lib/backend/time-entries.js";
-import { buildPaginationHrefs } from "$lib/backend/timeEntriesUrl.js";
-import { updateTimeEntry, updateTimeEntriesBulk, undoTimeEntryOperation } from "$lib/backend/updateTimeEntry.js";
+import { getTimeEntriesPageData, getMatchingTimeEntries as loadMatchingTimeEntries } from "$lib/server/time-entries.js";
+import { buildPaginationHrefs } from "$lib/shared/timeEntriesUrl.js";
+import { updateTimeEntry, updateTimeEntriesBulk, undoTimeEntryOperation } from "$lib/server/updateTimeEntry.js";
 import {
     bulkEditTimeEntriesCommandSchema,
     getMatchingTimeEntriesCommandSchema,

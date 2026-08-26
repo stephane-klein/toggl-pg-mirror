@@ -10,8 +10,8 @@ The header nav (`GoTo`, `ModeSelector`, and the `DayNav`/`WeekNav`/`MonthNav`/
 
 All nav hrefs pre-computed on the server via `computeTimeEntriesNav(basePath,
 url, referenceDate)` and `buildPaginationHrefs()` in
-`$lib/backend/timeEntriesUrl.js`, plus `computeGoToData(basePath, url, sort, q,
-goto)` in `$lib/backend/time-entries.js`.
+`$lib/shared/timeEntriesUrl.js`, plus `computeGoToData(basePath, url, sort, q,
+goto)` in `$lib/server/time-entries.js`.
 `modifyCurrentUrl()` in `$lib/url.js` used only for interactive handlers
 (DateInput, RangeNav, LimitSelector, SortToggle).
 

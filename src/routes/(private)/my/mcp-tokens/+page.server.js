@@ -1,5 +1,5 @@
 import { fail } from "@sveltejs/kit";
-import { createMcpToken, deleteMcpToken, listUserMcpTokens } from "$lib/backend/auth.js";
+import { createMcpToken, deleteMcpToken, listUserMcpTokens } from "$lib/server/auth.js";
 
 export async function load(event) {
     const tokens = await listUserMcpTokens(event.locals.user.id);

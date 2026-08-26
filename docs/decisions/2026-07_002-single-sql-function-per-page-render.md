@@ -61,7 +61,7 @@ The time-entries page was the first application of this rule. Two functions were
 }
 ```
 
-The JavaScript adapter `getTimeEntriesPageData()` in `src/lib/backend/time-entries.js` decodes the JSON, keeps the exact post-processing of the previous implementation (`has_more` pop, reversal for `before` / `after`+`desc`, cursor encoding), and returns a shaped object consumed by the four routes. `computeGoToData()` keeps only href/label construction; the presence and nearest data come from the SQL payload.
+The JavaScript adapter `getTimeEntriesPageData()` in `src/lib/server/time-entries.js` decodes the JSON, keeps the exact post-processing of the previous implementation (`has_more` pop, reversal for `before` / `after`+`desc`, cursor encoding), and returns a shaped object consumed by the four routes. `computeGoToData()` keeps only href/label construction; the presence and nearest data come from the SQL payload.
 
 ### Consequences
 
@@ -73,7 +73,7 @@ The JavaScript adapter `getTimeEntriesPageData()` in `src/lib/backend/time-entri
 - Good, because `entries` ids are emitted as text (`id::text`) to preserve the previous `postgres` driver behavior (BIGINT as string) and safe cursor encoding.
 - Bad, because the time-entries function signature has 19 parameters (many of them date bounds); the call site is verbose but explicit.
 - Good, because the page `ORDER BY` uses two direction-guarded `UNION ALL` branches (`WHERE _asc` / `WHERE NOT _asc`) instead of conditional `CASE` expressions: under a custom plan the inactive branch is folded away (`One-Time Filter: false`) and the page becomes an index-ordered scan with early-exit `LIMIT` (reads `_limit + 1` rows instead of sorting the whole period).
-- Good, because the `prepare: false` call (`src/lib/backend/time-entries.js`) keeps the statement unnamed, so PostgreSQL always custom-plans it with the real parameter values. Branch pruning, index-only counts and selectivity-aware plans all depend on this invariant.
+- Good, because the `prepare: false` call (`src/lib/server/time-entries.js`) keeps the statement unnamed, so PostgreSQL always custom-plans it with the real parameter values. Branch pruning, index-only counts and selectivity-aware plans all depend on this invariant.
 - Good, because the partial index `idx_time_entries_started_at_id_active (started_at DESC, id DESC) WHERE deleted_at IS NULL` (migration `00006_index_time_entries_active`) turns the period count and the presence probes into index-only scans (previously range scans with heap rechecks, or a full-table `Seq Scan` for a wide range count).
 - Good, because the redundant `ORDER BY` inside `jsonb_agg` was removed: the page CTE already sorts, so the JSON payload inherits the order and one `Sort` node is saved.
 - Bad, because the time-entries description filter predicate is inlined twice (page + total CTEs), re-scanning `time_entries` instead of sharing one materialized base CTE. Deliberate: sharing would spool the whole filtered period and lose the index-ordered scan with early-exit `LIMIT`; at the current scale (~60k rows) the duplication is negligible.
@@ -106,6 +106,6 @@ The JavaScript adapter `getTimeEntriesPageData()` in `src/lib/backend/time-entri
 
 - `sqls/functions.sql` — the function definitions (loaded at the end of every migration run).
 - `sqls/migrations/00006_index_time_entries_active/` — the partial index enabling index-only counts and presence probes.
-- `src/lib/backend/time-entries.js` — the `getTimeEntriesPageData` adapter (first application) and the `prepare: false` invariant.
+- `src/lib/server/time-entries.js` — the `getTimeEntriesPageData` adapter (first application) and the `prepare: false` invariant.
 - Measurements (EXPLAIN ANALYZE, ~60k rows): day view 50.0 → 33.5 ms, one-year range 69.7 → 42.5 ms; the range count dropped from a full `Seq Scan` (10.7 ms) to an index-only scan (3.3 ms).
 - Regression: verified by EXPLAIN ANALYZE before/after and by exercising the five time-entries routes across sort asc/desc, `q` filter, and `before`/`after` cursor pagination with zero behavioral differences.

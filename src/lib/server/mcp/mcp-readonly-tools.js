@@ -2,7 +2,7 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 
 import { getTimeEntriesSchema, recordMcpAccess, sqlReadonly } from "./mcp-readonly-db.js";
-import { logger } from "$lib/backend/logger.js";
+import { logger } from "$lib/server/logger.js";
 
 export async function createMcpReadonlyServer({ displayName, context }) {
     const schema = await getTimeEntriesSchema();

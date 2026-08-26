@@ -1,11 +1,11 @@
 import { sequence } from "@sveltejs/kit/hooks";
-import { SESSION_COOKIE_NAME, validateApiToken, validateSession } from "$lib/backend/auth.js";
-import { logger } from "$lib/backend/logger.js";
-import { verifySmtpConnection } from "$lib/backend/mailer.js";
-import { sql } from "$lib/backend/pg.js";
-import { startSyncDaemon, stopSyncDaemon } from "$lib/backend/sync.js";
+import { SESSION_COOKIE_NAME, validateApiToken, validateSession } from "$lib/server/auth.js";
+import { logger } from "$lib/server/logger.js";
+import { verifySmtpConnection } from "$lib/server/mailer.js";
+import { sql } from "$lib/server/pg.js";
+import { startSyncDaemon, stopSyncDaemon } from "$lib/server/sync.js";
 import { ensureMcpReaderRole } from "$lib/server/mcp/mcp-reader-role.js";
-import { togglIsConfigured } from "$lib/backend/toggl-client.js";
+import { togglIsConfigured } from "$lib/server/toggl-client.js";
 import { runWithMetrics as runWithPgMetrics, summarize as summarizePgMetrics } from "$lib/server/pg-metrics.js";
 
 const pollIntervalSeconds = parseInt(process.env.TOGGL_PG_MIRROR_POLL_INTERVAL_SECONDS || "600", 10);

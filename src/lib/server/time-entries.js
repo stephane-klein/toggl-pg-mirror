@@ -1,7 +1,7 @@
 import { sql } from "./pg.js";
 import { error } from "@sveltejs/kit";
 import { modifyCurrentUrl } from "$lib/url";
-import { splitFilter, TagFilterError } from "./tagFilter.js";
+import { splitFilter, TagFilterError } from "../shared/tagFilter.js";
 
 const DEFAULT_LIMIT = 50;
 const MIN_LIMIT = 10;

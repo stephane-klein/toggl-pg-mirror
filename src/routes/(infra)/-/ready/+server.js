@@ -1,6 +1,6 @@
 import { json } from "@sveltejs/kit";
-import { sql } from "$lib/backend/pg.js";
-import { isSyncDaemonRunning } from "$lib/backend/sync.js";
+import { sql } from "$lib/server/pg.js";
+import { isSyncDaemonRunning } from "$lib/server/sync.js";
 
 export async function GET() {
     let database;

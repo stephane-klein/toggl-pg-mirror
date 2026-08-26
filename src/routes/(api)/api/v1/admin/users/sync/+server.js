@@ -1,7 +1,7 @@
 import { json } from "@sveltejs/kit";
 import { safeParse } from "valibot";
-import { generateId, hashPassword } from "$lib/backend/auth.js";
-import { sql } from "$lib/backend/pg.js";
+import { generateId, hashPassword } from "$lib/server/auth.js";
+import { sql } from "$lib/server/pg.js";
 import { userFieldsSchema } from "$lib/schemas/user.js";
 import { findDuplicateCategoryTag } from "$lib/schemas/activity-matrix.js";
 import { requireAdminToken } from "../../_helpers.js";

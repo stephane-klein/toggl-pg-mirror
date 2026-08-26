@@ -45,7 +45,7 @@ After the initial implementation, href construction was moved from client-side c
 
 The same `modifyCurrentUrl()` is now called in two contexts:
 
-- **Server-side**: in `+page.server.js`, wrapped by `hreffy()` and `buildPaginationHrefs()` from `$lib/backend/timeEntriesUrl.js`. These produce complete hrefs (prev/next period, prev/next page, mode switches) and return them in `data`.
+- **Server-side**: in `+page.server.js`, wrapped by `hreffy()` and `buildPaginationHrefs()` from `$lib/shared/timeEntriesUrl.js`. These produce complete hrefs (prev/next period, prev/next page, mode switches) and return them in `data`.
 - **Client-side**: in interactive handlers only. All navigation links are pure `<a href>` with pre-computed values.
 
 This shift maximizes SSR content generation, reduces client-side JavaScript, and centralises URL construction logic on the server without adding a new abstraction — `modifyCurrentUrl()` remains the single tool, just called earlier in the request lifecycle. Detailed component-by-component breakdown lives in `docs/agents/time-entries.md`.
@@ -85,5 +85,5 @@ removes `selected` with a replace-state navigation.
 ## More Information
 
 - `$lib/url.js` — `modifyCurrentUrl()` implementation.
-- `$lib/backend/timeEntriesUrl.js` — server-side helpers wrapping `modifyCurrentUrl()`.
+- `$lib/shared/timeEntriesUrl.js` — server-side helpers wrapping `modifyCurrentUrl()`.
 - `docs/agents/time-entries.md` — detailed component architecture, props, and server data flow.

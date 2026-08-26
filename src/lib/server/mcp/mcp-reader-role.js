@@ -1,5 +1,5 @@
-import { logger } from "$lib/backend/logger.js";
-import { POSTGRES_SCHEMA, sql } from "$lib/backend/pg.js";
+import { logger } from "$lib/server/logger.js";
+import { POSTGRES_SCHEMA, sql } from "$lib/server/pg.js";
 
 export const MCP_READER_ROLE_ENV = "TOGGL_PG_MIRROR_MCP_READER_POSTGRES_ROLE";
 export const MCP_READER_PASSWORD_ENV = "TOGGL_PG_MIRROR_MCP_READER_POSTGRES_PASSWORD";

@@ -1,6 +1,6 @@
 import { redirect } from "@sveltejs/kit";
-import { createSession, SESSION_COOKIE_NAME, validateMagicLoginToken } from "$lib/backend/auth.js";
-import { sql } from "$lib/backend/pg.js";
+import { createSession, SESSION_COOKIE_NAME, validateMagicLoginToken } from "$lib/server/auth.js";
+import { sql } from "$lib/server/pg.js";
 
 export async function load({ url, cookies }) {
     const raw = url.searchParams.get("token");

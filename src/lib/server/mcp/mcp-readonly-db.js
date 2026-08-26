@@ -1,8 +1,8 @@
 import postgres from "postgres";
 
-import { logger } from "$lib/backend/logger.js";
+import { logger } from "$lib/server/logger.js";
 import { MCP_READER_DEFAULT_ROLE, MCP_READER_PASSWORD_ENV, MCP_READER_ROLE_ENV } from "./mcp-reader-role.js";
-import { POSTGRES_SCHEMA, sql } from "$lib/backend/pg.js";
+import { POSTGRES_SCHEMA, sql } from "$lib/server/pg.js";
 
 const POSTGRES_URL = process.env.TOGGL_PG_MIRROR_POSTGRES_URL;
 const role = process.env[MCP_READER_ROLE_ENV] || MCP_READER_DEFAULT_ROLE;

@@ -1,7 +1,7 @@
 import postgres from "postgres";
 
 import { logger } from "./logger.js";
-import { getMetrics } from "../server/pg-metrics.js";
+import { getMetrics } from "./pg-metrics.js";
 
 const POSTGRES_URL = process.env.TOGGL_PG_MIRROR_POSTGRES_URL;
 export const POSTGRES_SCHEMA = process.env.TOGGL_PG_MIRROR_POSTGRES_SCHEMA || "public";

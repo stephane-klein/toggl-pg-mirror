@@ -1,8 +1,8 @@
 import { error } from "@sveltejs/kit";
 
-import { computeTimeEntriesNav } from "$lib/backend/timeEntriesUrl.js";
-import { getChartsPageData } from "$lib/backend/activity-chart.js";
-import { buildActivityMatrix } from "$lib/backend/activity-matrix.js";
+import { computeTimeEntriesNav } from "$lib/shared/timeEntriesUrl.js";
+import { getChartsPageData } from "$lib/server/activity-chart.js";
+import { buildActivityMatrix } from "$lib/shared/activity-matrix.js";
 
 function firstOfMonth(year, month) {
     const d = new Date(year, month - 1, 1);

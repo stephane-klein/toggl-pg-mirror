@@ -1,12 +1,12 @@
 import { error } from "@sveltejs/kit";
 
-import { getTimeEntriesPageData, parseLimit, computeGoToData } from "$lib/backend/time-entries.js";
+import { getTimeEntriesPageData, parseLimit, computeGoToData } from "$lib/server/time-entries.js";
 import {
     computeTimeEntriesNav,
     hreffy,
     buildPaginationHrefs,
     parseSelectionState,
-} from "$lib/backend/timeEntriesUrl.js";
+} from "$lib/shared/timeEntriesUrl.js";
 
 function firstOfMonth(year, month) {
     const d = new Date(year, month - 1, 1);

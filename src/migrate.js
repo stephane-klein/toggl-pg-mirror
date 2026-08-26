@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import { fileURLToPath } from "node:url";
 import shift from "postgres-shift";
-import { logger } from "./lib/backend/logger.js";
-import { POSTGRES_SCHEMA, sql, waitForDb } from "./lib/backend/pg.js";
+import { logger } from "./lib/server/logger.js";
+import { POSTGRES_SCHEMA, sql, waitForDb } from "./lib/server/pg.js";
 
 const MIGRATIONS_PATH = fileURLToPath(new URL("../sqls/migrations", import.meta.url));
 const FUNCTIONS_PATH = fileURLToPath(new URL("../sqls/functions.sql", import.meta.url));

@@ -1,10 +1,7 @@
 import { fail } from "@sveltejs/kit";
 import { safeParse } from "valibot";
-import { sql } from "$lib/backend/pg.js";
-import {
-    getUserActivityMatrixCategories,
-    setUserActivityMatrixCategories,
-} from "$lib/backend/activity-matrix-store.js";
+import { sql } from "$lib/server/pg.js";
+import { getUserActivityMatrixCategories, setUserActivityMatrixCategories } from "$lib/server/activity-matrix-store.js";
 import { activityMatrixCategoriesSchema } from "$lib/schemas/activity-matrix.js";
 
 export async function load(event) {

@@ -1,5 +1,5 @@
 import { fail } from "@sveltejs/kit";
-import { createApiToken, deleteApiToken, listUserApiTokens } from "$lib/backend/auth.js";
+import { createApiToken, deleteApiToken, listUserApiTokens } from "$lib/server/auth.js";
 
 export async function load(event) {
     const tokens = await listUserApiTokens(event.locals.user.id);

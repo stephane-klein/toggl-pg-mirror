@@ -4,7 +4,7 @@
     import SearchField from "svelte-codemirror-search-field";
     import { getAllTags } from "./tags.remote.js";
     import { fuzzyMatch } from "./fuzzyMatch.js";
-    import { splitFilter, extractTagNames, TagFilterError } from "$lib/backend/tagFilter.js";
+    import { splitFilter, extractTagNames, TagFilterError } from "$lib/shared/tagFilter.js";
 
     let { total = null } = $props();
 

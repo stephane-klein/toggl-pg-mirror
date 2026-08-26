@@ -65,6 +65,26 @@ MCP token created at `/my/mcp-tokens/`, validated via `validateMcpToken`) direct
 `src/routes/(mcp)/mcp/readonly/+server.js`, and runs queries
 through the read-only PostgreSQL role (see `src/lib/server/mcp/mcp-readonly-db.js`).
 
+### Server-only library code
+
+Library code that runs only on the server (DB access via `postgres`, auth,
+sync daemon, mailer, file/`node:` APIs, `process.env`, secrets, etc.) MUST live
+under `src/lib/server/` and be imported via `$lib/server/...`. SvelteKit enforces
+this at build time: the `vite-plugin-sveltekit-guard` throws `Cannot import
+$lib/server/... into code that runs in the browser` if a client entrypoint
+(a Svelte component, a universal `load`, a client/universal hook) imports one.
+This is a security guarantee — never place server-only code anywhere else.
+
+Pure / isomorphic modules (no Node, DB, or environment access) that are needed
+from BOTH the server and client Svelte components live under `src/lib/shared/`
+and are imported via `$lib/shared/...`. If a module has to be importable by a
+client component, it must be pure (no `node:` imports, no DB, no `process.env`)
+and belong in `src/lib/shared/`.
+
+`src/lib/backend/` is **forbidden**: it no longer exists, never create it and
+never import from it. When adding a new module, decide its home up front:
+server-only → `src/lib/server/`, isomorphic/pure → `src/lib/shared/`.
+
 ## Project Structure
 
 ### SvelteKit Routes
@@ -80,9 +100,11 @@ through the read-only PostgreSQL role (see `src/lib/server/mcp/mcp-readonly-db.j
 - `src/hooks.server.js` — server hooks (auth, sync daemon initialization, graceful shutdown)
 - `src/app.html` — HTML shell
 
-### Backend Modules
+### Library modules
 
-- `src/lib/backend/` — business logic modules (sync, importer, logger, pg client, etc.)
+- `src/lib/server/` — server-only business logic modules (sync, importer, logger, pg client, auth, mailer, etc.). Imported via `$lib/server/...`.
+- `src/lib/shared/` — pure / isomorphic modules usable from both client and server (chart utils, tag filter, URL helpers, etc.). Imported via `$lib/shared/...`.
+- `src/lib/backend/` — **forbidden**. This directory no longer exists; never create it and never import from it.
 - `src/cli.js` — CLI entrypoint for non-server commands
 - `sqls/` — database migrations and schema
 

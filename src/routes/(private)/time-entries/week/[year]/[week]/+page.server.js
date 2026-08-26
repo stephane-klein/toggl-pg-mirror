@@ -1,12 +1,12 @@
 import { error } from "@sveltejs/kit";
 
-import { getTimeEntriesPageData, parseLimit, computeGoToData } from "$lib/backend/time-entries.js";
+import { getTimeEntriesPageData, parseLimit, computeGoToData } from "$lib/server/time-entries.js";
 import {
     computeTimeEntriesNav,
     hreffy,
     buildPaginationHrefs,
     parseSelectionState,
-} from "$lib/backend/timeEntriesUrl.js";
+} from "$lib/shared/timeEntriesUrl.js";
 
 function getMonday(year, week) {
     const jan4 = new Date(year, 0, 4);

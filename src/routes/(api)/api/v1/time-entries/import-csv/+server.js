@@ -1,7 +1,7 @@
 import { Readable } from "node:stream";
 import { json } from "@sveltejs/kit";
-import { importCsvFromStream } from "$lib/backend/csv-importer.js";
-import { logger } from "$lib/backend/logger.js";
+import { importCsvFromStream } from "$lib/server/csv-importer.js";
+import { logger } from "$lib/server/logger.js";
 import { problem } from "../../_problem.js";
 
 const ADMIN_TOKEN = process.env.TOGGL_PG_MIRROR_ADMIN_TOKEN;

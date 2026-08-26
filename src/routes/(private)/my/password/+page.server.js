@@ -1,9 +1,9 @@
 import { fail } from "@sveltejs/kit";
-import { createPasswordResetToken, hashPassword, verifyPassword } from "$lib/backend/auth.js";
-import { renderEmail } from "$lib/backend/email/index.js";
-import { logger } from "$lib/backend/logger.js";
-import { isMailAvailable, sendMail } from "$lib/backend/mailer.js";
-import { sql } from "$lib/backend/pg.js";
+import { createPasswordResetToken, hashPassword, verifyPassword } from "$lib/server/auth.js";
+import { renderEmail } from "$lib/server/email/index.js";
+import { logger } from "$lib/server/logger.js";
+import { isMailAvailable, sendMail } from "$lib/server/mailer.js";
+import { sql } from "$lib/server/pg.js";
 
 export async function load({ locals }) {
     const [stored] = await sql`SELECT password_hash FROM users WHERE id = ${locals.user.id}`;

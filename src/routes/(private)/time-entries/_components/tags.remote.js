@@ -1,7 +1,7 @@
 import { query, getRequestEvent } from "$app/server";
 
 import { requireUser } from "$lib/server/require-user.js";
-import { sql } from "$lib/backend/pg.js";
+import { sql } from "$lib/server/pg.js";
 
 export const getAllTags = query(async () => {
     requireUser(getRequestEvent());

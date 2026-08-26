@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { createApiToken, generateId, hashPassword } from "./lib/backend/auth.js";
-import { importCsv } from "./lib/backend/csv-importer.js";
-import { parseDate } from "./lib/backend/date-parser.js";
-import { importTimeEntries } from "./lib/backend/importer.js";
-import { logger } from "./lib/backend/logger.js";
-import { sql, waitForDb } from "./lib/backend/pg.js";
-import { ping, togglIsConfigured } from "./lib/backend/toggl-client.js";
+import { createApiToken, generateId, hashPassword } from "./lib/server/auth.js";
+import { importCsv } from "./lib/server/csv-importer.js";
+import { parseDate } from "./lib/server/date-parser.js";
+import { importTimeEntries } from "./lib/server/importer.js";
+import { logger } from "./lib/server/logger.js";
+import { sql, waitForDb } from "./lib/server/pg.js";
+import { ping, togglIsConfigured } from "./lib/server/toggl-client.js";
 
 function formatDuration(seconds) {
     if (seconds === null || seconds === undefined) return null;

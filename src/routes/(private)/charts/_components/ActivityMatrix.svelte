@@ -2,8 +2,8 @@
     import { onMount } from "svelte";
     import { scaleBand } from "d3-scale";
 
-    import { fmtDuration } from "$lib/backend/activity-chart-utils.js";
-    import { cellOpacity } from "$lib/backend/activity-matrix.js";
+    import { fmtDuration } from "$lib/shared/activity-chart-utils.js";
+    import { cellOpacity } from "$lib/shared/activity-matrix.js";
 
     let { days = [], matrix = [] } = $props();
 

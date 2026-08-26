@@ -1,8 +1,8 @@
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 
 import { sqlReadonly } from "$lib/server/mcp/mcp-readonly-db.js";
-import { validateMcpToken } from "$lib/backend/auth.js";
-import { logger } from "$lib/backend/logger.js";
+import { validateMcpToken } from "$lib/server/auth.js";
+import { logger } from "$lib/server/logger.js";
 import { createMcpReadonlyServer } from "$lib/server/mcp/mcp-readonly-tools.js";
 
 const sessions = new Map();

@@ -2,9 +2,9 @@
 
 ## Overview
 
-The time-entries UI is split into 5 routes (day, week, month, range, and the default list view) that share a common set of components under `_components/`. The header nav (`GoTo`, `ModeSelector`, and the `DayNav`/`WeekNav`/`MonthNav`/`RangeNav` period navs) is shared with the `/charts` section and lives in `src/lib/components/` (`$lib/components/`); each view passes its own `basePath` (`/time-entries` here, `/charts` there). All navigation hrefs are pre-computed on the server via `computeTimeEntriesNav(basePath, url, referenceDate)` and `buildPaginationHrefs()` in `$lib/backend/timeEntriesUrl.js`, plus `computeGoToData(basePath, url, sort, q, goto)` in `$lib/backend/time-entries.js`. The client-side utility `modifyCurrentUrl()` is used only for interactive handlers (GoTo DateInput, RangeNav, LimitSelector, SortToggle).
+The time-entries UI is split into 5 routes (day, week, month, range, and the default list view) that share a common set of components under `_components/`. The header nav (`GoTo`, `ModeSelector`, and the `DayNav`/`WeekNav`/`MonthNav`/`RangeNav` period navs) is shared with the `/charts` section and lives in `src/lib/components/` (`$lib/components/`); each view passes its own `basePath` (`/time-entries` here, `/charts` there). All navigation hrefs are pre-computed on the server via `computeTimeEntriesNav(basePath, url, referenceDate)` and `buildPaginationHrefs()` in `$lib/shared/timeEntriesUrl.js`, plus `computeGoToData(basePath, url, sort, q, goto)` in `$lib/server/time-entries.js`. The client-side utility `modifyCurrentUrl()` is used only for interactive handlers (GoTo DateInput, RangeNav, LimitSelector, SortToggle).
 
-## Server-side URL construction — `$lib/backend/timeEntriesUrl.js`
+## Server-side URL construction — `$lib/shared/timeEntriesUrl.js`
 
 ### `computeTimeEntriesNav(basePath, url, referenceDate)`
 
@@ -30,11 +30,11 @@ Builds a href by carrying `sort`, `q`, `limit` from the current URL, dropping al
 
 Returns `{ prevPageHref, nextPageHref }` — full hrefs with cursor params, respecting sort direction (asc = prev = older with `before`, desc = prev = newer with `after`).
 
-### `computeGoToData(basePath, url, sort, q, goto)` — in `$lib/backend/time-entries.js`
+### `computeGoToData(basePath, url, sort, q, goto)` — in `$lib/server/time-entries.js`
 
 Returns `firstNonEmpty*Href` and `todayHasEntries`/`*HasEntries` booleans. The presence flags and nearest-day values come from the single SQL payload (`goto`), produced by `getTimeEntriesPageData()`. Uses `modifyCurrentUrl` to build hrefs that carry `sort`, `q` and target the correct period.
 
-### `getTimeEntriesPageData({ from, to, before, after, limit, sort, q, prevFrom, prevTo, nextFrom, nextTo })` — in `$lib/backend/time-entries.js`
+### `getTimeEntriesPageData({ from, to, before, after, limit, sort, q, prevFrom, prevTo, nextFrom, nextTo })` — in `$lib/server/time-entries.js`
 
 Single round-trip backend for every time-entries view. Calls the stored function `get_time_entries_page_data()` (see `sqls/migrations/00006_time_entries_page_data/index.sql`) and returns `{ entries, prevCursor, nextCursor, total, prevHasEntries, nextHasEntries, nearestPeriodDay, goto }`. Each route passes its view-specific prev/next period bounds (day: ±1 day, week: ±7 days, month: ±1 month, range: `null`).
 
@@ -139,7 +139,7 @@ view). Two mutually exclusive states:
   the user changes the filter while the sentinel is active, the selection
   re-scopes (the header label always shows the live count).
 
-`parseSelectionState(raw, entries)` (`$lib/backend/timeEntriesSelection.js`)
+`parseSelectionState(raw, entries)` (`$lib/shared/timeEntriesSelection.js`)
 returns `{ selectedIds, selectAllMatching }` for both forms; each view's
 `+page.server.js` exposes `selectAllMatching` in `data`.
 
@@ -160,7 +160,7 @@ and the copy/export actions fetch the full matching rows through the
 ## The `q` filter DSL
 
 `q` mixes **description words/phrases** and **tag filters** (`#tag`). It is parsed
-by `splitFilter()` in `src/lib/backend/tagFilter.js`, which calls
+by `splitFilter()` in `src/lib/shared/tagFilter.js`, which calls
 `svelte-codemirror-search-field/parser` with `implicitOp: "and"` and
 `implicitAutoCloseParents: true` — the same options the SearchField component
 (`_components/TimeEntryFilter.svelte`) is hardcoded with, so the server
@@ -186,6 +186,6 @@ unnest(tags)` over non-deleted entries).
 
 1. **Never build navigation URLs on the client** — all nav hrefs must be pre-computed in `+page.server.js` via `computeTimeEntriesNav()` / `buildPaginationHrefs()`.
 2. **Never import `modifyCurrentUrl` in nav/mode/pagination components** — use only in interactive handlers (DateInput, RangeNav, LimitSelector, SortToggle).
-3. **When adding a new globally-carried query parameter**, add it to `hreffy()` in `$lib/backend/timeEntriesUrl.js`.
+3. **When adding a new globally-carried query parameter**, add it to `hreffy()` in `$lib/shared/timeEntriesUrl.js`.
 4. **When adding a new view-specific param**, add it to the drop list in `hreffy()`.
 5. **Cursor params (`before`, `after`) must never cross period boundaries** — `hreffy()` drops them automatically.

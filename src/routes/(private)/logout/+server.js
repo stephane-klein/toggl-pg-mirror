@@ -1,4 +1,4 @@
-import { invalidateSession, SESSION_COOKIE_NAME } from "$lib/backend/auth.js";
+import { invalidateSession, SESSION_COOKIE_NAME } from "$lib/server/auth.js";
 
 export async function GET({ cookies }) {
     const sessionId = cookies.get(SESSION_COOKIE_NAME);

@@ -7,12 +7,12 @@
 
 ## Login & session security review
 
-- **Password storage.** Passwords are hashed with argon2id (`hashPassword` in `src/lib/backend/auth.js`, `memoryCost` 19456, `timeCost` 2, `parallelism` 1) and verified via argon2 (`verifyPassword`).
+- **Password storage.** Passwords are hashed with argon2id (`hashPassword` in `src/lib/server/auth.js`, `memoryCost` 19456, `timeCost` 2, `parallelism` 1) and verified via argon2 (`verifyPassword`).
 - **Session cookie.** The session cookie is `httpOnly`, `sameSite: "lax"`, `secure` in production, with a 30-day `maxAge`, set on both the password and magic-login flows. On each request the hook validates the session against the database, and when the server-side rolling renewal extends a session it re-issues the cookie so the browser `maxAge` stays aligned with the sliding-window expiry.
 - **Session validation.** Sessions are stored in the database. `validateSession` checks `expires_at` (with rolling renewal at mid-life) and the user's `is_active`; an expired session or a deactivated user causes the session to be deleted and rejected.
 - **API tokens.** Tokens are stored hashed (SHA-256) in the database. `validateApiToken` checks `is_active` and `expires_at`, rejecting expired tokens (without deleting them, so they stay visible and removable) — an expired token is surfaced as `event.locals.authFailure = "expired"` and `requireUser` responds 401 `"API token expired"`.
 - **Magic link & password reset.** Tokens are high-entropy (`nanoid(48)`), stored hashed, single-use (`used`), with short expirations (15 min magic link, 30 min reset).
-- **Brute-force protection.** Failed sign-in attempts are recorded in `login_attempts` and throttled per client IP and per email (`src/lib/backend/rate-limit.js`, `LOGIN_MAX_ATTEMPTS`, `LOGIN_WINDOW_MS`), returning 429 once a threshold is reached — applied to both the `signIn` and `magicLink` actions.
+- **Brute-force protection.** Failed sign-in attempts are recorded in `login_attempts` and throttled per client IP and per email (`src/lib/server/rate-limit.js`, `LOGIN_MAX_ATTEMPTS`, `LOGIN_WINDOW_MS`), returning 429 once a threshold is reached — applied to both the `signIn` and `magicLink` actions.
 - **Account enumeration.** `signIn` (`src/routes/(public)/login/+page.server.js`) returns a single generic message for every failure path and equalizes response time by running a real argon2id verification against a dummy hash for unknown or deactivated accounts, so they are indistinguishable from a wrong-password attempt.
 - **Token leakage.** A global `Referrer-Policy: no-referrer` header is set on every response (`src/hooks.server.js`) so the one-time magic-login token carried in the callback URL is not forwarded to third-party sites on subsequent navigations.
 
