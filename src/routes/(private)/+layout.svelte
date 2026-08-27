@@ -40,6 +40,11 @@
             >
             ·
             <a
+                href="/tags"
+                class="text-gray-500 no-underline hover:text-blue-600 hover:underline">Tags</a
+            >
+            ·
+            <a
                 href="/docs"
                 class="text-gray-500 no-underline hover:text-blue-600 hover:underline">Import CSV</a
             >
