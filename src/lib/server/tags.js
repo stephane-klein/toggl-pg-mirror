@@ -1,22 +1,33 @@
 import { sql } from "./pg.js";
 
-const base = sql`
-    SELECT t.name, COUNT(e.id)::int AS entry_count
-    FROM time_entry_tags t
-    LEFT JOIN time_entry_tag_entries jt ON jt.tag_id = t.id
-    LEFT JOIN time_entries e ON e.id = jt.entry_id AND e.deleted_at IS NULL
-    GROUP BY t.id
-`;
+const VALID_SORTS = ["name_asc", "name_desc", "count_asc", "count_desc"];
 
-export async function listTags({ column = "name", dir = "asc" } = {}) {
-    const order =
-        column === "count"
-            ? dir === "desc"
-                ? sql`ORDER BY COUNT(e.id) DESC, lower(t.name)`
-                : sql`ORDER BY COUNT(e.id) ASC, lower(t.name)`
-            : dir === "desc"
-              ? sql`ORDER BY lower(t.name) DESC, t.id`
-              : sql`ORDER BY lower(t.name) ASC, t.id`;
+export function parseSort(value) {
+    if (!value || !VALID_SORTS.includes(value)) return { column: "name", dir: "asc" };
+    const [column, dir] = value.split("_");
+    return { column, dir };
+}
 
-    return sql`${base} ${order}`;
+export function nextSort(column, current) {
+    if (current.column === column) {
+        return `${column}_${current.dir === "asc" ? "desc" : "asc"}`;
+    }
+    return `${column}_${column === "count" ? "desc" : "asc"}`;
+}
+
+export function sortHref(path, value) {
+    return value === "name_asc" ? path : `${path}?sort=${value}`;
+}
+
+export async function listTagsForPeriod(from, to, sort = "name_asc") {
+    const _sort = VALID_SORTS.includes(sort) ? sort : "name_asc";
+    return sql.unsafe(
+        `SELECT * FROM list_tags(
+            _from => $1::date,
+            _to => $2::date,
+            _sort => $3
+        )`,
+        [from, to, _sort],
+        { prepare: false },
+    );
 }

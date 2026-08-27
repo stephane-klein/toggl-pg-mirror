@@ -30,6 +30,7 @@ DROP FUNCTION IF EXISTS get_mcp_access_log_page_data;
 DROP FUNCTION IF EXISTS set_time_entry_tags;
 DROP FUNCTION IF EXISTS rename_time_entry_tag;
 DROP FUNCTION IF EXISTS entry_matches_tags;
+DROP FUNCTION IF EXISTS list_tags;
 
 SET LOCAL client_min_messages = notice;
 
@@ -1055,9 +1056,32 @@ AS $$
     )
 $$;
 
+-- Tags of the selected period: one row per tag with its entry count restricted
+-- to non-deleted time entries whose started_at falls in [_from, _to). Only tags
+-- present in the period are returned (INNER JOIN guarantees entry_count >= 1).
+-- _sort drives the two-way ordering (name/count × asc/desc) via CASE expressions.
+CREATE FUNCTION list_tags(_from date, _to date, _sort text)
+RETURNS TABLE(name text, entry_count int)
+LANGUAGE sql
+AS $$
+    SELECT t.name, COUNT(e.id)::int AS entry_count
+    FROM time_entry_tags t
+    INNER JOIN time_entry_tag_entries jt ON jt.tag_id = t.id
+    INNER JOIN time_entries e ON e.id = jt.entry_id
+    WHERE e.deleted_at IS NULL
+      AND e.started_at >= _from
+      AND e.started_at < _to
+    GROUP BY t.id
+    ORDER BY
+      CASE WHEN _sort = 'name_desc' THEN lower(t.name) END DESC,
+      CASE WHEN _sort IN ('name_asc', 'name_desc') THEN lower(t.name) END ASC,
+      CASE WHEN _sort = 'count_desc' THEN COUNT(e.id) END DESC,
+      CASE WHEN _sort IN ('count_asc', 'count_desc') THEN COUNT(e.id) END ASC,
+      lower(t.name) ASC
+$$;
+
 -- Security: default-deny function execution.
 -- PostgreSQL grants EXECUTE to PUBLIC on every new function. The app role owns
--- these functions so it keeps EXECUTE implicitly; revoking PUBLIC only blocks
 -- other roles (e.g. the MCP reader role) until an explicit GRANT is added.
 -- Placed after all CREATEs because a CREATE resets privileges to the default.
 -- Silence the one-per-extension-function WARNING 01006 emitted by the REVOKE
