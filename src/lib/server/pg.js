@@ -11,6 +11,7 @@ const raw = postgres(POSTGRES_URL, {
     connection: {
         search_path: POSTGRES_SCHEMA,
     },
+    onnotice: (notice) => logger.debug({ ...notice }, "PostgreSQL notice"),
 });
 
 const INSTRUMENTED = Symbol("instrumented");

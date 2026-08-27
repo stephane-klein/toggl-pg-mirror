@@ -11,7 +11,7 @@ const prettyTransport = new pinoPretty({
 
 export const logger = pino(
     {
-        level: "info",
+        level: process.env.NODE_ENV !== "production" ? "debug" : "info",
     },
     process.env.NODE_ENV !== "production" ? prettyTransport : pino.destination(1),
 );
