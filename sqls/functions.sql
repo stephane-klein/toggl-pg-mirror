@@ -11,6 +11,12 @@
 -- - A migration that drops or renames a table used here must ship the matching
 --   update of this file, otherwise the next `pnpm migrate` fails loudly here.
 
+-- Silence the "does not exist, skipping" NOTICEs emitted by the idempotent
+-- DROPs below when a function is not yet present in the database (first load).
+-- SET LOCAL scopes this to the loading transaction only; the value is restored
+-- to notice right after the DROPs so the CREATEs below keep emitting NOTICEs.
+SET LOCAL client_min_messages = warning;
+
 DROP FUNCTION IF EXISTS get_time_entries_page_data;
 DROP FUNCTION IF EXISTS nearest_day_with_entries;
 DROP FUNCTION IF EXISTS upsert_time_entries;
@@ -22,6 +28,7 @@ DROP FUNCTION IF EXISTS get_activity_matrix_data;
 DROP FUNCTION IF EXISTS get_charts_page_data;
 DROP FUNCTION IF EXISTS get_mcp_access_log_page_data;
 
+SET LOCAL client_min_messages = notice;
 -- Returns the day (as 'YYYY-MM-DD') closest to _ref that has at least one
 -- non-deleted entry, or NULL when no entry exists on either side of _ref.
 CREATE FUNCTION nearest_day_with_entries(_ref date) RETURNS text

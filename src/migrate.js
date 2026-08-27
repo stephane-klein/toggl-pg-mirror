@@ -16,7 +16,14 @@ if (!SCHEMA_REGEX.test(POSTGRES_SCHEMA)) {
     process.exit(1);
 }
 
-await sql.unsafe(`CREATE SCHEMA IF NOT EXISTS ${POSTGRES_SCHEMA}`);
+// Only create the schema when absent; CREATE SCHEMA IF NOT EXISTS would emit a
+// "already exists, skipping" NOTICE on every run once the schema is present.
+const [{ exists }] = await sql`
+    SELECT EXISTS (SELECT 1 FROM pg_catalog.pg_namespace WHERE nspname = ${POSTGRES_SCHEMA}) AS exists
+`;
+if (!exists) {
+    await sql.unsafe(`CREATE SCHEMA ${POSTGRES_SCHEMA}`);
+}
 
 try {
     await shift({
