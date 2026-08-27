@@ -67,7 +67,6 @@ export async function load({ params, url }) {
 
     const navData = computeTimeEntriesNav("/tags", url, from);
     const sort = parseSort(url.searchParams.get("sort"));
-    const path = url.pathname;
     const toDate = new Date(fromDate);
     toDate.setDate(fromDate.getDate() + 7);
     const tags = await listTagsForPeriod(from, formatDate(toDate), `${sort.column}_${sort.dir}`);
@@ -78,13 +77,14 @@ export async function load({ params, url }) {
         currentYear: year,
         currentWeek: week,
         periodLabel: `Week ${week}, ${year} — ${formatPeriodLabel(fromDate)}`,
-        prevHref: sortHref(`/tags/week/${prevYear}/${prevWeek}`, `${sort.column}_${sort.dir}`),
+        prevHref: sortHref(url, `${sort.column}_${sort.dir}`, `/tags/week/${prevYear}/${prevWeek}`),
         prevLabel: `W ${prevWeek}`,
-        nextHref: sortHref(`/tags/week/${nextYear}/${nextWeek}`, `${sort.column}_${sort.dir}`),
+        nextHref: sortHref(url, `${sort.column}_${sort.dir}`, `/tags/week/${nextYear}/${nextWeek}`),
         nextLabel: `W ${nextWeek}`,
         tags,
         sort,
-        nameHref: sortHref(path, nextSort("name", sort)),
-        countHref: sortHref(path, nextSort("count", sort)),
+        nameHref: sortHref(url, nextSort("name", sort)),
+        countHref: sortHref(url, nextSort("count", sort)),
+        durationHref: sortHref(url, nextSort("duration", sort)),
     };
 }

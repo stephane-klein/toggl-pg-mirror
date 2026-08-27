@@ -7,6 +7,7 @@
     import InputTags from "./input-tags/InputTags.svelte";
     import { getAllTags } from "./tags.remote.js";
     import { fuzzyMatch } from "./fuzzyMatch.js";
+    import { formatHumanDuration } from "$lib/shared/format-duration.js";
 
     let {
         entries = [],
@@ -72,13 +73,6 @@
         const m = Math.floor((diff % 3600) / 60);
         const s = diff % 60;
         return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-    }
-
-    function formatPeriodDuration(totalSeconds) {
-        const h = Math.floor(totalSeconds / 3600);
-        const m = Math.floor((totalSeconds % 3600) / 60);
-        if (h === 0) return `${m}m`;
-        return `${h}h${m}m`;
     }
 
     function formatTimeRange(startedAt, endedAt) {
@@ -618,7 +612,7 @@
                     </th>
                     <th class="px-2 py-[7px] border-b-2 border-gray-300 text-left">
                         <span class="text-sm text-gray-500">Total duration</span>
-                        <span class="text-sm font-mono text-gray-500">{formatPeriodDuration(group.totalSeconds)}</span>
+                        <span class="text-sm font-mono text-gray-500">{formatHumanDuration(group.totalSeconds)}</span>
                     </th>
                     <th class="border-b-2 border-gray-300 rounded-tr"></th>
                 </tr>

@@ -39,7 +39,6 @@ export async function load({ params, url }) {
 
     const navData = computeTimeEntriesNav("/tags", url, firstOfMonth(year, monthNum));
     const sort = parseSort(url.searchParams.get("sort"));
-    const path = url.pathname;
     const tags = await listTagsForPeriod(
         firstOfMonth(year, monthNum),
         firstOfMonth(year, monthNum + 1),
@@ -51,13 +50,14 @@ export async function load({ params, url }) {
         mode: "month",
         currentMonth: rawMonth,
         periodLabel: formatLabel(rawMonth),
-        prevHref: sortHref(`/tags/month/${prevMonth}`, `${sort.column}_${sort.dir}`),
+        prevHref: sortHref(url, `${sort.column}_${sort.dir}`, `/tags/month/${prevMonth}`),
         prevLabel: formatLabel(prevMonth),
-        nextHref: sortHref(`/tags/month/${nextMonth}`, `${sort.column}_${sort.dir}`),
+        nextHref: sortHref(url, `${sort.column}_${sort.dir}`, `/tags/month/${nextMonth}`),
         nextLabel: formatLabel(nextMonth),
         tags,
         sort,
-        nameHref: sortHref(path, nextSort("name", sort)),
-        countHref: sortHref(path, nextSort("count", sort)),
+        nameHref: sortHref(url, nextSort("name", sort)),
+        countHref: sortHref(url, nextSort("count", sort)),
+        durationHref: sortHref(url, nextSort("duration", sort)),
     };
 }

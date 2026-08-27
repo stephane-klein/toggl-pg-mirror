@@ -1056,15 +1056,21 @@ AS $$
     )
 $$;
 
--- Tags of the selected period: one row per tag with its entry count restricted
--- to non-deleted time entries whose started_at falls in [_from, _to). Only tags
--- present in the period are returned (INNER JOIN guarantees entry_count >= 1).
--- _sort drives the two-way ordering (name/count × asc/desc) via CASE expressions.
+-- Tags of the selected period: one row per tag with its entry count and the
+-- summed duration of those entries, restricted to non-deleted time entries
+-- whose started_at falls in [_from, _to). Only tags present in the period are
+-- returned (INNER JOIN guarantees entry_count >= 1). duration_hours sums, per
+-- tag, the same entries that count towards entry_count, using the same duration
+-- formula as get_activity_matrix_data (running entries use now() as end).
+-- _sort drives the two-way ordering (name/count/duration × asc/desc) via CASE.
 CREATE FUNCTION list_tags(_from date, _to date, _sort text)
-RETURNS TABLE(name text, entry_count int)
+RETURNS TABLE(name text, entry_count int, duration_hours numeric)
 LANGUAGE sql
 AS $$
-    SELECT t.name, COUNT(e.id)::int AS entry_count
+    SELECT t.name,
+           COUNT(e.id)::int AS entry_count,
+           SUM(EXTRACT(EPOCH FROM (COALESCE(e.ended_at, now()) - e.started_at)) / 3600.0)
+               AS duration_hours
     FROM time_entry_tags t
     INNER JOIN time_entry_tag_entries jt ON jt.tag_id = t.id
     INNER JOIN time_entries e ON e.id = jt.entry_id
@@ -1077,6 +1083,10 @@ AS $$
       CASE WHEN _sort IN ('name_asc', 'name_desc') THEN lower(t.name) END ASC,
       CASE WHEN _sort = 'count_desc' THEN COUNT(e.id) END DESC,
       CASE WHEN _sort IN ('count_asc', 'count_desc') THEN COUNT(e.id) END ASC,
+      CASE WHEN _sort = 'duration_desc' THEN
+          SUM(EXTRACT(EPOCH FROM (COALESCE(e.ended_at, now()) - e.started_at)) / 3600.0) END DESC,
+      CASE WHEN _sort IN ('duration_asc', 'duration_desc') THEN
+          SUM(EXTRACT(EPOCH FROM (COALESCE(e.ended_at, now()) - e.started_at)) / 3600.0) END ASC,
       lower(t.name) ASC
 $$;
 

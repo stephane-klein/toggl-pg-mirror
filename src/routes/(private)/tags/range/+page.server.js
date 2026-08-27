@@ -23,7 +23,6 @@ export async function load({ url }) {
 
     const navData = computeTimeEntriesNav("/tags", url, null);
     const sort = parseSort(url.searchParams.get("sort"));
-    const path = url.pathname;
 
     if (from && to) {
         if (!isValidDate(from)) error(400, `Invalid from date: ${from}`);
@@ -43,7 +42,8 @@ export async function load({ url }) {
         periodLabel: from && to ? `${from} – ${to}` : "",
         tags,
         sort,
-        nameHref: sortHref(path, nextSort("name", sort)),
-        countHref: sortHref(path, nextSort("count", sort)),
+        nameHref: sortHref(url, nextSort("name", sort)),
+        countHref: sortHref(url, nextSort("count", sort)),
+        durationHref: sortHref(url, nextSort("duration", sort)),
     };
 }
