@@ -17,8 +17,22 @@
         <table class="w-full text-sm border-collapse max-w-md">
             <thead>
                 <tr class="text-left text-gray-500 border-b border-gray-300">
-                    <th class="pb-2 pr-4 font-semibold">Tag</th>
-                    <th class="pb-2 text-right font-semibold">Entries</th>
+                    <th class="pb-2 pr-4 font-semibold">
+                        <a
+                            href={data.nameHref}
+                            class="no-underline hover:underline text-inherit whitespace-nowrap"
+                        >
+                            Tag{data.sort.column === "name" ? (data.sort.dir === "asc" ? " ↑" : " ↓") : ""}
+                        </a>
+                    </th>
+                    <th class="pb-2 text-right font-semibold">
+                        <a
+                            href={data.countHref}
+                            class="no-underline hover:underline text-inherit whitespace-nowrap"
+                        >
+                            Entries{data.sort.column === "count" ? (data.sort.dir === "desc" ? " ↓" : " ↑") : ""}
+                        </a>
+                    </th>
                 </tr>
             </thead>
             <tbody>
