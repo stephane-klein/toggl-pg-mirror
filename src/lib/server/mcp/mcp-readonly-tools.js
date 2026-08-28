@@ -104,19 +104,47 @@ export async function createMcpReadonlyServer({ displayName, context }) {
                     required: ["from", "to", "purpose"],
                 },
             },
+            {
+                name: "getTimeEntriesRange",
+                description:
+                    `Return the overall time range of the time_entries of user '${displayName}', ` +
+                    "plus the current date/time, so you know the actual time frame of the data " +
+                    "before running a search.\n" +
+                    "Semantics:\n" +
+                    "  - Soft-deleted entries are excluded.\n" +
+                    "  - now_paris is the current date/time on the server, in the Paris timezone.\n" +
+                    "  - min/max started_at and ended_at bound the stored data, in the Paris timezone.\n" +
+                    "  - min_ended_at may be the smallest ended_at of running entries still open.\n" +
+                    "This tool takes no argument. 'purpose' is optional for audit logging.",
+                inputSchema: {
+                    type: "object",
+                    properties: {
+                        purpose: {
+                            type: "string",
+                            description: "Optional: describe the purpose of this call in under 400 characters.",
+                            maxLength: 400,
+                        },
+                    },
+                },
+            },
         ],
     }));
 
     server.setRequestHandler(CallToolRequestSchema, async (request) => {
-        const { name, arguments: args } = request.params;
+        const { name, arguments: args = {} } = request.params;
 
         logger.debug({ toolName: name }, "MCP tool call");
 
-        if (name !== "readOnlySqlQuery" && name !== "searchTags") {
+        if (name !== "readOnlySqlQuery" && name !== "searchTags" && name !== "getTimeEntriesRange") {
             return {
                 content: [{ type: "text", text: `Unknown tool: ${name}` }],
                 isError: true,
             };
+        }
+
+        if (name === "getTimeEntriesRange" && typeof args.purpose !== "string") {
+            args.purpose =
+                "Fetch the overall time_entries range (min/max started_at and ended_at) and the current date/time.";
         }
 
         const clientInfo = server.getClientVersion?.() ?? {};
@@ -166,6 +194,26 @@ export async function createMcpReadonlyServer({ displayName, context }) {
                     `)`,
                 values: [from, to, _sort, _q],
                 label: `searchTags(from=${from}, to=${to}, q=[${_q.join(", ")}], sort=${_sort})`,
+            };
+        } else if (name === "getTimeEntriesRange") {
+            query = {
+                text:
+                    `WITH bounds AS (\n` +
+                    `    SELECT min(started_at) AS min_started_at,\n` +
+                    `           max(started_at) AS max_started_at,\n` +
+                    `           min(ended_at)   AS min_ended_at,\n` +
+                    `           max(ended_at)   AS max_ended_at\n` +
+                    `    FROM time_entries\n` +
+                    `    WHERE deleted_at IS NULL\n` +
+                    `)\n` +
+                    `SELECT now() AT TIME ZONE 'Europe/Paris' AS now_paris,\n` +
+                    `       bounds.min_started_at AT TIME ZONE 'Europe/Paris' AS min_started_at_paris,\n` +
+                    `       bounds.max_started_at AT TIME ZONE 'Europe/Paris' AS max_started_at_paris,\n` +
+                    `       bounds.min_ended_at   AT TIME ZONE 'Europe/Paris' AS min_ended_at_paris,\n` +
+                    `       bounds.max_ended_at   AT TIME ZONE 'Europe/Paris' AS max_ended_at_paris\n` +
+                    `FROM bounds`,
+                values: [],
+                label: "getTimeEntriesRange",
             };
         } else {
             query = {
