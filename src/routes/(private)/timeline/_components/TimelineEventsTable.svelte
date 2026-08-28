@@ -141,7 +141,7 @@
     });
 </script>
 
-{#if events.length === 0}
+{#if events.length === 0 && editing?.mode !== "add"}
     <p class="text-sm text-gray-500">No life events yet.</p>
 {:else}
     <table class="w-full text-sm border-collapse">
