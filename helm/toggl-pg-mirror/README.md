@@ -62,6 +62,13 @@ The reader role name defaults to `toggl_mcp_reader`, configurable via
 key (default) of the application secret; if that key is absent, the MCP
 read-only access is disabled.
 
+To avoid flooding an AI agent's context with oversized results, the
+`readOnlySqlQuery` and `searchTags` tools cap the number of characters they
+return. The hard ceiling is `mcp.maxOutputChars` (default `200000`); when a
+tool call does not pass a `maxCharacters` argument, `mcp.defaultMaxOutputChars`
+(default `50000`) is applied. Each tool can request a smaller cap per call via
+its `maxCharacters` argument.
+
 At startup the app grants the role its privileges (`USAGE` on the schema,
 `SELECT` on `time_entries`, `EXECUTE` on the fuzzy-search helpers). It only
 **creates** the role when the application database user has `CREATE ROLE`

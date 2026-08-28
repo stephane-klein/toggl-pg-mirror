@@ -149,6 +149,13 @@
                                 {row.success ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}"
                                 >{row.success ? "ok" : "err"}</span
                             >
+                            {#if row.truncated}
+                                <span
+                                    class="inline-block px-1.5 py-0.5 text-xs font-semibold rounded-sm bg-amber-100 text-amber-700"
+                                    title={`Output truncated to ${row.output_chars ?? "unknown"} characters`}
+                                    >truncated</span
+                                >
+                            {/if}
                         </td>
                     </tr>
                 {/each}

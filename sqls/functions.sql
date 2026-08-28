@@ -1018,7 +1018,7 @@ AS $$
     WITH page_base AS (
         SELECT l.id, l.created_at, l.client_name, l.client_version, l.ip,
                l.user_id, u.display_name, l.query, l.purpose, l.success, l.duration_ms,
-               l.input_chars, l.output_chars
+               l.input_chars, l.output_chars, l.truncated
         FROM mcp_access_log l
         LEFT JOIN users u ON u.id = l.user_id
         WHERE (_from IS NULL AND _to IS NULL)
@@ -1048,7 +1048,8 @@ AS $$
                 'success', success,
                 'duration_ms', duration_ms,
                 'input_chars', input_chars,
-                'output_chars', output_chars
+                'output_chars', output_chars,
+                'truncated', truncated
             )) FROM page),
             '[]'::jsonb
         ),

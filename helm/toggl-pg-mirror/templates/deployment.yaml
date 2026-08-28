@@ -58,6 +58,10 @@ spec:
                   name: {{ .Values.existingSecret.name }}
                   key: {{ .Values.existingSecret.mcpReaderPostgresPasswordKey }}
             {{- end }}
+            - name: TOGGL_PG_MIRROR_MCP_MAX_OUTPUT_CHARS
+              value: {{ .Values.mcp.maxOutputChars | quote }}
+            - name: TOGGL_PG_MIRROR_MCP_DEFAULT_MAX_OUTPUT_CHARS
+              value: {{ .Values.mcp.defaultMaxOutputChars | quote }}
             - name: TOGGL_PG_MIRROR_TOGGL_API_TOKEN
               valueFrom:
                 secretKeyRef:

@@ -246,13 +246,15 @@ yargs(hideBin(process.argv))
     .epilogue(
         `
 Environment variables:
-  TOGGL_PG_MIRROR_POSTGRES_URL              PostgreSQL connection URL (e.g. postgres://user:pass@localhost:5432/db)
-  TOGGL_PG_MIRROR_POSTGRES_SCHEMA           PostgreSQL schema name (default: public)
-  TOGGL_PG_MIRROR_TOGGL_API_TOKEN           Toggl API token
-  TOGGL_PG_MIRROR_POLL_INTERVAL_SECONDS     Sync daemon polling interval in seconds (default: 600)
+  TOGGL_PG_MIRROR_POSTGRES_URL                 PostgreSQL connection URL (e.g. postgres://user:pass@localhost:5432/db)
+  TOGGL_PG_MIRROR_POSTGRES_SCHEMA              PostgreSQL schema name (default: public)
+  TOGGL_PG_MIRROR_TOGGL_API_TOKEN              Toggl API token
+  TOGGL_PG_MIRROR_POLL_INTERVAL_SECONDS        Sync daemon polling interval in seconds (default: 600)
   TOGGL_PG_MIRROR_MCP_READER_POSTGRES_ROLE     PostgreSQL role name for the MCP read-only access (default: toggl_mcp_reader)
   TOGGL_PG_MIRROR_MCP_READER_POSTGRES_PASSWORD Password for the MCP reader role (creates the role at startup when set)
-  TOGGL_PG_MIRROR_ADMIN_TOKEN               Admin token for the admin API (at least 32 characters)
+  TOGGL_PG_MIRROR_MCP_MAX_OUTPUT_CHARS         Hard cap on MCP tool output characters (default: 200000)
+  TOGGL_PG_MIRROR_MCP_DEFAULT_MAX_OUTPUT_CHARS Default MCP tool output cap when maxCharacters is omitted (default: 50000)
+  TOGGL_PG_MIRROR_ADMIN_TOKEN                  Admin token for the admin API (at least 32 characters)
 `,
     )
     .parse();

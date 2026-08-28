@@ -4,6 +4,9 @@ import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprot
 import { getTimeEntriesSchema, recordMcpAccess, sqlReadonly } from "./mcp-readonly-db.js";
 import { logger } from "$lib/server/logger.js";
 
+const MAX_OUTPUT_CHARS = parseInt(process.env.TOGGL_PG_MIRROR_MCP_MAX_OUTPUT_CHARS || "200000", 10);
+const DEFAULT_MAX_OUTPUT_CHARS = parseInt(process.env.TOGGL_PG_MIRROR_MCP_DEFAULT_MAX_OUTPUT_CHARS || "50000", 10);
+
 export async function createMcpReadonlyServer({ displayName, context }) {
     const schema = await getTimeEntriesSchema();
 
@@ -53,6 +56,14 @@ export async function createMcpReadonlyServer({ displayName, context }) {
                             description: "Describe the purpose of this query in under 400 characters.",
                             maxLength: 400,
                         },
+                        maxCharacters: {
+                            type: "integer",
+                            minimum: 1,
+                            description:
+                                `Optional cap on the number of characters returned, so large results ` +
+                                `are truncated. Defaults to ${DEFAULT_MAX_OUTPUT_CHARS}. ` +
+                                `Prefer adding LIMIT or narrowing the filter to get the full data.`,
+                        },
                     },
                     required: ["query", "purpose"],
                 },
@@ -99,6 +110,14 @@ export async function createMcpReadonlyServer({ displayName, context }) {
                             type: "string",
                             description: "Describe the purpose of this search in under 400 characters.",
                             maxLength: 400,
+                        },
+                        maxCharacters: {
+                            type: "integer",
+                            minimum: 1,
+                            description:
+                                `Optional cap on the number of characters returned, so large results ` +
+                                `are truncated. Defaults to ${DEFAULT_MAX_OUTPUT_CHARS}. ` +
+                                `Prefer narrowing the date range or the 'q' filter to get the full data.`,
                         },
                     },
                     required: ["from", "to", "purpose"],
@@ -225,6 +244,14 @@ export async function createMcpReadonlyServer({ displayName, context }) {
 
         let result;
         let success = true;
+        let errorResponse = null;
+        let truncated = false;
+        const cap = Math.min(
+            Number.isInteger(args.maxCharacters) && args.maxCharacters > 0
+                ? args.maxCharacters
+                : DEFAULT_MAX_OUTPUT_CHARS,
+            MAX_OUTPUT_CHARS,
+        );
         const startedAt = Date.now();
         try {
             // Run each query in a read-only transaction scoped to one pooled
@@ -236,9 +263,20 @@ export async function createMcpReadonlyServer({ displayName, context }) {
                 await tx`SET LOCAL idle_in_transaction_session_timeout = '10s'`;
                 return await tx.unsafe(query.text, query.values);
             });
+            truncated = JSON.stringify(result, null, 2).length > cap;
         } catch (err) {
             success = false;
-            throw err;
+            const message = err instanceof Error ? err.message : String(err);
+            const bounded = message.length > 1000 ? `${message.slice(0, 1000)}...` : message;
+            errorResponse = {
+                content: [
+                    {
+                        type: "text",
+                        text: `Query failed: ${bounded}. Re-run with a narrower filter or check the SQL.`,
+                    },
+                ],
+                isError: true,
+            };
         } finally {
             recordMcpAccess({
                 tokenId: context.tokenId,
@@ -252,11 +290,22 @@ export async function createMcpReadonlyServer({ displayName, context }) {
                 success,
                 durationMs: Date.now() - startedAt,
                 inputChars: query.label.length,
-                outputChars: JSON.stringify(result, null, 2).length,
+                outputChars: result === undefined ? 0 : JSON.stringify(result, null, 2).length,
+                truncated,
             });
         }
 
-        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+        if (errorResponse) {
+            return errorResponse;
+        }
+
+        const text = JSON.stringify(result, null, 2);
+        const finalText =
+            text.length > cap
+                ? `${text.slice(0, cap)}\n\n[... truncated: showing ${cap} of ${text.length} chars — ` +
+                  `re-run with LIMIT or a narrower filter to see the rest]`
+                : text;
+        return { content: [{ type: "text", text: finalText }] };
     });
 
     return server;

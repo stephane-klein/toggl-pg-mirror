@@ -53,6 +53,12 @@ existingSecret:
 mcp:
   # PostgreSQL role name used for read-only MCP access.
   readerRole: toggl_mcp_reader
+  # Cap on the number of characters returned by the readOnlySqlQuery and
+  # searchTags tools, so a large result does not flood the AI agent's context.
+  # maxOutputChars is the hard server-side ceiling; defaultMaxOutputChars is
+  # applied when a tool call does not pass maxCharacters.
+  maxOutputChars: 200000
+  defaultMaxOutputChars: 50000
 
 # SMTP configuration for outgoing emails (e.g. the send-test-mail admin endpoint).
 # The password is read from the existingSecret (smtpPassKey).

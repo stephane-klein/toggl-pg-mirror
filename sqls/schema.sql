@@ -208,6 +208,7 @@ CREATE TABLE IF NOT EXISTS mcp_access_log (
     duration_ms    INTEGER,
     input_chars    INTEGER,
     output_chars   INTEGER,
+    truncated      BOOLEAN NOT NULL DEFAULT FALSE,
     created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
