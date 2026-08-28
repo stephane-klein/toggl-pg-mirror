@@ -1,43 +1,21 @@
 <script>
-    import { onMount } from "svelte";
     import { scaleBand } from "d3-scale";
 
     import { fmtDuration } from "$lib/shared/activity-chart-utils.js";
     import { cellOpacity } from "$lib/shared/activity-matrix.js";
+    import { DAY_CHART_LEFT_GUTTER, DAY_CHART_RIGHT_MARGIN, DAY_SCALE_PADDING } from "$lib/shared/chart-day-columns.js";
 
-    let { days = [], matrix = [] } = $props();
+    let { days = [], matrix = [], cellWidth = 24 } = $props();
 
     const ROW_HEIGHT = 32;
-    const MIN_CELL_WIDTH = 24;
-    const margin = { top: 8, right: 8, bottom: 26, left: 96 };
+    const margin = { top: 8, right: DAY_CHART_RIGHT_MARGIN, bottom: 26, left: DAY_CHART_LEFT_GUTTER };
 
-    // Measured on the client once mounted (null during SSR): the wrapper div
-    // width, so the matrix stretches across the full page width. The day
-    // columns share the usable width; a period that fits fills the line, a
-    // wider one (e.g. a whole year) keeps a minimum cell width and scrolls.
-    let containerEl = $state();
-    let containerWidth = $state(null);
-
-    onMount(() => {
-        const update = () => {
-            containerWidth = containerEl?.clientWidth ?? 0;
-        };
-        update();
-        const observer = new ResizeObserver(update);
-        if (containerEl) observer.observe(containerEl);
-        return () => observer.disconnect();
-    });
-
-    let cellWidth = $derived.by(() => {
-        if (containerWidth === null) return MIN_CELL_WIDTH; // SSR default (first paint)
-        const usable = containerWidth - margin.left - margin.right;
-        return Math.max(MIN_CELL_WIDTH, Math.floor(usable / days.length));
-    });
-
+    // cellWidth comes from the page (shared with ActivityChart and
+    // TimelineGantt) so all charts line up day for day.
     let plotWidth = $derived(days.length * cellWidth);
     let plotHeight = $derived(matrix.length * ROW_HEIGHT);
 
-    let xScale = $derived(scaleBand().domain(days).range([0, plotWidth]).padding(0.12));
+    let xScale = $derived(scaleBand().domain(days).range([0, plotWidth]).padding(DAY_SCALE_PADDING));
     let yScale = $derived(
         scaleBand()
             .domain(matrix.map((row) => row.category.tag))
@@ -79,7 +57,6 @@
         <h2 class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Activity matrix</h2>
         <div
             class="overflow-x-auto"
-            bind:this={containerEl}
             style="overflow-y: visible"
         >
             <svg

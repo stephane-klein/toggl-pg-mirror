@@ -1,33 +1,14 @@
 <script>
-    import { onMount } from "svelte";
     import { scaleBand } from "d3-scale";
 
     import { buildTimelineGantt } from "$lib/shared/timeline-gantt.js";
+    import { DAY_CHART_LEFT_GUTTER, DAY_CHART_RIGHT_MARGIN, DAY_SCALE_PADDING } from "$lib/shared/chart-day-columns.js";
 
-    let { periods = [], days = [] } = $props();
+    let { periods = [], days = [], cellWidth = 24 } = $props();
 
     const LANE_HEIGHT = 34;
     const LANE_GAP = 6;
-    const BAR_GAP = 2;
-    const MIN_CELL_WIDTH = 24;
-    // Left gutter mirrors ActivityMatrix's category-label column so both
-    // charts share the exact same day-column geometry.
-    const margin = { top: 8, right: 8, bottom: 8, left: 96 };
-
-    // Measured on the client once mounted (null during SSR): the wrapper div
-    // width, so the frise fills the page width instead of a fixed size.
-    let containerEl = $state();
-    let containerWidth = $state(null);
-
-    onMount(() => {
-        const update = () => {
-            containerWidth = containerEl?.clientWidth ?? 0;
-        };
-        update();
-        const observer = new ResizeObserver(update);
-        if (containerEl) observer.observe(containerEl);
-        return () => observer.disconnect();
-    });
+    const margin = { top: 8, right: DAY_CHART_RIGHT_MARGIN, bottom: 8, left: DAY_CHART_LEFT_GUTTER };
 
     function ts(dateStr) {
         return new Date(dateStr + "T00:00:00").getTime();
@@ -65,19 +46,12 @@
         );
     });
 
-    // Same day-column geometry as ActivityMatrix: shared left gutter, minimum
-    // cell width, horizontal scroll and identical scaleBand padding, so both
-    // charts line up day for day.
-    let cellWidth = $derived.by(() => {
-        if (containerWidth === null) return MIN_CELL_WIDTH; // SSR default (first paint)
-        const usable = containerWidth - margin.left - margin.right;
-        return Math.max(MIN_CELL_WIDTH, Math.floor(usable / Math.max(1, days.length)));
-    });
-
+    // cellWidth comes from the page (shared with ActivityChart and
+    // ActivityMatrix) so all charts line up day for day.
     let plotWidth = $derived(days.length * cellWidth);
     let plotHeight = $derived(Math.max(0, rows.length * LANE_HEIGHT + (rows.length - 1) * LANE_GAP));
 
-    let xScale = $derived(scaleBand().domain(days).range([0, plotWidth]).padding(0.12));
+    let xScale = $derived(scaleBand().domain(days).range([0, plotWidth]).padding(DAY_SCALE_PADDING));
 
     function truncate(text, max) {
         return text.length > max ? `${text.slice(0, Math.max(1, max - 1))}…` : text;
@@ -92,7 +66,6 @@
     <h2 class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Life Periods</h2>
     <div
         class="overflow-x-auto"
-        bind:this={containerEl}
         style="overflow-y: visible"
     >
         <svg
@@ -108,8 +81,8 @@
                         {@const startIdx = dayIndex(period.start)}
                         {@const endIdx = dayIndex(period.end)}
                         {@const x0 = xScale(days[startIdx])}
-                        {@const x1 = endIdx >= days.length ? plotWidth : xScale(days[endIdx])}
-                        {@const barWidth = x1 - x0 - BAR_GAP}
+                        {@const x1 = xScale(days[endIdx - 1]) + xScale.bandwidth()}
+                        {@const barWidth = x1 - x0}
                         <rect
                             x={x0}
                             y={row.y + 2}

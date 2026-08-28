@@ -1,37 +1,17 @@
 <script>
-    import { onMount } from "svelte";
     import { scaleLinear, scaleBand } from "d3-scale";
 
     import { fmtTime, fmtDuration, DAY_START_HOUR } from "$lib/shared/activity-chart-utils.js";
     import { computeSleepStats } from "$lib/shared/sleep-stats.js";
+    import { DAY_CHART_LEFT_GUTTER, DAY_CHART_RIGHT_MARGIN, DAY_SCALE_PADDING } from "$lib/shared/chart-day-columns.js";
 
-    let { days = [], segments = [], color = "#534AB7", chartHeight = 420 } = $props();
+    let { days = [], segments = [], cellWidth = 24, color = "#534AB7", chartHeight = 420 } = $props();
 
-    const margin = { top: 8, right: 8, bottom: 26, left: 36 };
-    const MIN_COLUMN_WIDTH = 24;
+    const margin = { top: 8, right: DAY_CHART_RIGHT_MARGIN, bottom: 26, left: DAY_CHART_LEFT_GUTTER };
 
-    // Measured on the client once mounted (null during SSR): the wrapper div
-    // width, so the chart can fill the whole page width instead of a fixed size.
-    let containerEl = $state();
-    let containerWidth = $state(null);
-
-    onMount(() => {
-        const update = () => {
-            containerWidth = containerEl?.clientWidth ?? 0;
-        };
-        update();
-        const observer = new ResizeObserver(update);
-        if (containerEl) observer.observe(containerEl);
-        return () => observer.disconnect();
-    });
-
-    let columnWidth = $derived.by(() => {
-        if (containerWidth === null) return 64; // SSR default (first paint)
-        const usable = containerWidth - margin.left - margin.right;
-        return Math.max(MIN_COLUMN_WIDTH, Math.floor(usable / days.length));
-    });
-
-    let plotWidth = $derived(days.length * columnWidth);
+    // cellWidth comes from the page (shared with ActivityMatrix and
+    // TimelineGantt) so all charts line up day for day.
+    let plotWidth = $derived(days.length * cellWidth);
     let plotHeight = $derived(chartHeight);
 
     // The Y axis extends beyond 24h so that the sleep bar can stretch from
@@ -41,7 +21,7 @@
     let yMax = $derived(Math.max(26, ...segments.map((s) => s.end - DAY_START_HOUR)));
 
     let yScale = $derived(scaleLinear().domain([0, yMax]).range([0, plotHeight]));
-    let xScale = $derived(scaleBand().domain(days).range([0, plotWidth]).padding(0.15));
+    let xScale = $derived(scaleBand().domain(days).range([0, plotWidth]).padding(DAY_SCALE_PADDING));
 
     // Graduations every 2h, labelled with the real hour: 4h, 6h, …, 0h, 2h, 4h, 6h, 8h…
     let yTicks = $derived(
@@ -86,7 +66,6 @@
     <h2 class="text-xs font-bold uppercase tracking-wider text-gray-500 mt-8 mb-2">Activity chart</h2>
     <div
         class="overflow-x-auto"
-        bind:this={containerEl}
         style="overflow-y: visible"
     >
         <svg
@@ -136,8 +115,8 @@
                 {#each segments as seg (seg.day + "-" + seg.start)}
                     {@const y0 = seg.start - DAY_START_HOUR}
                     {@const y1 = seg.end - DAY_START_HOUR}
-                    {@const barX = xScale(seg.day) + xScale.bandwidth() / 2 - xScale.bandwidth() * 0.4}
-                    {@const barWidth = xScale.bandwidth() * 0.8}
+                    {@const barX = xScale(seg.day)}
+                    {@const barWidth = xScale.bandwidth()}
                     <g
                         onmouseenter={() => (hoveredSeg = seg)}
                         onmouseleave={() => (hoveredSeg = null)}
@@ -148,6 +127,7 @@
                             y={yScale(y0)}
                             width={barWidth}
                             height={Math.max(2, yScale(y1) - yScale(y0))}
+                            rx="3"
                             fill={color}
                             opacity={hoveredSeg === seg ? 0.8 : 1}
                             style="transition: opacity 150ms"
