@@ -1,11 +1,11 @@
 <script>
-    import { format } from "date-fns";
+    import { formatInTimeZone } from "date-fns-tz";
 
     let { data } = $props();
 
     function fmtTime(ts) {
         const d = new Date(ts);
-        return isNaN(d.getTime()) ? ts : format(d, "yyyy-MM-dd HH:mm");
+        return isNaN(d.getTime()) ? ts : formatInTimeZone(d, "Europe/Paris", "yyyy-MM-dd HH:mm");
     }
 
     function shortQuery(q) {
