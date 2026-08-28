@@ -40,15 +40,14 @@ function normalizeBulkTags(raw, field) {
 export async function updateTimeEntry({ id, changes }) {
     const [current] = await sql`
         SELECT te.id, te.toggl_uid, te.started_at, te.ended_at,
-               COALESCE(tg.tags, '{}'::text[]) AS tags,
+               COALESCE((
+                   SELECT array_agg(tgt.name ORDER BY jt.position)
+                   FROM time_entry_tag_entries jt
+                   JOIN time_entry_tags tgt ON tgt.id = jt.tag_id
+                   WHERE jt.entry_id = te.id
+               ), '{}'::text[]) AS tags,
                te.description, te.project, te.import_source
         FROM time_entries te
-        LEFT JOIN LATERAL (
-            SELECT array_agg(tgt.name ORDER BY jt.position) AS tags
-            FROM time_entry_tag_entries jt
-            JOIN time_entry_tags tgt ON tgt.id = jt.tag_id
-            WHERE jt.entry_id = te.id
-        ) tg ON TRUE
         WHERE te.id = ${id}
     `;
     if (!current) {
@@ -127,15 +126,14 @@ export async function updateTimeEntriesBulk({ ids, changes }) {
     return sql.begin(async (tx) => {
         const currentEntries = await tx`
             SELECT te.id, te.toggl_uid, te.started_at, te.ended_at,
-                   COALESCE(tg.tags, '{}'::text[]) AS tags,
+                   COALESCE((
+                       SELECT array_agg(tgt.name ORDER BY jt.position)
+                       FROM time_entry_tag_entries jt
+                       JOIN time_entry_tags tgt ON tgt.id = jt.tag_id
+                       WHERE jt.entry_id = te.id
+                   ), '{}'::text[]) AS tags,
                    te.description, te.project, te.import_source, te.updated_at
             FROM time_entries te
-            LEFT JOIN LATERAL (
-                SELECT array_agg(tgt.name ORDER BY jt.position) AS tags
-                FROM time_entry_tag_entries jt
-                JOIN time_entry_tags tgt ON tgt.id = jt.tag_id
-                WHERE jt.entry_id = te.id
-            ) tg ON TRUE
             WHERE te.id = ANY(${tx.array(uniqueIds, 20)})
             FOR UPDATE
         `;
