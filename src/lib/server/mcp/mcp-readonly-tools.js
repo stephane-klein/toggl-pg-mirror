@@ -57,6 +57,50 @@ export async function createMcpReadonlyServer({ displayName, context }) {
                     required: ["query", "purpose"],
                 },
             },
+            {
+                name: "searchTags",
+                description:
+                    `Search the distinct tags of user '${displayName}' used within a date range, with an ` +
+                    "optional fuzzy (trigram) substring filter, and per-tag usage statistics.\n" +
+                    "Semantics:\n" +
+                    "  - The date range is half-open [from, to): a tag counts an entry when started_at is in [from, to).\n" +
+                    "  - Soft-deleted entries are excluded.\n" +
+                    "  - Only tags actually used in the period are returned.\n" +
+                    "  - entry_count is the number of matching entries; duration_hours is the summed duration of those\n" +
+                    "    entries (running entries use now() as end).\n" +
+                    "  - 'q' is an optional substring filter on the tag name, matched accent- and case-insensitively\n" +
+                    "    (trigram-backed); omit it or pass '' to match all tags.\n" +
+                    "  - 'sort' is optional, defaulting to name_asc; values: name_asc, name_desc, count_asc, count_desc,\n" +
+                    "    duration_asc, duration_desc.",
+                inputSchema: {
+                    type: "object",
+                    properties: {
+                        from: {
+                            type: "string",
+                            description: "Start of the range (inclusive), YYYY-MM-DD",
+                        },
+                        to: {
+                            type: "string",
+                            description: "End of the range (exclusive), YYYY-MM-DD",
+                        },
+                        q: {
+                            type: "string",
+                            description: "Optional accent- and case-insensitive substring filter on the tag name",
+                        },
+                        sort: {
+                            type: "string",
+                            description: "Optional sort; default name_asc",
+                            enum: ["name_asc", "name_desc", "count_asc", "count_desc", "duration_asc", "duration_desc"],
+                        },
+                        purpose: {
+                            type: "string",
+                            description: "Describe the purpose of this search in under 400 characters.",
+                            maxLength: 400,
+                        },
+                    },
+                    required: ["from", "to", "purpose"],
+                },
+            },
         ],
     }));
 
@@ -65,7 +109,7 @@ export async function createMcpReadonlyServer({ displayName, context }) {
 
         logger.debug({ toolName: name }, "MCP tool call");
 
-        if (name !== "readOnlySqlQuery") {
+        if (name !== "readOnlySqlQuery" && name !== "searchTags") {
             return {
                 content: [{ type: "text", text: `Unknown tool: ${name}` }],
                 isError: true,
@@ -86,6 +130,44 @@ export async function createMcpReadonlyServer({ displayName, context }) {
             };
         }
 
+        const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+        const VALID_SORTS = ["name_asc", "name_desc", "count_asc", "count_desc", "duration_asc", "duration_desc"];
+
+        let query;
+        if (name === "searchTags") {
+            const from = args.from;
+            const to = args.to;
+            const _q = typeof args.q === "string" ? args.q : "";
+            const _sort = VALID_SORTS.includes(args.sort) ? args.sort : "name_asc";
+
+            if (typeof from !== "string" || !DATE_RE.test(from) || typeof to !== "string" || !DATE_RE.test(to)) {
+                return {
+                    content: [
+                        { type: "text", text: "The 'from' and 'to' fields are required and must be YYYY-MM-DD." },
+                    ],
+                    isError: true,
+                };
+            }
+
+            query = {
+                text:
+                    `SELECT * FROM list_tags(\n` +
+                    `    _from => $1::date,\n` +
+                    `    _to => $2::date,\n` +
+                    `    _sort => $3,\n` +
+                    `    _q => $4\n` +
+                    `)`,
+                values: [from, to, _sort, _q],
+                label: `searchTags(from=${from}, to=${to}, q=${_q}, sort=${_sort})`,
+            };
+        } else {
+            query = {
+                text: args.query,
+                values: [],
+                label: args.query,
+            };
+        }
+
         let result;
         let success = true;
         try {
@@ -96,7 +178,7 @@ export async function createMcpReadonlyServer({ displayName, context }) {
                 await tx`SET TRANSACTION READ ONLY`;
                 await tx`SET LOCAL statement_timeout = '10s'`;
                 await tx`SET LOCAL idle_in_transaction_session_timeout = '10s'`;
-                return await tx.unsafe(args.query);
+                return await tx.unsafe(query.text, query.values);
             });
         } catch (err) {
             success = false;
@@ -109,7 +191,7 @@ export async function createMcpReadonlyServer({ displayName, context }) {
                 clientName: clientInfo.name,
                 clientVersion: clientInfo.version,
                 ip: context.ip,
-                query: args.query,
+                query: query.label,
                 purpose: args.purpose,
                 success,
             });

@@ -204,9 +204,10 @@ Access is read-only by design, enforced at two levels:
 
 ### Tool
 
-| Tool               | Description                                                                                |
-| ------------------ | ------------------------------------------------------------------------------------------ |
-| `readOnlySqlQuery` | Execute a read-only SQL query (`SELECT`/`EXPLAIN`/`WITH`) against the `time_entries` table |
+| Tool               | Description                                                                                                                                                       |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `readOnlySqlQuery` | Execute a read-only SQL query (`SELECT`/`EXPLAIN`/`WITH`) against the `time_entries` table                                                                        |
+| `searchTags`       | Search the distinct tags used within a date range, with an optional fuzzy (trigram) substring filter, and per-tag usage statistics (entry count, summed duration) |
 
 ### Usage
 

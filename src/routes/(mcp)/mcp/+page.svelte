@@ -86,6 +86,13 @@
                     <code class="bg-gray-100 px-1 py-0.5 rounded-sm">time_entries</code> table.
                 </td>
             </tr>
+            <tr class="border-b border-gray-200">
+                <td class="pr-4 py-1 font-mono">searchTags</td>
+                <td class="py-1">
+                    Search the distinct tags used within a date range, with an optional fuzzy (trigram) substring
+                    filter, and per-tag usage statistics (entry count, summed duration).
+                </td>
+            </tr>
         </tbody>
     </table>
 
@@ -118,11 +125,11 @@ time_entry_tag_entries(
 
     <p class="mb-4">
         Tags are normalized: join <code class="bg-gray-100 px-1 py-0.5 rounded-sm">time_entries</code> to
-        <code class="bg-gray-100 px-1 py-0.5 rounded-sm">time_entry_tag_entries</code> on <code
-            class="bg-gray-100 px-1 py-0.5 rounded-sm">entry_id</code
-        >, then to <code class="bg-gray-100 px-1 py-0.5 rounded-sm">time_entry_tags</code> on <code
-            class="bg-gray-100 px-1 py-0.5 rounded-sm">tag_id</code
-        >. Match tag names case-insensitively with <code class="bg-gray-100 px-1 py-0.5 rounded-sm">lower(name)</code>.
+        <code class="bg-gray-100 px-1 py-0.5 rounded-sm">time_entry_tag_entries</code> on
+        <code class="bg-gray-100 px-1 py-0.5 rounded-sm">entry_id</code>, then to
+        <code class="bg-gray-100 px-1 py-0.5 rounded-sm">time_entry_tags</code>
+        on <code class="bg-gray-100 px-1 py-0.5 rounded-sm">tag_id</code>. Match tag names case-insensitively with
+        <code class="bg-gray-100 px-1 py-0.5 rounded-sm">lower(name)</code>.
     </p>
 
     <h2 class="text-lg font-bold mb-3 mt-6">Usage</h2>
