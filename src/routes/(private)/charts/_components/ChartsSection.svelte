@@ -7,7 +7,7 @@
     import ActivityMatrix from "./ActivityMatrix.svelte";
     import ActivityChart from "./ActivityChart.svelte";
 
-    let { periods = [], days = [], segments = [], matrix = [] } = $props();
+    let { periods = [], milestones = [], days = [], segments = [], matrix = [] } = $props();
 
     // A single container measurement shared by all three charts. Each chart
     // receives the same cellWidth, so their day columns are guaranteed to line
@@ -31,6 +31,7 @@
 <div bind:this={chartsWrapEl}>
     <TimelineGantt
         {periods}
+        {milestones}
         {days}
         {cellWidth}
     />

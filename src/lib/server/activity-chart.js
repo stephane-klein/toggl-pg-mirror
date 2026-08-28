@@ -35,6 +35,9 @@ function daysBetween(from, to) {
 //   - timelinePeriods : [{ id, category, title, start_date, end_date, ongoing }]
 //                  period-type timeline events intersecting the window, fed to
 //                  the Gantt swimlane chart (clipped client-side).
+//   - timelineMilestones : [{ id, category, title, start_date }] milestone-type
+//                  timeline events whose single date falls in the window, fed to
+//                  the Gantt milestone points.
 // The categories are returned (not passed in) so the load layer never issues a
 // separate users lookup: one round-trip serves the whole render (ADR 002).
 export async function getChartsPageData(from, to, userId) {
@@ -55,5 +58,6 @@ export async function getChartsPageData(from, to, userId) {
         segments: row.data.segments,
         matrixRows: row.data.matrix,
         timelinePeriods: row.data.timeline_periods,
+        timelineMilestones: row.data.timeline_milestones,
     };
 }

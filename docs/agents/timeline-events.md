@@ -48,6 +48,15 @@ event list as JSON, newest `start_date` first. It is called from
 `getTimelineEventsPageData()` in `src/lib/server/timeline-events.js` with
 `{ prepare: false }` (unnamed statement, see ADR 002).
 
+The `/charts` Life Periods Gantt is fed by `get_charts_page_data()`
+(`sqls/functions.sql`): it returns `timeline_periods` (period-type events
+intersecting the window, drawn as bars) and `timeline_milestones`
+(milestone-type events whose single date falls in the window, drawn as points
+centered on their day column with the title to the right — or to the left when
+there is no room). Milestone grouping, sorting and window clipping are shared
+in `buildTimelineGantt(periods, milestones, from, to)`
+(`src/lib/shared/timeline-gantt.js`).
+
 ## Server module
 
 `src/lib/server/timeline-events.js` holds the page-data fetch

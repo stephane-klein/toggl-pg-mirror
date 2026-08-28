@@ -4,7 +4,7 @@
     import { buildTimelineGantt } from "$lib/shared/timeline-gantt.js";
     import { DAY_CHART_LEFT_GUTTER, DAY_CHART_RIGHT_MARGIN, DAY_SCALE_PADDING } from "$lib/shared/chart-day-columns.js";
 
-    let { periods = [], days = [], cellWidth = 24 } = $props();
+    let { periods = [], milestones = [], days = [], cellWidth = 24 } = $props();
 
     const LANE_HEIGHT = 34;
     const LANE_GAP = 6;
@@ -31,19 +31,25 @@
         return Math.round((ts(dateStr) - fromTime) / 86400000);
     }
 
-    let groups = $derived(buildTimelineGantt(periods, from, to));
+    let groups = $derived(buildTimelineGantt(periods, milestones, from, to));
 
-    // One row per lane, with its precomputed y (categories are only told apart
-    // by their bar color).
+    // One row per lane or milestone, with its precomputed y (categories are
+    // only told apart by their bar/point color). Within a category the period
+    // lanes come first, then one dedicated row per milestone.
     let rows = $derived.by(() => {
         let y = 0;
-        return groups.flatMap((group) =>
-            group.lanes.map((lane, laneIndex) => {
-                const row = { group, lane, laneIndex, y };
+        return groups.flatMap((group) => [
+            ...group.lanes.map((lane, laneIndex) => {
+                const row = { group, kind: "lane", lane, laneIndex, y };
                 y += LANE_HEIGHT + LANE_GAP;
                 return row;
             }),
-        );
+            ...group.milestones.map((milestone, milestoneIndex) => {
+                const row = { group, kind: "milestone", milestone, milestoneIndex, y };
+                y += LANE_HEIGHT + LANE_GAP;
+                return row;
+            }),
+        ]);
     });
 
     // cellWidth comes from the page (shared with ActivityChart and
@@ -63,7 +69,7 @@
 </script>
 
 {#if rows.length > 0}
-    <h2 class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Life Periods</h2>
+    <h2 class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Life Events & Periods</h2>
     <div
         class="overflow-x-auto"
         style="overflow-y: visible"
@@ -76,54 +82,81 @@
             aria-label="Timeline periods"
         >
             <g transform="translate({margin.left},{margin.top})">
-                {#each rows as row (row.group.category + "-" + row.laneIndex)}
-                    {#each row.lane as period (period.id)}
-                        {@const startIdx = dayIndex(period.start)}
-                        {@const endIdx = dayIndex(period.end)}
-                        {@const x0 = xScale(days[startIdx])}
-                        {@const x1 = xScale(days[endIdx - 1]) + xScale.bandwidth()}
-                        {@const barWidth = x1 - x0}
-                        <rect
-                            x={x0}
-                            y={row.y + 2}
-                            width={Math.max(barWidth, 2)}
-                            height={LANE_HEIGHT - 4}
-                            rx="2"
+                {#each rows as row (row.group.category + (row.kind === "lane" ? "-" + row.laneIndex : "-m" + row.milestoneIndex))}
+                    {#if row.kind === "lane"}
+                        {#each row.lane as period (period.id)}
+                            {@const startIdx = dayIndex(period.start)}
+                            {@const endIdx = dayIndex(period.end)}
+                            {@const x0 = xScale(days[startIdx])}
+                            {@const x1 = xScale(days[endIdx - 1]) + xScale.bandwidth()}
+                            {@const barWidth = x1 - x0}
+                            <rect
+                                x={x0}
+                                y={row.y + 2}
+                                width={Math.max(barWidth, 2)}
+                                height={LANE_HEIGHT - 4}
+                                rx="2"
+                                fill={row.group.color}
+                            />
+                            {#if barWidth >= 60}
+                                {@const titleChars = Math.floor((barWidth - 12) / 6.5)}
+                                {@const datesChars = Math.floor((barWidth - 12) / 5.2)}
+                                <text
+                                    x={x0 + 6}
+                                    y={row.y + 15}
+                                    font-size="11"
+                                    fill="#fff"
+                                >
+                                    {truncate(period.title, titleChars)}
+                                </text>
+                                <text
+                                    x={x0 + 6}
+                                    y={row.y + 26}
+                                    font-size="9"
+                                    fill="#fff"
+                                    opacity="0.85"
+                                >
+                                    {truncate(periodDates(period), datesChars)}
+                                </text>
+                            {/if}
+                            {#if period.ongoing && barWidth >= 16}
+                                <text
+                                    x={x1 - 3}
+                                    y={row.y + LANE_HEIGHT / 2 + 4}
+                                    text-anchor="end"
+                                    font-size="10"
+                                    fill="#fff"
+                                >
+                                    →
+                                </text>
+                            {/if}
+                        {/each}
+                    {:else}
+                        {@const dayIdx = dayIndex(row.milestone.start_date)}
+                        {@const xCenter = xScale(days[dayIdx]) + xScale.bandwidth() / 2}
+                        {@const cy = row.y + LANE_HEIGHT / 2}
+                        {@const gap = 6}
+                        {@const labelW = row.milestone.title.length * 6.5 + gap}
+                        {@const roomRight = plotWidth - xCenter - gap}
+                        {@const roomLeft = xCenter - gap + DAY_CHART_LEFT_GUTTER}
+                        {@const onRight = roomRight >= labelW}
+                        {@const maxChars = Math.max(1, Math.floor((onRight ? roomRight : roomLeft) / 6.5))}
+                        <circle
+                            cx={xCenter}
+                            {cy}
+                            r="4"
                             fill={row.group.color}
                         />
-                        {#if barWidth >= 60}
-                            {@const titleChars = Math.floor((barWidth - 12) / 6.5)}
-                            {@const datesChars = Math.floor((barWidth - 12) / 5.2)}
-                            <text
-                                x={x0 + 6}
-                                y={row.y + 15}
-                                font-size="11"
-                                fill="#fff"
-                            >
-                                {truncate(period.title, titleChars)}
-                            </text>
-                            <text
-                                x={x0 + 6}
-                                y={row.y + 26}
-                                font-size="9"
-                                fill="#fff"
-                                opacity="0.85"
-                            >
-                                {truncate(periodDates(period), datesChars)}
-                            </text>
-                        {/if}
-                        {#if period.ongoing && barWidth >= 16}
-                            <text
-                                x={x1 - 3}
-                                y={row.y + LANE_HEIGHT / 2 + 4}
-                                text-anchor="end"
-                                font-size="10"
-                                fill="#fff"
-                            >
-                                →
-                            </text>
-                        {/if}
-                    {/each}
+                        <text
+                            x={onRight ? xCenter + gap : xCenter - gap}
+                            y={cy + 4}
+                            text-anchor={onRight ? "start" : "end"}
+                            font-size="11"
+                            fill="#374151"
+                        >
+                            {truncate(row.milestone.title, maxChars)}
+                        </text>
+                    {/if}
                 {/each}
             </g>
         </svg>

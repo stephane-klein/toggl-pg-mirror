@@ -74,6 +74,7 @@
 
     <ChartsSection
         periods={data.timelinePeriods}
+        milestones={data.timelineMilestones}
         days={data.days}
         segments={data.segments}
         matrix={data.matrix}

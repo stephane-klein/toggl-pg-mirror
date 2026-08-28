@@ -2,6 +2,8 @@
 // /charts page). Given the period-type timeline events and the visible window
 // [from, to), they compute the clipped bars, the lane stacking within each
 // category (no overlap, newest below oldest) and the per-category color.
+// Milestone-type events are handled too: they render as points, so each one
+// keeps its single date and groups by category without any lane assignment.
 //
 // All dates are 'YYYY-MM-DD' strings; an interval renders as [start, end)
 // (end exclusive, matching the app-wide _to convention).
@@ -81,13 +83,35 @@ function groupByCategory(items) {
     return [...groups].map(([category, items]) => ({ category, items }));
 }
 
-// Returns [{ category, color, lanes: [[period, ...], ...] }], lanes ordered
-// top-down. Each period carries the clipped { start, end } plus its original
-// fields (id, category, title, ongoing).
-export function buildTimelineGantt(periods, from, to) {
-    return groupByCategory(clipAndSort(periods, from, to)).map(({ category, items }) => ({
+// Milestones are points (zero duration): keep only those whose single date
+// falls in the window and sort them chronologically (then by id).
+function clipAndSortMilestones(milestones, from, to) {
+    return milestones
+        .filter((m) => m.start_date >= from && m.start_date < to)
+        .sort((a, b) => (a.start_date === b.start_date ? a.id - b.id : a.start_date < b.start_date ? -1 : 1));
+}
+
+// Returns [{ category, color, lanes, milestones }], ordered by category:
+// first the period categories (by first chronological appearance), then the
+// milestone-only categories (by first chronological appearance of their
+// milestones). lanes holds the period swimlanes (empty when the category has
+// no period in the window); milestones holds the sorted milestone list (empty
+// when the category has none). Each period carries the clipped { start, end }
+// plus its original fields (id, category, title, ongoing).
+export function buildTimelineGantt(periods, milestones = [], from, to) {
+    const periodGroups = groupByCategory(clipAndSort(periods, from, to));
+    const milestoneGroups = groupByCategory(clipAndSortMilestones(milestones, from, to));
+    const periodCategories = periodGroups.map((g) => g.category);
+    const categories = [
+        ...periodCategories,
+        ...milestoneGroups.map((g) => g.category).filter((c) => !periodCategories.includes(c)),
+    ];
+    const lanesByCategory = new Map(periodGroups.map((g) => [g.category, assignLanes(g.items)]));
+    const milestonesByCategory = new Map(milestoneGroups.map((g) => [g.category, g.items]));
+    return categories.map((category) => ({
         category,
         color: categoryColor(category),
-        lanes: assignLanes(items),
+        lanes: lanesByCategory.get(category) ?? [],
+        milestones: milestonesByCategory.get(category) ?? [],
     }));
 }

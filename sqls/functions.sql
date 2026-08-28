@@ -977,7 +977,8 @@ $$;
 -- Single stored function serving a full /charts page render (ADR 002): one
 -- round-trip that composes the sleep activity chart segments, the user's
 -- activity matrix categories and the matrix rows (one row per (day, tag)),
--- plus the timeline periods intersecting the window (the Gantt swimlanes).
+-- plus the timeline periods intersecting the window (the Gantt swimlanes) and
+-- the timeline milestones whose date falls in it (the Gantt milestone points).
 CREATE FUNCTION get_charts_page_data(
     _from date,   -- period start (inclusive)
     _to date,     -- period end (exclusive)
@@ -1001,6 +1002,15 @@ AS $$
         WHERE type = 'period'
           AND start_date < _to
           AND (end_date IS NULL OR end_date >= _from)
+    ),
+    timeline_milestones AS (
+        -- Milestone-type timeline events whose single date falls in [_from, _to).
+        -- The Gantt renders each as a point centered on its day column.
+        SELECT id, category, title, start_date
+        FROM timeline_events
+        WHERE type = 'milestone'
+          AND start_date >= _from
+          AND start_date < _to
     )
     SELECT jsonb_build_object(
         'categories', c.value,
@@ -1024,6 +1034,15 @@ AS $$
                 'end_date', end_date,
                 'ongoing', ongoing
             )) FROM timeline_periods),
+            '[]'::jsonb
+        ),
+        'timeline_milestones', COALESCE(
+            (SELECT jsonb_agg(jsonb_build_object(
+                'id', id,
+                'category', category,
+                'title', title,
+                'start_date', start_date
+            )) FROM timeline_milestones),
             '[]'::jsonb
         )
     )

@@ -16,10 +16,14 @@ function period(id, start_date, end_date, category = null, title = `p${id}`, ong
     return { id, category, title, start_date, end_date, ongoing };
 }
 
+function milestone(id, start_date, category = null, title = `m${id}`) {
+    return { id, category, title, start_date };
+}
+
 test("overlapping periods of one category stack, newest below oldest", () => {
     const a = period(1, "2026-08-05", "2026-08-20", "Work");
     const b = period(2, "2026-08-10", "2026-08-25", "Work");
-    const [group] = buildTimelineGantt([a, b], FROM, TO);
+    const [group] = buildTimelineGantt([a, b], [], FROM, TO);
     assert.equal(group.category, "Work");
     assert.equal(group.lanes.length, 2);
     assert.deepEqual(
@@ -35,7 +39,7 @@ test("overlapping periods of one category stack, newest below oldest", () => {
 test("adjacent periods share the same lane", () => {
     const a = period(1, "2026-08-05", "2026-08-10", "Work");
     const b = period(2, "2026-08-10", "2026-08-20", "Work");
-    const [group] = buildTimelineGantt([a, b], FROM, TO);
+    const [group] = buildTimelineGantt([a, b], [], FROM, TO);
     assert.equal(group.lanes.length, 1);
     assert.deepEqual(
         group.lanes[0].map((p) => p.id),
@@ -47,7 +51,7 @@ test("a period can return to an earlier lane after a gap", () => {
     const a = period(1, "2026-08-05", "2026-08-10", "Work");
     const b = period(2, "2026-08-08", "2026-08-15", "Work");
     const c = period(3, "2026-08-20", "2026-08-25", "Work");
-    const [group] = buildTimelineGantt([a, b, c], FROM, TO);
+    const [group] = buildTimelineGantt([a, b, c], [], FROM, TO);
     assert.deepEqual(
         group.lanes.map((lane) => lane.map((p) => p.id)),
         [[1, 3], [2]],
@@ -55,7 +59,7 @@ test("a period can return to an earlier lane after a gap", () => {
 });
 
 test("ongoing period is clipped to the window end and flagged", () => {
-    const [group] = buildTimelineGantt([period(1, "2026-08-05", null, "Work", "Job", true)], FROM, TO);
+    const [group] = buildTimelineGantt([period(1, "2026-08-05", null, "Work", "Job", true)], [], FROM, TO);
     const [p] = group.lanes[0];
     assert.equal(p.start, "2026-08-05");
     assert.equal(p.end, TO);
@@ -63,7 +67,7 @@ test("ongoing period is clipped to the window end and flagged", () => {
 });
 
 test("period extending past the window is clipped without ongoing flag", () => {
-    const [group] = buildTimelineGantt([period(1, "2026-08-05", "2026-10-01", "Work")], FROM, TO);
+    const [group] = buildTimelineGantt([period(1, "2026-08-05", "2026-10-01", "Work")], [], FROM, TO);
     const [p] = group.lanes[0];
     assert.equal(p.start, "2026-08-05");
     assert.equal(p.end, TO);
@@ -71,7 +75,7 @@ test("period extending past the window is clipped without ongoing flag", () => {
 });
 
 test("period starting before the window is clipped at its start", () => {
-    const [group] = buildTimelineGantt([period(1, "2026-07-25", "2026-08-10", "Work")], FROM, TO);
+    const [group] = buildTimelineGantt([period(1, "2026-07-25", "2026-08-10", "Work")], [], FROM, TO);
     const [p] = group.lanes[0];
     assert.equal(p.start, FROM);
     assert.equal(p.end, "2026-08-10");
@@ -81,13 +85,13 @@ test("periods outside the window are dropped", () => {
     const before = period(1, "2026-07-01", "2026-07-31", "Work");
     const endsAtFrom = period(2, "2026-07-01", FROM, "Work");
     const startsAtTo = period(3, TO, "2026-09-15", "Work");
-    assert.deepEqual(buildTimelineGantt([before, endsAtFrom, startsAtTo], FROM, TO), []);
+    assert.deepEqual(buildTimelineGantt([before, endsAtFrom, startsAtTo], [], FROM, TO), []);
 });
 
 test("null category becomes the trailing Uncategorized lane", () => {
     const a = period(1, "2026-08-05", "2026-08-20", "Work");
     const b = period(2, "2026-08-10", "2026-08-25", null);
-    const groups = buildTimelineGantt([a, b], FROM, TO);
+    const groups = buildTimelineGantt([a, b], [], FROM, TO);
     assert.deepEqual(
         groups.map((g) => g.category),
         ["Work", UNCATEGORIZED_LABEL],
@@ -104,7 +108,7 @@ test("categories are ordered by first chronological appearance", () => {
     const a = period(1, "2026-08-20", "2026-08-25", "Work");
     const b = period(2, "2026-08-05", "2026-08-10", "Sport");
     const c = period(3, "2026-08-15", "2026-08-18", null);
-    const groups = buildTimelineGantt([a, b, c], FROM, TO);
+    const groups = buildTimelineGantt([a, b, c], [], FROM, TO);
     assert.deepEqual(
         groups.map((g) => g.category),
         ["Sport", UNCATEGORIZED_LABEL, "Work"],
@@ -115,4 +119,74 @@ test("category color is deterministic", () => {
     assert.equal(categoryColor("Work"), categoryColor("Work"));
     assert.equal(categoryColor(UNCATEGORIZED_LABEL), UNCATEGORIZED_COLOR);
     assert.ok(!PERIOD_COLORS.includes(categoryColor(UNCATEGORIZED_LABEL)));
+});
+
+test("milestones are grouped under their category, below the period lanes", () => {
+    const p = period(1, "2026-08-05", "2026-08-20", "Work");
+    const m = milestone(1, "2026-08-10", "Work");
+    const [group] = buildTimelineGantt([p], [m], FROM, TO);
+    assert.equal(group.category, "Work");
+    assert.deepEqual(
+        group.lanes[0].map((x) => x.id),
+        [1],
+    );
+    assert.deepEqual(
+        group.milestones.map((x) => x.id),
+        [1],
+    );
+});
+
+test("a category with only milestones gets a group with empty lanes", () => {
+    const m = milestone(1, "2026-08-15", "Sport");
+    const [group] = buildTimelineGantt([], [m], FROM, TO);
+    assert.equal(group.category, "Sport");
+    assert.deepEqual(group.lanes, []);
+    assert.deepEqual(
+        group.milestones.map((x) => x.id),
+        [1],
+    );
+});
+
+test("milestone-only categories come after period categories", () => {
+    const p = period(1, "2026-08-05", "2026-08-20", "Work");
+    const m = milestone(1, "2026-08-15", "Sport");
+    const groups = buildTimelineGantt([p], [m], FROM, TO);
+    assert.deepEqual(
+        groups.map((g) => g.category),
+        ["Work", "Sport"],
+    );
+});
+
+test("milestones are sorted chronologically, then by id", () => {
+    const m1 = milestone(2, "2026-08-10", "Work");
+    const m2 = milestone(1, "2026-08-05", "Work");
+    const m3 = milestone(3, "2026-08-10", "Work");
+    const [group] = buildTimelineGantt([], [m1, m2, m3], FROM, TO);
+    assert.deepEqual(
+        group.milestones.map((x) => x.id),
+        [1, 2, 3],
+    );
+});
+
+test("milestones outside the window are dropped", () => {
+    const before = milestone(1, "2026-07-01", "Work");
+    const atFrom = milestone(2, FROM, "Work");
+    const atTo = milestone(3, TO, "Work");
+    const after = milestone(4, "2026-09-15", "Work");
+    const [group] = buildTimelineGantt([], [before, atFrom, atTo, after], FROM, TO);
+    assert.deepEqual(
+        group.milestones.map((x) => x.id),
+        [2],
+    );
+});
+
+test("null-category milestone becomes the trailing Uncategorized group", () => {
+    const m = milestone(1, "2026-08-15", null);
+    const [group] = buildTimelineGantt([], [m], FROM, TO);
+    assert.equal(group.category, UNCATEGORIZED_LABEL);
+    assert.equal(group.color, UNCATEGORIZED_COLOR);
+    assert.deepEqual(
+        group.milestones.map((x) => x.id),
+        [1],
+    );
 });

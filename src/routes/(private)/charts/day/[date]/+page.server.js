@@ -59,7 +59,7 @@ export async function load({ params, url, locals }) {
     const navData = computeTimeEntriesNav("/charts", url, rawDate);
     const prevPeriodDate = addDays(rawDate, -1);
     const nextPeriodDate = addDays(rawDate, 1);
-    const { days, categories, segments, matrixRows, timelinePeriods } = await getChartsPageData(
+    const { days, categories, segments, matrixRows, timelinePeriods, timelineMilestones } = await getChartsPageData(
         rawDate,
         addDays(rawDate, 1),
         locals.user.id,
@@ -79,5 +79,6 @@ export async function load({ params, url, locals }) {
         segments,
         matrix,
         timelinePeriods,
+        timelineMilestones,
     };
 }
