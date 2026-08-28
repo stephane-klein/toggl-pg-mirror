@@ -32,16 +32,19 @@ export async function load({ url, locals }) {
     let days = [];
     let segments = [];
     let matrix = [];
+    let timelinePeriods = [];
     if (from && to) {
         const {
             days: ds,
             categories,
             segments: ss,
             matrixRows,
+            timelinePeriods: tp,
         } = await getChartsPageData(from, addDays(to, 1), locals.user.id);
         days = ds;
         segments = ss;
         matrix = buildActivityMatrix(days, categories, matrixRows);
+        timelinePeriods = tp;
     }
 
     return {
@@ -53,5 +56,6 @@ export async function load({ url, locals }) {
         days,
         segments,
         matrix,
+        timelinePeriods,
     };
 }

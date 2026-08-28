@@ -83,7 +83,7 @@
 {#if days.length === 0}
     <p class="text-sm text-gray-500 mt-2">No days in period.</p>
 {:else}
-    <h2 class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Activity chart</h2>
+    <h2 class="text-xs font-bold uppercase tracking-wider text-gray-500 mt-8 mb-2">Activity chart</h2>
     <div
         class="overflow-x-auto"
         bind:this={containerEl}

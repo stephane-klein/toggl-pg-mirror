@@ -976,7 +976,8 @@ $$;
 
 -- Single stored function serving a full /charts page render (ADR 002): one
 -- round-trip that composes the sleep activity chart segments, the user's
--- activity matrix categories and the matrix rows (one row per (day, tag)).
+-- activity matrix categories and the matrix rows (one row per (day, tag)),
+-- plus the timeline periods intersecting the window (the Gantt swimlanes).
 CREATE FUNCTION get_charts_page_data(
     _from date,   -- period start (inclusive)
     _to date,     -- period end (exclusive)
@@ -990,6 +991,16 @@ AS $$
         SELECT COALESCE(u.activity_matrix_categories, '[]'::jsonb) AS value
         FROM (SELECT 1) AS one
         LEFT JOIN users u ON u.id = _user_id
+    ),
+    timeline_periods AS (
+        -- Period-type timeline events intersecting [_from, _to). The Gantt
+        -- clips each bar to the window on the client; end_date stays raw so
+        -- "ongoing" (end_date IS NULL) is distinguishable from a past end.
+        SELECT id, category, title, start_date, end_date, (end_date IS NULL) AS ongoing
+        FROM timeline_events
+        WHERE type = 'period'
+          AND start_date < _to
+          AND (end_date IS NULL OR end_date >= _from)
     )
     SELECT jsonb_build_object(
         'categories', c.value,
@@ -1003,6 +1014,17 @@ AS $$
                  WHERE j->>'tag' IS NOT NULL),
                 '[]'::jsonb
             )
+        ),
+        'timeline_periods', COALESCE(
+            (SELECT jsonb_agg(jsonb_build_object(
+                'id', id,
+                'category', category,
+                'title', title,
+                'start_date', start_date,
+                'end_date', end_date,
+                'ongoing', ongoing
+            )) FROM timeline_periods),
+            '[]'::jsonb
         )
     )
     FROM categories c;

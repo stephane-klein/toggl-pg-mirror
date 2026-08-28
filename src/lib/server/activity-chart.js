@@ -32,6 +32,9 @@ function daysBetween(from, to) {
 //                  Europe/Paris hours (end may exceed 24), computed by SQL,
 //   - matrixRows : [{ day, tag, count, duration_hours }] activity matrix
 //                  aggregates, fed to buildActivityMatrix for the full grid.
+//   - timelinePeriods : [{ id, category, title, start_date, end_date, ongoing }]
+//                  period-type timeline events intersecting the window, fed to
+//                  the Gantt swimlane chart (clipped client-side).
 // The categories are returned (not passed in) so the load layer never issues a
 // separate users lookup: one round-trip serves the whole render (ADR 002).
 export async function getChartsPageData(from, to, userId) {
@@ -51,5 +54,6 @@ export async function getChartsPageData(from, to, userId) {
         categories: row.data.categories,
         segments: row.data.segments,
         matrixRows: row.data.matrix,
+        timelinePeriods: row.data.timeline_periods,
     };
 }

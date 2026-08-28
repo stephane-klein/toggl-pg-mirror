@@ -5,6 +5,7 @@
     import MonthNav from "$lib/components/nav/MonthNav.svelte";
     import ActivityChart from "../../_components/ActivityChart.svelte";
     import ActivityMatrix from "../../_components/ActivityMatrix.svelte";
+    import TimelineGantt from "../../_components/TimelineGantt.svelte";
 
     let { data } = $props();
 
@@ -72,13 +73,18 @@
         currentMonth={data.currentMonth}
     />
 
-    <ActivityChart
+    <TimelineGantt
+        periods={data.timelinePeriods}
         days={data.days}
-        segments={data.segments}
     />
 
     <ActivityMatrix
         days={data.days}
         matrix={data.matrix}
+    />
+
+    <ActivityChart
+        days={data.days}
+        segments={data.segments}
     />
 </main>

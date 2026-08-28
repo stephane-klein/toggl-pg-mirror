@@ -69,7 +69,7 @@ export async function load({ params, url, locals }) {
     const navData = computeTimeEntriesNav("/charts", url, from);
     const toDate = new Date(fromDate);
     toDate.setDate(fromDate.getDate() + 7);
-    const { days, categories, segments, matrixRows } = await getChartsPageData(
+    const { days, categories, segments, matrixRows, timelinePeriods } = await getChartsPageData(
         from,
         formatDate(toDate),
         locals.user.id,
@@ -89,5 +89,6 @@ export async function load({ params, url, locals }) {
         days,
         segments,
         matrix,
+        timelinePeriods,
     };
 }

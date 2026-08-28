@@ -39,7 +39,7 @@ export async function load({ params, url, locals }) {
     const nextMonth = addMonths(rawMonth, 1);
 
     const navData = computeTimeEntriesNav("/charts", url, firstOfMonth(year, monthNum));
-    const { days, categories, segments, matrixRows } = await getChartsPageData(
+    const { days, categories, segments, matrixRows, timelinePeriods } = await getChartsPageData(
         firstOfMonth(year, monthNum),
         firstOfMonth(year, monthNum + 1),
         locals.user.id,
@@ -58,5 +58,6 @@ export async function load({ params, url, locals }) {
         days,
         segments,
         matrix,
+        timelinePeriods,
     };
 }
