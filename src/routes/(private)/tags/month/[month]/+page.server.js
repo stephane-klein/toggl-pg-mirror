@@ -39,10 +39,12 @@ export async function load({ params, url }) {
 
     const navData = computeTimeEntriesNav("/tags", url, firstOfMonth(year, monthNum));
     const sort = parseSort(url.searchParams.get("sort"));
+    const q = url.searchParams.get("q") || "";
     const tags = await listTagsForPeriod(
         firstOfMonth(year, monthNum),
         firstOfMonth(year, monthNum + 1),
         `${sort.column}_${sort.dir}`,
+        q,
     );
 
     return {

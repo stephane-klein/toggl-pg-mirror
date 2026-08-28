@@ -122,6 +122,11 @@ CREATE INDEX IF NOT EXISTS idx_time_entry_tag_entries_entry_id_position
 CREATE INDEX IF NOT EXISTS idx_time_entry_tag_entries_tag_id
     ON time_entry_tag_entries (tag_id);
 
+-- Accent- and case-insensitive trigram search over normalized tag names (used by
+-- the _q filter of list_tags for the /tags search field).
+CREATE INDEX IF NOT EXISTS idx_time_entry_tags_name_unaccent_trgm
+    ON time_entry_tags USING GIN (immutable_unaccent(name) gin_trgm_ops);
+
 -- Look up the full change history of a given time entry.
 CREATE INDEX IF NOT EXISTS idx_time_entry_audit_log_entry_id
     ON time_entry_audit_log (entry_id);

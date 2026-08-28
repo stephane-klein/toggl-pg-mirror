@@ -1,5 +1,6 @@
 <script>
     import { formatHumanDuration } from "$lib/shared/format-duration.js";
+    import TagSearchField from "./TagSearchField.svelte";
 
     let { data } = $props();
 
@@ -8,6 +9,8 @@
     let durationHref = $derived(data.durationHref);
     let sort = $derived(data.sort);
 </script>
+
+<TagSearchField value={data.q} />
 
 {#if data.tags.length === 0}
     <p class="text-sm text-gray-500 italic">No tags in this period.</p>

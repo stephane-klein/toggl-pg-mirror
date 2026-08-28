@@ -22,15 +22,16 @@ export function sortHref(url, value, newPath = null) {
     });
 }
 
-export async function listTagsForPeriod(from, to, sort = "name_asc") {
+export async function listTagsForPeriod(from, to, sort = "name_asc", q = "") {
     const _sort = VALID_SORTS.includes(sort) ? sort : "name_asc";
     return sql.unsafe(
         `SELECT * FROM list_tags(
             _from => $1::date,
             _to => $2::date,
-            _sort => $3
+            _sort => $3,
+            _q => $4
         )`,
-        [from, to, _sort],
+        [from, to, _sort, q],
         { prepare: false },
     );
 }

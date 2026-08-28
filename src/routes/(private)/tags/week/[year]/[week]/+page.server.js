@@ -67,9 +67,10 @@ export async function load({ params, url }) {
 
     const navData = computeTimeEntriesNav("/tags", url, from);
     const sort = parseSort(url.searchParams.get("sort"));
+    const q = url.searchParams.get("q") || "";
     const toDate = new Date(fromDate);
     toDate.setDate(fromDate.getDate() + 7);
-    const tags = await listTagsForPeriod(from, formatDate(toDate), `${sort.column}_${sort.dir}`);
+    const tags = await listTagsForPeriod(from, formatDate(toDate), `${sort.column}_${sort.dir}`, q);
 
     return {
         ...navData,

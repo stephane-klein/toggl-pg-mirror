@@ -23,6 +23,7 @@ export async function load({ url }) {
 
     const navData = computeTimeEntriesNav("/tags", url, null);
     const sort = parseSort(url.searchParams.get("sort"));
+    const q = url.searchParams.get("q") || "";
 
     if (from && to) {
         if (!isValidDate(from)) error(400, `Invalid from date: ${from}`);
@@ -31,7 +32,7 @@ export async function load({ url }) {
 
     let tags = [];
     if (from && to) {
-        tags = await listTagsForPeriod(from, addDays(to, 1), `${sort.column}_${sort.dir}`);
+        tags = await listTagsForPeriod(from, addDays(to, 1), `${sort.column}_${sort.dir}`, q);
     }
 
     return {
