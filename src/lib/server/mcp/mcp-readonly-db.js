@@ -29,7 +29,7 @@ if (POSTGRES_URL && !password) {
 
 let cachedSchema = null;
 
-export async function getTimeEntriesSchema() {
+export async function getReadOnlyTablesSchema() {
     if (cachedSchema) return cachedSchema;
 
     const describe = async (table) => {
@@ -50,6 +50,7 @@ export async function getTimeEntriesSchema() {
         `time_entries(\n  ${await describe("time_entries")}\n)`,
         `time_entry_tags(\n  ${await describe("time_entry_tags")}\n)`,
         `time_entry_tag_entries(\n  ${await describe("time_entry_tag_entries")}\n)`,
+        `timeline_events(\n  ${await describe("timeline_events")}\n)`,
     ].join(", ");
     return cachedSchema;
 }

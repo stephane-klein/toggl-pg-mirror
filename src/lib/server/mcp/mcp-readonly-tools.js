@@ -1,14 +1,14 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 
-import { getTimeEntriesSchema, recordMcpAccess, sqlReadonly } from "./mcp-readonly-db.js";
+import { getReadOnlyTablesSchema, recordMcpAccess, sqlReadonly } from "./mcp-readonly-db.js";
 import { logger } from "$lib/server/logger.js";
 
 const MAX_OUTPUT_CHARS = parseInt(process.env.TOGGL_PG_MIRROR_MCP_MAX_OUTPUT_CHARS || "200000", 10);
 const DEFAULT_MAX_OUTPUT_CHARS = parseInt(process.env.TOGGL_PG_MIRROR_MCP_DEFAULT_MAX_OUTPUT_CHARS || "50000", 10);
 
 export async function createMcpReadonlyServer({ displayName, context }) {
-    const schema = await getTimeEntriesSchema();
+    const schema = await getReadOnlyTablesSchema();
 
     const server = new Server(
         { name: "toggl-pg-mirror-mcp-readonly", version: "1.0.0" },
@@ -20,10 +20,11 @@ export async function createMcpReadonlyServer({ displayName, context }) {
             {
                 name: "readOnlySqlQuery",
                 description:
-                    `Read-only access to the time-tracking data (the time_entries table) of user '${displayName}', ` +
+                    `Read-only access to the time-tracking data (time_entries and its tags) and the ` +
+                    `life events & periods (timeline_events) of user '${displayName}', ` +
                     "to answer questions about how they spend their time — past activity, " +
                     "weekly/monthly workload, time per project or tag, and so on.\n" +
-                    `Available table:\n- ${schema}\n` +
+                    `Available tables:\n${schema}\n` +
                     "Semantics and tips:\n" +
                     "  - An entry is 'running' when ended_at IS NULL.\n" +
                     "  - Exclude soft-deleted entries: WHERE deleted_at IS NULL.\n" +
@@ -32,6 +33,13 @@ export async function createMcpReadonlyServer({ displayName, context }) {
                     "    time_entry_tag_entries one row per (entry_id, tag_id) with a position column. Join time_entries to\n" +
                     "    time_entry_tag_entries on entry_id, then to time_entry_tags on tag_id, to search per tag;\n" +
                     "    match case-insensitively with lower(name).\n" +
+                    "  - timeline_events holds the user's structuring life events — the milestones and periods that\n" +
+                    "    frame how they spend their time (declarative temporal context independent of the fine-grained\n" +
+                    "    time-tracking flow): type is 'milestone' (a single date, end_date IS NULL or = start_date) or\n" +
+                    "    'period' (ongoing when end_date IS NULL, otherwise end_date > start_date). Use these periods\n" +
+                    "    and milestones to interpret how time was spent within broader life phases, e.g. a project\n" +
+                    "    carried from March to June, a move, a sabbatical — dates are DATE (no timezone), unlike\n" +
+                    "    started_at/ended_at.\n" +
                     "Timezone conversion:\n" +
                     "  - started_at and ended_at are TIMESTAMPTZ columns stored in UTC.\n" +
                     "  - Use the AT TIME ZONE operator to convert them to a timezone:\n" +
