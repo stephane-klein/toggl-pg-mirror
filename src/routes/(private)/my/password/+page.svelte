@@ -21,6 +21,11 @@
         method="POST"
         class="max-w-sm"
     >
+        <input
+            type="hidden"
+            name="form"
+            value="change-password"
+        />
         {#if data.hasPassword}
             <div class="mb-3">
                 <label
@@ -88,9 +93,13 @@
     {#if data.hasPassword}
         <form
             method="POST"
-            action="?/sendResetLink"
             class="mt-3"
         >
+            <input
+                type="hidden"
+                name="form"
+                value="send-reset-link"
+            />
             {#if form?.resetSent}
                 <span class="text-xs text-green-600">
                     We sent a reset link to <strong class="font-mono">{data.email}</strong>.
