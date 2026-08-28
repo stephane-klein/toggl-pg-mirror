@@ -68,8 +68,9 @@ export async function createMcpReadonlyServer({ displayName, context }) {
                     "  - Only tags actually used in the period are returned.\n" +
                     "  - entry_count is the number of matching entries; duration_hours is the summed duration of those\n" +
                     "    entries (running entries use now() as end).\n" +
-                    "  - 'q' is an optional substring filter on the tag name, matched accent- and case-insensitively\n" +
-                    "    (trigram-backed); omit it or pass '' to match all tags.\n" +
+                    "  - 'q' is an optional filter on the tag name, matched accent- and case-insensitively\n" +
+                    "    (trigram-backed): a single substring, or an array of substrings matched with OR;\n" +
+                    "    omit it or pass an empty array to match all tags.\n" +
                     "  - 'sort' is optional, defaulting to name_asc; values: name_asc, name_desc, count_asc, count_desc,\n" +
                     "    duration_asc, duration_desc.",
                 inputSchema: {
@@ -84,8 +85,10 @@ export async function createMcpReadonlyServer({ displayName, context }) {
                             description: "End of the range (exclusive), YYYY-MM-DD",
                         },
                         q: {
-                            type: "string",
-                            description: "Optional accent- and case-insensitive substring filter on the tag name",
+                            anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
+                            description:
+                                "Optional one or more accent- and case-insensitive substring terms matched with OR " +
+                                "against the tag name; omit for all tags",
                         },
                         sort: {
                             type: "string",
@@ -137,7 +140,11 @@ export async function createMcpReadonlyServer({ displayName, context }) {
         if (name === "searchTags") {
             const from = args.from;
             const to = args.to;
-            const _q = typeof args.q === "string" ? args.q : "";
+            const _q = Array.isArray(args.q)
+                ? args.q.filter((t) => typeof t === "string")
+                : typeof args.q === "string"
+                  ? [args.q]
+                  : [];
             const _sort = VALID_SORTS.includes(args.sort) ? args.sort : "name_asc";
 
             if (typeof from !== "string" || !DATE_RE.test(from) || typeof to !== "string" || !DATE_RE.test(to)) {
@@ -155,10 +162,10 @@ export async function createMcpReadonlyServer({ displayName, context }) {
                     `    _from => $1::date,\n` +
                     `    _to => $2::date,\n` +
                     `    _sort => $3,\n` +
-                    `    _q => $4\n` +
+                    `    _q => $4::text[]\n` +
                     `)`,
                 values: [from, to, _sort, _q],
-                label: `searchTags(from=${from}, to=${to}, q=${_q}, sort=${_sort})`,
+                label: `searchTags(from=${from}, to=${to}, q=[${_q.join(", ")}], sort=${_sort})`,
             };
         } else {
             query = {

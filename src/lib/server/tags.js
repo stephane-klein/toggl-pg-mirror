@@ -29,7 +29,7 @@ export async function listTagsForPeriod(from, to, sort = "name_asc", q = "") {
             _from => $1::date,
             _to => $2::date,
             _sort => $3,
-            _q => $4
+            _q => ARRAY[$4]::text[]
         )`,
         [from, to, _sort, q],
         { prepare: false },

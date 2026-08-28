@@ -1064,8 +1064,9 @@ $$;
 -- formula as get_activity_matrix_data (running entries use now() as end).
 -- _sort drives the two-way ordering (name/count/duration × asc/desc) via CASE.
 -- _q optionally filters tags by name (accent- and case-insensitive substring,
--- backed by the idx_time_entry_tags_name_unaccent_trgm GIN index); '' matches all.
-CREATE FUNCTION list_tags(_from date, _to date, _sort text, _q text DEFAULT '')
+-- backed by the idx_time_entry_tags_name_unaccent_trgm GIN index). It holds one
+-- or more terms matched with OR; an empty array matches all tags.
+CREATE FUNCTION list_tags(_from date, _to date, _sort text, _q text[] DEFAULT '{}')
 RETURNS TABLE(name text, entry_count int, duration_hours numeric)
 LANGUAGE sql
 AS $$
@@ -1079,7 +1080,10 @@ AS $$
     WHERE e.deleted_at IS NULL
       AND e.started_at >= _from
       AND e.started_at < _to
-      AND (_q = '' OR immutable_unaccent(t.name) ILIKE immutable_unaccent('%' || _q || '%'))
+      AND (cardinality(_q) = 0 OR EXISTS (
+          SELECT 1 FROM unnest(_q) q
+          WHERE immutable_unaccent(t.name) ILIKE immutable_unaccent('%' || q || '%')
+      ))
     GROUP BY t.id
     ORDER BY
       CASE WHEN _sort = 'name_desc' THEN lower(t.name) END DESC,

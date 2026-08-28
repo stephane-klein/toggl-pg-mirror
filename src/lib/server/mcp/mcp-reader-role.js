@@ -70,7 +70,7 @@ export async function ensureMcpReaderRole() {
             GRANT SELECT ON "${POSTGRES_SCHEMA}".time_entry_tag_entries TO "${role}";
             GRANT EXECUTE ON FUNCTION "${POSTGRES_SCHEMA}".immutable_unaccent(text) TO "${role}";
             GRANT EXECUTE ON FUNCTION "${POSTGRES_SCHEMA}".immutable_lower(text) TO "${role}";
-            GRANT EXECUTE ON FUNCTION "${POSTGRES_SCHEMA}".list_tags(date, date, text, text) TO "${role}";
+            GRANT EXECUTE ON FUNCTION "${POSTGRES_SCHEMA}".list_tags(date, date, text, text[]) TO "${role}";
         `);
 
         // Best-effort: the app role may lack the right to ALTER ROLE when the
