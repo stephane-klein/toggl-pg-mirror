@@ -65,11 +65,13 @@ export async function recordMcpAccess({
     purpose,
     success,
     durationMs,
+    inputChars,
+    outputChars,
 }) {
     try {
         await sql`
-            INSERT INTO mcp_access_log (token_id, user_id, session_id, client_name, client_version, ip, query, purpose, success, duration_ms)
-            VALUES (${tokenId}, ${userId}, ${sessionId}, ${clientName}, ${clientVersion}, ${ip}, ${query}, ${purpose}, ${success}, ${durationMs})
+            INSERT INTO mcp_access_log (token_id, user_id, session_id, client_name, client_version, ip, query, purpose, success, duration_ms, input_chars, output_chars)
+            VALUES (${tokenId}, ${userId}, ${sessionId}, ${clientName}, ${clientVersion}, ${ip}, ${query}, ${purpose}, ${success}, ${durationMs}, ${inputChars}, ${outputChars})
         `;
     } catch (err) {
         logger.error({ err }, "Failed to record MCP access");

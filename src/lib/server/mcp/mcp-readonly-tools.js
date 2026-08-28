@@ -251,6 +251,8 @@ export async function createMcpReadonlyServer({ displayName, context }) {
                 purpose: args.purpose,
                 success,
                 durationMs: Date.now() - startedAt,
+                inputChars: query.label.length,
+                outputChars: JSON.stringify(result, null, 2).length,
             });
         }
 
