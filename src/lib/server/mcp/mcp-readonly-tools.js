@@ -225,6 +225,7 @@ export async function createMcpReadonlyServer({ displayName, context }) {
 
         let result;
         let success = true;
+        const startedAt = Date.now();
         try {
             // Run each query in a read-only transaction scoped to one pooled
             // connection, so the hardening settings apply even when the app role
@@ -249,6 +250,7 @@ export async function createMcpReadonlyServer({ displayName, context }) {
                 query: query.label,
                 purpose: args.purpose,
                 success,
+                durationMs: Date.now() - startedAt,
             });
         }
 

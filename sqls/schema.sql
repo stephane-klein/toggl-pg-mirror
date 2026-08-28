@@ -205,6 +205,7 @@ CREATE TABLE IF NOT EXISTS mcp_access_log (
     query          TEXT NOT NULL,
     purpose        TEXT,
     success        BOOLEAN NOT NULL DEFAULT TRUE,
+    duration_ms    INTEGER,
     created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

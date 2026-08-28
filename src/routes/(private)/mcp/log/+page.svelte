@@ -91,7 +91,8 @@
                     <th class="py-1.5 pr-3">User</th>
                     <th class="py-1.5 pr-3">Purpose</th>
                     <th class="py-1.5">Query</th>
-                    <th class="py-1.5 text-right">Status</th>
+                    <th class="py-1.5 text-right">Duration</th>
+                    <th class="py-1.5 text-right pl-3">Status</th>
                 </tr>
             </thead>
             <tbody>
@@ -118,6 +119,13 @@
                                 <pre
                                     class="mt-2 p-2 bg-gray-100 rounded-sm font-mono text-xs whitespace-pre-wrap break-all">{row.query}</pre>
                             </details>
+                        </td>
+                        <td class="py-1.5 text-right whitespace-nowrap text-gray-600">
+                            {#if row.duration_ms != null}
+                                {row.duration_ms} ms
+                            {:else}
+                                -
+                            {/if}
                         </td>
                         <td class="py-1.5 text-right">
                             <span
