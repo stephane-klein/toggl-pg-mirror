@@ -31,6 +31,7 @@ DROP FUNCTION IF EXISTS set_time_entry_tags;
 DROP FUNCTION IF EXISTS rename_time_entry_tag;
 DROP FUNCTION IF EXISTS entry_matches_tags;
 DROP FUNCTION IF EXISTS list_tags;
+DROP FUNCTION IF EXISTS get_timeline_events_page_data;
 
 SET LOCAL client_min_messages = notice;
 
@@ -1100,6 +1101,30 @@ AS $$
       CASE WHEN _sort IN ('duration_asc', 'duration_desc') THEN
           SUM(EXTRACT(EPOCH FROM (COALESCE(e.ended_at, now()) - e.started_at)) / 3600.0) END ASC,
       lower(t.name) ASC
+$$;
+
+-- Life events & periods page render: the full list of timeline events as a
+-- single JSON array, newest start_date first. One round-trip per render, in
+-- line with ADR 002 (single SQL function per page render).
+CREATE FUNCTION get_timeline_events_page_data()
+RETURNS jsonb
+LANGUAGE sql STABLE PARALLEL SAFE
+AS $$
+    SELECT COALESCE(
+        jsonb_agg(jsonb_build_object(
+            'id', id,
+            'type', type,
+            'category', category,
+            'title', title,
+            'start_date', start_date,
+            'end_date', end_date,
+            'description', description,
+            'created_at', created_at,
+            'updated_at', updated_at
+        ) ORDER BY start_date DESC, id DESC),
+        '[]'::jsonb
+    )
+    FROM timeline_events
 $$;
 
 -- Security: default-deny function execution.

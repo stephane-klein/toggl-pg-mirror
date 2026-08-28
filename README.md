@@ -342,6 +342,15 @@ $ curl -X POST http://localhost:5173/api/v1/time-entries/import-csv \
     -F "file=@toggl-export-data/Toggl_time_entries_2025-01-01_to_2025-12-31.csv"
 ```
 
+## Life Events & Periods
+
+In addition to the measured time-tracking data, the web UI offers a
+`/timeline` page to record declarative life context — milestones (diploma,
+move) and long periods (employment, vacation, sport club) — with no link to
+the fine-grained time-entries flow. Milestones are degenerate periods (zero
+duration): their single date lives in `start_date`. The database enforces the
+date invariant through the `timeline_events_dates_check` CHECK constraint.
+
 ## Help
 
 ```bash

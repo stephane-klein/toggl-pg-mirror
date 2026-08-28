@@ -45,6 +45,11 @@
             >
             ·
             <a
+                href="/timeline"
+                class="text-gray-500 no-underline hover:text-blue-600 hover:underline">Life Events & Periods</a
+            >
+            ·
+            <a
                 href="/docs"
                 class="text-gray-500 no-underline hover:text-blue-600 hover:underline">Import CSV</a
             >
