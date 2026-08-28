@@ -642,6 +642,7 @@
                             class="bg-blue-50 border-y border-blue-300"
                             onkeydown={handleEditKeydown}
                             onfocusout={handleFocusOut}
+                            onmousedown={() => (suppressBlurCancel = !!editing)}
                         >
                             <td class="w-[1px] px-2 py-[7px] border-b border-gray-300 align-middle">
                                 <input
