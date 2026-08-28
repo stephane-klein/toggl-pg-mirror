@@ -8,6 +8,8 @@
     import { getAllTags } from "./tags.remote.js";
     import { fuzzyMatch } from "./fuzzyMatch.js";
     import { formatHumanDuration } from "$lib/shared/format-duration.js";
+    import { categoryColor, UNCATEGORIZED_LABEL } from "$lib/shared/timeline-gantt.js";
+    import { formatTimelineEventDates } from "$lib/shared/timeline-event.js";
 
     let {
         entries = [],
@@ -19,6 +21,7 @@
         total = null,
         hasFilter = false,
         view = null,
+        timelineEventsByDay = {},
         onSaved = null,
     } = $props();
 
@@ -610,11 +613,38 @@
                             >
                         </div>
                     </th>
-                    <th class="px-2 py-[7px] border-b-2 border-gray-300 text-left">
-                        <span class="text-sm text-gray-500">Total duration</span>
-                        <span class="text-sm font-mono text-gray-500">{formatHumanDuration(group.totalSeconds)}</span>
+                    <th
+                        colspan="2"
+                        class="px-2 py-[7px] border-b-2 border-gray-300 rounded-tr text-left align-middle overflow-hidden max-w-0"
+                    >
+                        <div class="flex items-center justify-between gap-2 min-w-0">
+                            <span class="text-sm text-gray-500 whitespace-nowrap shrink-0">
+                                Total duration
+                                <span class="font-mono">{formatHumanDuration(group.totalSeconds)}</span>
+                            </span>
+                            <div class="flex items-center justify-end gap-2 flex-nowrap min-w-0">
+                                {#each timelineEventsByDay[daySlug(group.date)] ?? [] as event (event.type + event.id)}
+                                    <span
+                                        class="inline-flex items-center gap-1 text-[11px] text-gray-600 whitespace-nowrap min-w-0"
+                                        title={`${event.title} — ${formatTimelineEventDates(event)}${event.category ? ` (${event.category})` : ""}`}
+                                    >
+                                        {#if event.type === "milestone"}
+                                            <span
+                                                class="w-2 h-2 rounded-full shrink-0"
+                                                style:background={categoryColor(event.category ?? UNCATEGORIZED_LABEL)}
+                                            ></span>
+                                        {:else}
+                                            <span
+                                                class="w-3 h-[5px] rounded-sm shrink-0"
+                                                style:background={categoryColor(event.category ?? UNCATEGORIZED_LABEL)}
+                                            ></span>
+                                        {/if}
+                                        <span class="truncate">{event.title}</span>
+                                    </span>
+                                {/each}
+                            </div>
+                        </div>
                     </th>
-                    <th class="border-b-2 border-gray-300 rounded-tr"></th>
                 </tr>
                 <tr>
                     <th class="w-[1px] px-2 py-[7px] border-b-2 border-gray-300"></th>

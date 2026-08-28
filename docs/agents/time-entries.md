@@ -36,7 +36,9 @@ Returns `firstNonEmpty*Href` and `todayHasEntries`/`*HasEntries` booleans. The p
 
 ### `getTimeEntriesPageData({ from, to, before, after, limit, sort, q, prevFrom, prevTo, nextFrom, nextTo })` — in `$lib/server/time-entries.js`
 
-Single round-trip backend for every time-entries view. Calls the stored function `get_time_entries_page_data()` (see `sqls/migrations/00006_time_entries_page_data/index.sql`) and returns `{ entries, prevCursor, nextCursor, total, prevHasEntries, nextHasEntries, nearestPeriodDay, goto }`. Each route passes its view-specific prev/next period bounds (day: ±1 day, week: ±7 days, month: ±1 month, range: `null`).
+Single round-trip backend for every time-entries view. Calls the stored function `get_time_entries_page_data()` (see `sqls/migrations/00006_time_entries_page_data/index.sql`) and returns `{ entries, prevCursor, nextCursor, total, prevHasEntries, nextHasEntries, nearestPeriodDay, timelineEventsByDay, goto }`. Each route passes its view-specific prev/next period bounds (day: ±1 day, week: ±7 days, month: ±1 month, range: `null`).
+
+`timelineEventsByDay` is a JSON object keyed by `YYYY-MM-DD` (computed by the stored function's `events_by_day` CTE): each day holds the timeline events relevant to that day — `period`-type events covering it (ongoing included) and `milestone`-type events dated on it, ordered by `(start_date, id)`. The day-group header of `TimeEntriesTable` renders them as per-day chips.
 
 ## Client-side URL utility — `$lib/url.js`
 
@@ -84,7 +86,7 @@ prop (`/time-entries` or `/charts`).
 | `RangeNav`         | `currentFrom`, `currentTo`                                                                                     | `goToRange()` uses `modifyCurrentUrl`                                                            |
 | `LimitSelector`    | `mode`                                                                                                         | Reads `$page.url` for current `limit`, uses `modifyCurrentUrl` to set it                         |
 | `SortToggle`       | `sort`                                                                                                         | Reads `$page.url`, uses `modifyCurrentUrl` to toggle `sort`                                      |
-| `TimeEntriesTable` | `entries`, `sort`, `prevPageHref`, `nextPageHref`                                                              | Pagination links are pre-computed hrefs                                                          |
+| `TimeEntriesTable` | `entries`, `sort`, `prevPageHref`, `nextPageHref`, `timelineEventsByDay`                                       | Pagination links are pre-computed hrefs; per-day timeline-event chips in each day-group header   |
 | `Pagination`       | `prevPageHref`, `nextPageHref`, `entries`                                                                      | Same                                                                                             |
 
 ## Server — `+page.server.js` responsibility

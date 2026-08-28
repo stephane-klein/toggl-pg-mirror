@@ -464,6 +464,46 @@ AS $$
             WHEN (SELECT * FROM goto_month_has) THEN NULL
             ELSE nearest_day_with_entries(_goto_month_from)
         END
+    ),
+    events_by_day AS (
+        -- Timeline events relevant to each day of [_from, _to): period-type
+        -- events covering the day (ongoing periods included) and milestone-type
+        -- events dated on the day itself. Grouped by day so the time-entries
+        -- day-group header can render them as per-day chips.
+        SELECT day, jsonb_agg(event ORDER BY start_date, id) AS events
+        FROM (
+            SELECT d.day::date AS day,
+                   jsonb_build_object(
+                       'type', 'period',
+                       'id', p.id,
+                       'category', p.category,
+                       'title', p.title,
+                       'start_date', p.start_date,
+                       'end_date', p.end_date
+                   ) AS event,
+                   p.start_date, p.id
+            FROM generate_series(_from, _to - 1, interval '1 day') AS d(day)
+            JOIN timeline_events p
+              ON p.type = 'period'
+             AND p.start_date <= d.day::date
+             AND (p.end_date IS NULL OR p.end_date >= d.day::date)
+            UNION ALL
+            SELECT m.start_date AS day,
+                   jsonb_build_object(
+                       'type', 'milestone',
+                       'id', m.id,
+                       'category', m.category,
+                       'title', m.title,
+                       'start_date', m.start_date,
+                       'end_date', NULL
+                   ) AS event,
+                   m.start_date, m.id
+            FROM timeline_events m
+            WHERE m.type = 'milestone'
+              AND m.start_date >= _from
+              AND m.start_date < _to
+        ) t
+        GROUP BY day
     )
     SELECT jsonb_build_object(
         'entries', COALESCE((
@@ -477,6 +517,9 @@ AS $$
         'prev_period_has_entries', (SELECT * FROM prev_has),
         'next_period_has_entries', (SELECT * FROM next_has),
         'nearest_period_day', (SELECT * FROM nearest_period_day),
+        'timeline_events_by_day', COALESCE((
+            SELECT jsonb_object_agg(day, events) FROM events_by_day
+        ), '{}'::jsonb),
         'goto', jsonb_build_object(
             'today_has_entries', (SELECT * FROM goto_today_has),
             'nearest_today_day', (SELECT * FROM nearest_today_day),

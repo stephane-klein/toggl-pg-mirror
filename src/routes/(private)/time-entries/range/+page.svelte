@@ -25,6 +25,7 @@
     let nextPageHref = $state(data.nextPageHref);
     let hasFilter = $derived(data.hasFilter);
     let view = $derived(data.view);
+    let timelineEventsByDay = $derived(data.timelineEventsByDay);
     // svelte-ignore state_referenced_locally (writable state resynced from props via $effect)
     let selectedIds = $state(new Set(data.selectedIds));
     // svelte-ignore state_referenced_locally (writable state resynced from props via $effect)
@@ -121,6 +122,7 @@
             {total}
             {hasFilter}
             {view}
+            {timelineEventsByDay}
             {onSaved}
         />
         <Pagination

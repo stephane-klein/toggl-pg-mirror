@@ -216,6 +216,7 @@ export async function getTimeEntriesPageData({
         prevHasEntries: data.prev_period_has_entries,
         nextHasEntries: data.next_period_has_entries,
         nearestPeriodDay: data.nearest_period_day,
+        timelineEventsByDay: data.timeline_events_by_day,
         goto: {
             todayHasEntries: data.goto.today_has_entries,
             nearestTodayDay: data.goto.nearest_today_day,

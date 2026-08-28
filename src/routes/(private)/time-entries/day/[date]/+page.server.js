@@ -85,8 +85,17 @@ export async function load({ params, url }) {
         nextTo: addDays(nextPeriodDate, 1),
     };
 
-    const { entries, prevCursor, nextCursor, total, prevHasEntries, nextHasEntries, nearestPeriodDay, goto } =
-        await getTimeEntriesPageData(view);
+    const {
+        entries,
+        prevCursor,
+        nextCursor,
+        total,
+        prevHasEntries,
+        nextHasEntries,
+        nearestPeriodDay,
+        goto,
+        timelineEventsByDay,
+    } = await getTimeEntriesPageData(view);
     const { selectedIds, selectAllMatching } = parseSelectionState(url.searchParams.get("selected"), entries);
 
     const prevLabel = `${formatLabel(prevPeriodDate)}${prevHasEntries ? "" : " (empty)"}`;
@@ -107,6 +116,7 @@ export async function load({ params, url }) {
         selectAllMatching,
         total,
         hasFilter: !!q,
+        timelineEventsByDay,
         mode: "day",
         currentDate: rawDate,
         periodLabel: formatPeriodLabel(rawDate),

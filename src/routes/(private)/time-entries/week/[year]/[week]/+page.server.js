@@ -98,8 +98,17 @@ export async function load({ params, url }) {
         nextTo: formatDate(nextWeekTo),
     };
 
-    const { entries, prevCursor, nextCursor, total, prevHasEntries, nextHasEntries, nearestPeriodDay, goto } =
-        await getTimeEntriesPageData(view);
+    const {
+        entries,
+        prevCursor,
+        nextCursor,
+        total,
+        prevHasEntries,
+        nextHasEntries,
+        nearestPeriodDay,
+        goto,
+        timelineEventsByDay,
+    } = await getTimeEntriesPageData(view);
     const { selectedIds, selectAllMatching } = parseSelectionState(url.searchParams.get("selected"), entries);
 
     const prevLabel = `W ${prevWeek}${prevHasEntries ? "" : " (empty)"}`;
@@ -128,6 +137,7 @@ export async function load({ params, url }) {
         selectAllMatching,
         total,
         hasFilter: !!q,
+        timelineEventsByDay,
         mode: "week",
         currentYear: year,
         currentWeek: week,

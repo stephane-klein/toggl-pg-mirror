@@ -49,7 +49,7 @@ export async function load({ url }) {
         nextTo: null,
     };
 
-    const { entries, prevCursor, nextCursor, total, goto } = await getTimeEntriesPageData(view);
+    const { entries, prevCursor, nextCursor, total, goto, timelineEventsByDay } = await getTimeEntriesPageData(view);
     const { selectedIds, selectAllMatching } = parseSelectionState(url.searchParams.get("selected"), entries);
     const gotoData = computeGoToData("/time-entries", url, sort, q, goto);
 
@@ -62,6 +62,7 @@ export async function load({ url }) {
             selectAllMatching: false,
             total: 0,
             hasFilter: false,
+            timelineEventsByDay: {},
             mode: "range",
             currentFrom: from || "",
             currentTo: to || "",
@@ -82,6 +83,7 @@ export async function load({ url }) {
         selectAllMatching,
         total,
         hasFilter: !!q,
+        timelineEventsByDay,
         mode: "range",
         currentFrom: from,
         currentTo: to,
