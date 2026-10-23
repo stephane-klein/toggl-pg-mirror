@@ -29,7 +29,7 @@ ORIGIN=http://localhost:3000 node build/index.js
 run = "podman compose stop"
 
 [tools]
-node = "24.16.0"
+node = "24.22.1"
 pnpm = "11.22.0"
 usql = "0.21.4"
 "aqua:gitleaks/gitleaks" = "8.30.1"

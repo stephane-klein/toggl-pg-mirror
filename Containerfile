@@ -1,4 +1,4 @@
-FROM node:24-slim AS build
+FROM node:24.22.1-slim AS build
 
 RUN npm install -g pnpm@11.22.0
 
@@ -20,7 +20,7 @@ ENV PUBLIC_GIT_HASH=$GIT_HASH \
 COPY . .
 RUN pnpm build
 
-FROM node:24-slim
+FROM node:24.22.1-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
